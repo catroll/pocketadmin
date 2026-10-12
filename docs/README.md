@@ -10,6 +10,12 @@ Read in this order. Each document is reviewable on its own.
 | 4 | [`design.md`](design.md) | How the platform is built: architecture, authentication, authorisation, audit, jobs, integrations, security, phasing, risks. |
 | 5 | [`business-design.md`](business-design.md) | How the business domain works: pricing pipeline, order state machine, payment idempotency, refund workflow, subscription billing, inventory. |
 
+Operational reference, outside the specification set:
+
+| Document | Answers |
+| --- | --- |
+| [`operations.md`](operations.md) | How do I configure, run and extend it? Configuration precedence, logging, endpoints, source layout, security posture. |
+
 ## Status
 
 | Document | Status |

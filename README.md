@@ -1,198 +1,96 @@
 # PocketAdmin
 
-A small, self-contained admin panel for [PocketBase](https://pocketbase.io),
-built with [Gin](https://gin-gonic.com) and [AdminLTE 3](https://adminlte.io).
+A self-contained admin panel for [PocketBase](https://pocketbase.io), written in
+Go. PocketBase is embedded as a library, so the whole thing ships as a single
+binary: one process, one port, one SQLite file, no external services.
 
-PocketBase is embedded **as a library**: it owns the SQLite database, the data
-directory, migrations, settings and the whole REST API. Gin serves an AdminLTE
-management UI on top, and PocketBase's own REST API + bundled superuser
-dashboard are mounted on the *same port* — so everything lives behind one URL
-and ships as a single binary.
+## Goals
 
-```
-                     ┌──────────────────────────────────────────┐
-   browser  ───────▶ │  Gin (single port)                       │
-                     │                                          │
-                     │  /login  /dashboard  /collections/...    │  AdminLTE UI
-                     │        ───────────────────────────       │
-                     │  /api/**            ──▶ PocketBase REST  │  mounted
-                     │  /_/**              ──▶ PB dashboard     │  http.Handler
-                     └──────────────────┬───────────────────────┘
-                                        │ core.App (in-process)
-                                        ▼
-                              SQLite + storage/ in pb_data/
-```
+PocketBase already gives you a database, authentication, a REST API and a file
+store. What it ships for a UI, though, is aimed at developers defining schemas —
+not at operators doing day-to-day work.
 
-## Documentation
+PocketAdmin fills that gap: a familiar AdminLTE back office for browsing and
+editing data, built so it can grow from a database browser into a full operations
+platform.
 
-The platform roadmap lives in a specification set. Start with the capability
-map: module boundaries, dependency direction and build order are the most
-expensive things to change later.
+The project runs in two layers:
 
-| Document | Contents |
-| --- | --- |
-| [CAPABILITY-MAP.md](CAPABILITY-MAP.md) | 20 modules (13 platform, 7 business), dependency direction, build order, scope boundaries |
-| [docs/requirements.md](docs/requirements.md) | Numbered functional requirements, traceability to the feature request, open questions |
-| [docs/database-design.md](docs/database-design.md) | 55 PocketBase collections with fields, indexes and relationships |
-| [docs/design.md](docs/design.md) | Architecture, authentication, authorisation, audit, jobs, integrations, security, phasing, risks |
-| [docs/business-design.md](docs/business-design.md) | Pricing pipeline, order state machine, payment idempotency, refund workflow, subscription billing, inventory |
-| [docs/README.md](docs/README.md) | Index, revision summary and module-to-document map |
-
-These are drafts pending review; no implementation work starts until the
-capability map is approved.
+- **The panel that works today** — sign in, browse collections, manage records
+  and files.
+- **A specified platform** — identity and organisation, role-based access
+  control, audit trails, configuration, scheduled jobs, third-party
+  integrations, and a business domain covering catalogue, orders, payments,
+  refunds, memberships, coupons and subscriptions. See
+  [Documentation](#documentation).
 
 ## Features
 
-- **Superuser sign-in** against PocketBase's `_superusers` collection, with
-  timing-equalised credential checks and a redirect-back (`?next=`) flow.
-- **CSRF protection** on every panel write (double-submit token bound to the
-  session), HttpOnly + SameSite=Lax session cookie, constant-time comparison.
-- **Dashboard** — collection/record/file counters, a records-per-collection
-  chart (Chart.js) and the storage footprint.
-- **Collection browser** — every collection with type, field count and record
-  count, user collections first.
-- **Record CRUD** for `base` and `auth` collections:
-  - paginated, sorted and free-text-searchable tables;
-  - forms generated from the collection schema, covering text, email, url,
-    number, bool, date, select, relation, file, editor, json, geopoint,
-    password and autodate fields;
-  - file uploads (append) and per-file removal, rendered with thumbnails;
-  - PocketBase validation errors surfaced field-by-field.
-- **Full PocketBase API and dashboard** still reachable at `/api/**` and `/_/`.
+- **Single binary** — PocketBase embedded; no external database or service.
+- **Dashboard** — collection, record and file counts, a records-per-collection
+  chart and the storage footprint.
+- **Collection browser** — type, field count and record count per collection.
+- **Record management** for base and auth collections:
+  - paginated, sortable, free-text-searchable tables;
+  - forms generated from the collection schema, covering every PocketBase field
+    type — text, email, url, number, bool, date, select, relation, file, editor,
+    json, geopoint, password and autodate;
+  - file uploads with per-file removal and thumbnails;
+  - validation errors surfaced field by field.
+- **Superuser sign-in** with timing-equalised credential checks and a
+  redirect-back flow.
+- **Security** — CSRF-protected writes, HttpOnly session cookie, upload size
+  caps.
+- **Nothing hidden** — the full PocketBase REST API and its bundled dashboard
+  stay reachable on the same port at `/api/**` and `/_/`.
+
+## Tech stack
+
+| Layer | Choice |
+| --- | --- |
+| Language | Go |
+| Data | [PocketBase](https://pocketbase.io) embedded as a library (SQLite) |
+| HTTP | [Gin](https://gin-gonic.com) |
+| UI | [AdminLTE 3](https://adminlte.io) on Bootstrap 4, server-rendered with `html/template` |
+| Charts | [Chart.js](https://www.chartjs.org) |
+| Configuration | YAML, overridable by environment variables and CLI flags |
+| Logging | `log/slog`, one JSON object per line on stdout |
 
 ## Quick start
 
 ```bash
-make assets      # vendor AdminLTE + plugins into web/static/vendor (once)
-make build
-
-# create the first superuser
+make assets      # vendor AdminLTE and its plugins (once)
 make superuser EMAIL=admin@example.com PASSWORD='change-me-please'
-
 make run         # http://127.0.0.1:8090
 ```
 
-Then sign in at <http://127.0.0.1:8090/login>. PocketBase's own dashboard is at
-<http://127.0.0.1:8090/_/>.
+Panel: <http://127.0.0.1:8090/login> · PocketBase dashboard:
+<http://127.0.0.1:8090/_/>
 
-### Without make
+Requires Go 1.25 or newer. `make help` lists every target.
 
-```bash
-go build -o bin/pocketadmin .
-./bin/pocketadmin -dir ./pb_data superuser upsert admin@example.com 'change-me-please'
-./bin/pocketadmin -dir ./pb_data -addr 127.0.0.1:8090
-```
+## Documentation
 
-## Configuration
+| Document | Contents |
+| --- | --- |
+| [docs/operations.md](docs/operations.md) | Configuration, logging, endpoints, source layout, security notes |
+| [CAPABILITY-MAP.md](CAPABILITY-MAP.md) | Module decomposition, dependency direction, build order |
+| [docs/requirements.md](docs/requirements.md) | Numbered functional requirements and open questions |
+| [docs/database-design.md](docs/database-design.md) | Collection schema, indexes and relationships |
+| [docs/design.md](docs/design.md) | Architecture, authentication, authorisation, audit, jobs, integrations, security |
+| [docs/business-design.md](docs/business-design.md) | Pricing, orders, payments, refunds, subscriptions, inventory |
+| [docs/README.md](docs/README.md) | Index and module map |
 
-Runtime settings come from an optional **YAML** file. Precedence, lowest to
-highest:
+The specification set is a draft under review. The panel described under
+[Features](#features) is what is implemented today; everything beyond it is
+planned, not built.
 
-```
-built-in defaults  <  pocketadmin.yaml  <  environment variables  <  CLI flags
-```
+## License
 
-Copy [`pocketadmin.example.yaml`](pocketadmin.example.yaml) to
-`pocketadmin.yaml` (or point `-config` / `POCKETADMIN_CONFIG` at a path). A
-missing `pocketadmin.yaml` is not an error — the panel starts on pure defaults.
-Unknown keys are rejected at startup so a typo fails loudly.
-
-```yaml
-addr: 127.0.0.1:8090      # HTTP listen address
-dataDir: ./pb_data        # PocketBase data directory (1-500 below)
-perPage: 30               # default records per page
-secureCookie: false       # mark the session cookie HTTPS-only
-dev: false                # PocketBase dev mode
-log:
-  level: info             # debug | info | warn | error
-  format: json            # json | text
-```
-
-| Flag             | Environment                | YAML key       | Default          |
-| ---------------- | -------------------------- | -------------- | ---------------- |
-| `-config`        | `POCKETADMIN_CONFIG`       | —              | `pocketadmin.yaml` |
-| `-addr`          | `POCKETADMIN_ADDR`         | `addr`         | `127.0.0.1:8090` |
-| `-dir`           | `POCKETADMIN_DATA_DIR`     | `dataDir`      | `./pb_data`      |
-| `-per-page`      | `POCKETADMIN_PER_PAGE`     | `perPage`      | `30`             |
-| `-secure-cookie` | `POCKETADMIN_SECURE_COOKIE`| `secureCookie` | `false`          |
-| `-dev`           | `POCKETADMIN_DEV`          | `dev`          | `false`          |
-| `-log-level`     | `POCKETADMIN_LOG_LEVEL`    | `log.level`    | `info`           |
-| `-log-format`    | `POCKETADMIN_LOG_FORMAT`   | `log.format`   | `json`           |
-
-The session signing key is **never** a hard-coded default: set
-`POCKETADMIN_SESSION_KEY` (at least 32 characters), or let the app generate one
-on first run and persist it as `pb_data/admin_session.key` (mode `0600`).
-
-Any first positional argument is forwarded to PocketBase's own CLI, so
-`pocketadmin superuser upsert …`, `pocketadmin superuser otp …` and friends work
-as usual.
-
-## Logging
-
-Application logs go through `log/slog` as **one JSON object per line on
-stdout**:
-
-```json
-{"time":"2026-10-12T19:50:43Z","level":"INFO","msg":"http request","method":"GET","path":"/dashboard","status":200,"latency":1810000,"clientIp":"127.0.0.1","bytes":8421}
-```
-
-Every request is logged once by Gin middleware, levelled by response status
-(5xx → error, 4xx → warn, otherwise info). Startup and shutdown are logged as
-`panel listening` / `shutdown signal received`.
-
-PocketBase's *own* operational logs are independent of this: it always persists
-them to the `_logs` collection (browsable in the PocketBase dashboard at `/_/`)
-and only echoes them to stdout in dev mode. Set `log.format: text` for
-human-readable output during local debugging.
-
-
-## Layout
+Licensed under the [Apache License, Version 2.0](LICENSE).
 
 ```
-main.go                       flags/YAML → logging → PocketBase bootstrap → Gin
-pocketadmin.example.yaml      annotated configuration template
-internal/config/              YAML + env + flag configuration resolution
-internal/logging/             log/slog JSON handler and the Gin request logger
-internal/pbapp/               PocketBase instance + API handler mounted into Gin
-internal/server/
-  server.go                   Gin engine, routes, middleware wiring
-  auth.go                     sessions, CSRF, login/logout, flash messages
-  render.go                   per-page template sets + template helpers
-  view.go                     view models
-  fields.go                   schema → form inputs, search/sort, form apply
-  handlers_dashboard.go       dashboard + collections index
-  handlers_records.go         record list / create / edit / delete
-web/
-  assets.go                   embeds templates + static assets
-  templates/                  AdminLTE layouts, partials and pages
-  static/                     app.css, app.js and the vendored AdminLTE bundle
-scripts/
-  goenv.sh                    workspace-local Go caches + module proxy
-  vendor-assets.sh            downloads AdminLTE + plugins into web/static/vendor
+Copyright 2026 catroll
 ```
 
-### Why the caches are local
-
-`scripts/goenv.sh` pins `GOMODCACHE`, `GOCACHE` and `GOPATH` inside `.cache/`
-and points `GOPROXY` at a reachable mirror. Every `go` invocation in the
-Makefile sources it. Adjust or delete it if your environment can write to
-`$HOME` and reach `proxy.golang.org` normally.
-
-## Security notes
-
-- Only records from `_superusers` can sign in; `IsSuperuser()` is re-checked on
-  every request against the live database, so revoking access takes effect
-  immediately.
-- Panel writes require a valid CSRF token; PocketBase's API routes are excluded
-  because they authenticate with bearer tokens rather than the panel cookie.
-- Request bodies on panel routes are capped at 128 MiB before PocketBase
-  validates each file field against its own limits.
-- `-secure-cookie` should be enabled whenever the panel is served over TLS.
-
-## Verification
-
-The panel was exercised end-to-end against a live instance: superuser sign-in,
-bad-password rejection, CSRF rejection on unauthenticated writes, all page
-renders, and the full record lifecycle (create → search → update → delete)
-including number and file fields, with uploaded files served back through
-`/api/files/...`.
+See [`NOTICE`](NOTICE) for attribution details.

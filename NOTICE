@@ -1,0 +1,78 @@
+PocketAdmin
+Copyright 2026 catroll
+
+This product is licensed under the Apache License, Version 2.0.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+===============================================================================
+THIRD-PARTY NOTICES
+===============================================================================
+
+This product bundles the following components in web/static/vendor/.
+
+--------------------------------------------------------------------------------
+AdminLTE 3.2.0 — MIT License
+Copyright (c) 2014-2021 ColorlibHQ
+https://github.com/ColorlibHQ/AdminLTE
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Bootstrap 4.6.2 — MIT License
+Copyright (c) 2011-2021 The Bootstrap Authors
+Copyright (c) 2011-2021 Twitter, Inc.
+https://github.com/twbs/bootstrap
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+jQuery 3.7.1 — MIT License
+Copyright OpenJS Foundation and other contributors
+https://jquery.org/
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Chart.js 2.9.4 — MIT License
+Copyright (c) 2014-2021 Chart.js Contributors
+https://www.chartjs.org/
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+OverlayScrollbars 1.13.3 — MIT License
+Copyright (c) 2018 Rene Haas
+https://github.com/KingSora/OverlayScrollbars
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Toastr 2.1.4 — MIT License
+Copyright (c) 2016 CodeSeven
+https://github.com/CodeSeven/toastr
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Font Awesome Free 5.15.4
+https://fontawesome.com/
+
+  Icons .............. CC BY 4.0  — Copyright (c) Fonticons, Inc.
+                        https://creativecommons.org/licenses/by/4.0/
+  Fonts .............. SIL OFL 1.1
+                        https://scripts.sil.org/OFL
+  Code ............... MIT License — Copyright (c) Fonticons, Inc.
+
+The Font Awesome Free icon and font files are redistributed unmodified, with
+attribution as required by CC BY 4.0 and SIL OFL 1.1. The Font Awesome name and
+the font names are trademarks of Fonticons, Inc. and are not covered by the
+licenses above.
+--------------------------------------------------------------------------------
+
+===============================================================================
+Go module dependencies are listed in go.mod / go.sum. Their licenses are not
+reproduced here; run `go-licenses save ./... --save_path=third_party/licenses`
+before distributing a binary if you need them bundled.
+===============================================================================
