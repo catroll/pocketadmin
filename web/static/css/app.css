@@ -77,3 +77,22 @@
 .login-page {
   min-height: 100vh;
 }
+
+/* Tree views indent a row by depth instead of nesting tables, so the whole
+   hierarchy stays one sortable, searchable list. */
+.tree-indent {
+  display: inline-block;
+  width: 1.35rem;
+}
+
+.tree-indent::before {
+  content: "";
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.2rem;
+  border-left: 1px solid var(--bs-border-color);
+  border-bottom: 1px solid var(--bs-border-color);
+  vertical-align: middle;
+  opacity: 0.6;
+}

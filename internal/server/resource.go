@@ -49,6 +49,17 @@ type resource struct {
 	// path.
 	ParentField string
 
+	// TreeView indents a row by its depth, turning a flat list into a visible
+	// hierarchy. The depth comes from a `level` field when the collection has one
+	// and is otherwise walked up the ParentField chain.
+	TreeView bool
+
+	// TreePathField names the materialised path column, when the hierarchy has
+	// one. It must be declared rather than inferred from a field called "path":
+	// menus carry a `path` that is a URL, and treating that as a tree path
+	// silently disabled the ordering.
+	TreePathField string
+
 	// ChildOf names a relation that scopes this resource to a parent record given
 	// in the query string, as `?parent=<id>`. It is how a sub-list such as a
 	// dictionary's items is expressed without a second resource layer: the parent
@@ -185,6 +196,7 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 			Columns:       listColumns(col),
 			Query:         query,
 			QueryPrefix:   buildQueryPrefix(query, perPage),
+			TreeView:      r.TreeView,
 			ListPath:      r.listPath(c),
 			ParentID:      r.parentID(c),
 			ParentLabel:   s.parentLabel(c, r),
@@ -230,10 +242,27 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 		return
 	}
 
+	if r.TreeView {
+		// A hierarchy that sorts flat interleaves parents and children, so the
+		// indent would show depths that do not nest. A materialised path already
+		// groups correctly; without one the records are reordered parents-first.
+		records = orderAsTree(records, r.ParentField, r.TreePathField)
+	}
+
 	cols := listColumns(col)
+	if r.TreeView {
+		// The indent marks the first column, so a tree has to lead with the name
+		// rather than with the id, or the hierarchy is drawn down the wrong column.
+		cols = leadWithLabel(cols, col)
+	}
+
 	rows := make([]row, 0, len(records))
 	for _, rec := range records {
-		rows = append(rows, buildRow(col, rec, cols))
+		built := buildRow(col, rec, cols)
+		if r.TreeView {
+			built.Indent = treeDepth(s.app, col, rec, r.ParentField)
+		}
+		rows = append(rows, built)
 	}
 
 	pageVM := resourceListPage{
@@ -246,6 +275,7 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 		Sort:          c.Query("sort"),
 		Dir:           c.Query("dir"),
 		QueryPrefix:   buildQueryPrefix(query, perPage),
+		TreeView:      r.TreeView,
 		ListPath:      r.listPath(c),
 		ParentID:      r.parentID(c),
 		ParentLabel:   s.parentLabel(c, r),
@@ -457,6 +487,167 @@ func (s *Server) resourceRoutes(panel *gin.RouterGroup, r resource) {
 		s.guarded(panel, http.MethodPost, r.BasePath+"/:id/delete", r.DeletePerm,
 			func(c *gin.Context) { s.resourceDelete(c, r) })
 	}
+}
+
+// treeNode is the minimal shape the ordering algorithm needs, so the algorithm
+// itself does not depend on PocketBase.
+type treeNode struct {
+	ID     string
+	Parent string
+}
+
+// orderAsTree reorders records so every parent precedes its children.
+//
+// A materialised path already sorts into tree order, so this only fills the gap
+// for a hierarchy that has no path column.
+func orderAsTree(records []*core.Record, parentField, treePathField string) []*core.Record {
+	if parentField == "" || treePathField != "" || len(records) < 2 {
+		return records
+	}
+
+	nodes := make([]treeNode, 0, len(records))
+	for _, rec := range records {
+		nodes = append(nodes, treeNode{ID: rec.Id, Parent: rec.GetString(parentField)})
+	}
+
+	order := orderTreeNodes(nodes)
+	out := make([]*core.Record, 0, len(order))
+	for _, i := range order {
+		out = append(out, records[i])
+	}
+	return out
+}
+
+// orderTreeNodes returns the indices of nodes in parents-first order.
+//
+// A node whose parent is absent from the set is treated as a root rather than
+// dropped, so paging or a filter never hides a row. A cycle is broken rather
+// than followed, and anything left unwalked is appended so no record is lost.
+func orderTreeNodes(nodes []treeNode) []int {
+	index := make(map[string]int, len(nodes))
+	for i, n := range nodes {
+		index[n.ID] = i
+	}
+
+	children := make(map[string][]int, len(nodes))
+	var roots []int
+	for i, n := range nodes {
+		if n.Parent == "" {
+			roots = append(roots, i)
+			continue
+		}
+		if _, present := index[n.Parent]; !present {
+			roots = append(roots, i)
+			continue
+		}
+		children[n.Parent] = append(children[n.Parent], i)
+	}
+
+	order := make([]int, 0, len(nodes))
+	visited := make([]bool, len(nodes))
+
+	var walk func(list []int, depth int)
+	walk = func(list []int, depth int) {
+		if depth > maxTreeDepth {
+			return
+		}
+		for _, i := range list {
+			if visited[i] {
+				continue
+			}
+			visited[i] = true
+			order = append(order, i)
+			walk(children[nodes[i].ID], depth+1)
+		}
+	}
+	walk(roots, 0)
+
+	for i := range nodes {
+		if !visited[i] {
+			order = append(order, i)
+		}
+	}
+	return order
+}
+
+// leadWithLabel moves the column that names a record to the front.
+//
+// It prefers a field flagged presentable, then the usual naming fields, and
+// leaves the order untouched when none is found.
+func leadWithLabel(cols []column, col *core.Collection) []column {
+	label := ""
+	for _, f := range col.Fields {
+		tf, ok := f.(*core.TextField)
+		if !ok || !tf.Presentable {
+			continue
+		}
+		label = tf.Name
+		break
+	}
+	if label == "" {
+		for _, candidate := range []string{"name", "title", "label", "code", "email"} {
+			if col.Fields.GetByName(candidate) != nil {
+				label = candidate
+				break
+			}
+		}
+	}
+	if label == "" {
+		return cols
+	}
+
+	idx := -1
+	for i, c := range cols {
+		if c.Name == label {
+			idx = i
+			break
+		}
+	}
+	if idx <= 0 {
+		return cols
+	}
+
+	reordered := make([]column, 0, len(cols))
+	reordered = append(reordered, cols[idx])
+	reordered = append(reordered, cols[:idx]...)
+	reordered = append(reordered, cols[idx+1:]...)
+	return reordered
+}
+
+// maxTreeDepth bounds a depth walk so a parent cycle cannot hang a request.
+const maxTreeDepth = 12
+
+// treeDepth returns how far a record sits below the root of its hierarchy.
+//
+// A stored `level` is trusted when present, because the tree's own invariants
+// maintain it. Otherwise the depth is walked up the parent chain, which is what
+// a hierarchy without a materialised path needs.
+func treeDepth(app core.App, col *core.Collection, rec *core.Record, parentField string) int {
+	if col.Fields.GetByName("level") != nil {
+		if level := rec.GetInt("level"); level > 0 {
+			return level - 1
+		}
+	}
+
+	if parentField == "" || app == nil {
+		return 0
+	}
+
+	depth := 0
+	current := rec
+	for i := 0; i < maxTreeDepth; i++ {
+		parentID := current.GetString(parentField)
+		if parentID == "" {
+			break
+		}
+		depth++
+		next, err := app.FindRecordById(col, parentID)
+		if err != nil || next == nil {
+			break
+		}
+		current = next
+	}
+	return depth
 }
 
 // parentLabel resolves a readable name for the record this sub-list belongs to,

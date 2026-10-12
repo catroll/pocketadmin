@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"html/template"
 	"strconv"
 	"strings"
 
@@ -614,4 +615,18 @@ func firstOrEmpty(values []string) string {
 		return ""
 	}
 	return values[0]
+}
+
+// treeIndent renders the leading spacer that shows a row's depth in a tree view.
+//
+// It returns template.HTML because the spacer is markup: letting html/template
+// escape it would print the tags instead of indenting the row.
+func treeIndent(depth int) template.HTML {
+	if depth <= 0 {
+		return ""
+	}
+	if depth > maxTreeDepth {
+		depth = maxTreeDepth
+	}
+	return template.HTML(strings.Repeat(`<span class="tree-indent"></span>`, depth))
 }

@@ -100,6 +100,7 @@ func templateFuncs() template.FuncMap {
 		"formatTime": formatTime,
 		"jsonPretty": jsonPretty,
 		"truncate":   truncate,
+		"treeIndent": treeIndent,
 		"fileURL":    fileURL,
 		"isImage":    isImage,
 		"json":       jsonString,

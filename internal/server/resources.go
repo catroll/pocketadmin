@@ -72,6 +72,8 @@ func organizationResources() []resource {
 			// declares the fields as read-only and refuses an orphan-producing
 			// delete.
 			DerivedFields: []string{"path", "level"},
+			TreeView:      true,
+			TreePathField: "path",
 			BeforeDelete: func(s *Server, rec *core.Record) error {
 				return refuseIfReferenced(s, "departments", "parent", rec.Id,
 					"This department still has sub-departments. Move or delete them first.")
@@ -157,17 +159,19 @@ func rbacResources() []resource {
 			Order:      "module,resource,action",
 		},
 		{
-			Collection: "menus",
-			BasePath:   "/rbac/menus",
-			Title:      "Menus",
-			Singular:   "menu",
-			Active:     "rbac.menus",
-			ListPerm:   permission.RBACMenuList,
-			CreatePerm: permission.RBACMenuCreate,
-			UpdatePerm: permission.RBACMenuUpdate,
-			DeletePerm: permission.RBACMenuDelete,
-			Order:      "sortOrder",
-			LabelField: "title",
+			Collection:  "menus",
+			BasePath:    "/rbac/menus",
+			Title:       "Menus",
+			Singular:    "menu",
+			Active:      "rbac.menus",
+			ListPerm:    permission.RBACMenuList,
+			CreatePerm:  permission.RBACMenuCreate,
+			UpdatePerm:  permission.RBACMenuUpdate,
+			DeletePerm:  permission.RBACMenuDelete,
+			Order:       "sortOrder",
+			LabelField:  "title",
+			ParentField: "parent",
+			TreeView:    true,
 			BeforeDelete: func(s *Server, rec *core.Record) error {
 				return refuseIfReferenced(s, "menus", "parent", rec.Id,
 					"This menu still has child nodes. Move or delete them first.")

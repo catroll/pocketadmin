@@ -164,6 +164,9 @@ type column struct {
 type row struct {
 	ID    string
 	Cells []cell
+
+	// Indent is how deep the row sits in a hierarchy, for a tree view.
+	Indent int
 }
 
 // cell is a single rendered table cell. Kind selects the template branch.
@@ -249,6 +252,9 @@ type resourceListPage struct {
 
 	// HasDetail renders a view action linking to the resource's detail screen.
 	HasDetail bool
+
+	// TreeView indents rows by depth to show a hierarchy.
+	TreeView bool
 
 	// RowActionPath and friends render a per-row link to a sub-list.
 	RowActionPath string

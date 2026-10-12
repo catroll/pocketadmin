@@ -62,9 +62,11 @@
       </thead>
       <tbody>
         {{range .Rows}}
+          {{$row := .}}
         <tr>
-          {{range .Cells}}
+          {{range $i, $c := .Cells}}
           <td>
+            {{if and (eq $i 0) $.TreeView}}{{treeIndent $row.Indent}}{{end}}
             {{if eq .Kind "bool"}}
               {{if .Bool}}<span class="badge text-bg-success">true</span>{{else}}<span class="badge text-bg-secondary">false</span>{{end}}
             {{else if eq .Kind "empty"}}
