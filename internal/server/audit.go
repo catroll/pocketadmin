@@ -13,6 +13,7 @@ const (
 	auditImpersonationStop  = "impersonation.stop"
 	auditStatusChange       = "account.status_change"
 	auditPasswordReset      = "account.password_reset"
+	auditPasswordChange     = "account.password_change"
 	auditSoftDelete         = "account.soft_delete"
 	auditRestore            = "account.restore"
 	auditSessionRevoke      = "session.revoke"

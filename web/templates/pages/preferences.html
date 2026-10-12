@@ -110,6 +110,46 @@
         <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save preferences</button>
       </div>
     </form>
+
+    {{/* A separate form: changing a credential is not a preference, and it must
+         not be submitted by the ordinary save. */}}
+    <form method="post" action="/preferences/password">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <div class="card card-warning card-outline">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-key me-1"></i>Password</h3>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <label class="col-sm-4 col-form-label" for="curPw">Current password</label>
+            <div class="col-sm-8">
+              <input type="password" class="form-control" id="curPw" name="currentPassword"
+                     autocomplete="current-password" required>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-4 col-form-label" for="newPw">New password</label>
+            <div class="col-sm-8">
+              <input type="password" class="form-control" id="newPw" name="newPassword"
+                     autocomplete="new-password" minlength="8" required>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-4 col-form-label" for="newPw2">Repeat the new password</label>
+            <div class="col-sm-8">
+              <input type="password" class="form-control" id="newPw2" name="newPasswordConfirm"
+                     autocomplete="new-password" minlength="8" required>
+              <div class="form-text">
+                Changing your password signs out your other sessions and keeps this one.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-warning"><i class="fas fa-key me-1"></i>Change password</button>
+        </div>
+      </div>
+    </form>
   </div>
 
   <div class="col-lg-4">

@@ -1,12 +1,17 @@
 package server
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
+
+	"pocketadmin/internal/rbac"
 )
 
 // Preference contexts. A person may want different settings in the back office
@@ -49,6 +54,109 @@ type preferencesPage struct {
 func (s *Server) registerPreferenceRoutes(panel *gin.RouterGroup) {
 	s.safe(panel, http.MethodGet, "/preferences", s.handlePreferencesForm)
 	s.selfGuarded(panel, http.MethodPost, "/preferences", s.handlePreferencesSave)
+	s.selfGuarded(panel, http.MethodPost, "/preferences/password", s.handlePasswordChange)
+}
+
+// handlePasswordChange lets an account change its own password.
+//
+// Administrators can reset any password from the account screen; this is the
+// holder doing it themselves, which is the only path that does not require
+// someone else to know or set a credential. Every other session is revoked,
+// because a password change is how someone responds to a suspected compromise of
+// their own account -- but the session performing the change is kept, so the
+// person is not thrown out of the screen they are standing on.
+func (s *Server) handlePasswordChange(c *gin.Context) {
+	actor := s.actor(c)
+	if actor == nil || actor.IsSuperuser {
+		// A break-glass superuser has no `users` row to change a password on; they
+		// use PocketBase's own dashboard.
+		s.setFlash(c, "warning", "Change this password from the PocketBase dashboard.")
+		c.Redirect(http.StatusSeeOther, "/preferences")
+		return
+	}
+
+	rec, err := s.app.FindRecordById(rbac.CollectionUsers, actor.UserID)
+	if err != nil || rec == nil {
+		s.setFlash(c, "danger", "Could not load your account.")
+		c.Redirect(http.StatusSeeOther, "/preferences")
+		return
+	}
+
+	current := c.PostForm("currentPassword")
+	next := c.PostForm("newPassword")
+	confirm := c.PostForm("newPasswordConfirm")
+
+	if !rec.ValidatePassword(current) {
+		s.audit(c, auditEntry{
+			Action: auditPasswordChange, Resource: "account", ResourceID: rec.Id,
+			Result: "failure", Risk: "medium",
+			Summary:   "Password change refused: the current password was wrong.",
+			SubjectID: rec.Id, SubjectEmail: rec.Email(),
+		})
+		s.setFlash(c, "danger", "Your current password is not correct.")
+		c.Redirect(http.StatusSeeOther, "/preferences")
+		return
+	}
+	if len(next) < 8 {
+		s.setFlash(c, "danger", "The new password must be at least 8 characters.")
+		c.Redirect(http.StatusSeeOther, "/preferences")
+		return
+	}
+	if next != confirm {
+		s.setFlash(c, "danger", "The two new passwords do not match.")
+		c.Redirect(http.StatusSeeOther, "/preferences")
+		return
+	}
+	if next == current {
+		s.setFlash(c, "warning", "The new password is the same as the current one.")
+		c.Redirect(http.StatusSeeOther, "/preferences")
+		return
+	}
+
+	rec.SetPassword(next)
+	rec.Set("passwordChangedAt", time.Now().UTC())
+	if err := s.app.Save(rec); err != nil {
+		s.setFlash(c, "danger", "Could not change the password: "+strings.Join(validationMessages(err), "; "))
+		c.Redirect(http.StatusSeeOther, "/preferences")
+		return
+	}
+
+	// Revoke every other session but keep this one.
+	currentToken, _ := sessions.Default(c).Get(sessionTokenKey).(string)
+	if err := s.revokeOtherSessions(rec.Id, currentToken); err != nil {
+		slog.Warn("could not revoke the other sessions after a password change",
+			"user", rec.Id, "error", err)
+	}
+
+	s.audit(c, auditEntry{
+		Action: auditPasswordChange, Resource: "account", ResourceID: rec.Id,
+		Risk:      "medium",
+		Summary:   "Password changed by the account holder; other sessions revoked.",
+		SubjectID: rec.Id, SubjectEmail: rec.Email(),
+	})
+	s.setFlash(c, "success", "Password changed. Your other sessions were signed out.")
+	c.Redirect(http.StatusSeeOther, "/preferences")
+}
+
+// revokeOtherSessions ends every live session for an account except the one
+// identified by keepToken.
+func (s *Server) revokeOtherSessions(userID, keepToken string) error {
+	records, err := s.app.FindRecordsByFilter(sessionCollectionName,
+		"user = {:user} && revokedAt = ''", "", 0, 0, map[string]any{"user": userID})
+	if err != nil {
+		return err
+	}
+
+	keep := hashToken(keepToken)
+	for _, rec := range records {
+		if rec.GetString("tokenHash") == keep {
+			continue
+		}
+		if err := s.revokeSessionRecord(rec, sessionRevokedPassword); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // handlePreferencesForm renders the account's preferences.
