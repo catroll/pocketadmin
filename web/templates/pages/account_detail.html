@@ -1,0 +1,312 @@
+{{define "content"}}
+{{/* The account screen. Identity lives on the account; the employee and admin
+     profiles are separate records that can be attached and detached without
+     touching it. */}}
+
+<div class="row">
+  <div class="col-lg-5">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-user me-1"></i>{{.Account.Email}}</h3>
+        <div class="card-tools">
+          {{if .Can "identity:account:update"}}
+          <a href="/identity/accounts/{{.Account.Id}}/edit" class="btn btn-secondary btn-sm">
+            <i class="fas fa-pen me-1"></i>Edit
+          </a>
+          {{end}}
+          <a href="/identity/accounts" class="btn btn-secondary btn-sm">Back</a>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr><th style="width:38%">Name</th><td>{{if .Account.GetString "name"}}{{.Account.GetString "name"}}{{else}}&mdash;{{end}}</td></tr>
+            <tr><th>Phone</th><td>{{if .Account.GetString "phone"}}{{.Account.GetString "phone"}}{{else}}&mdash;{{end}}</td></tr>
+            <tr><th>Status</th><td>
+              {{$st := .Account.GetString "status"}}
+              {{if eq $st "active"}}<span class="badge text-bg-success">active</span>
+              {{else if eq $st "banned"}}<span class="badge text-bg-danger">banned</span>
+              {{else}}<span class="badge text-bg-secondary">{{if $st}}{{$st}}{{else}}unknown{{end}}</span>{{end}}
+            </td></tr>
+            <tr><th>Source</th><td>{{if .Account.GetString "source"}}{{.Account.GetString "source"}}{{else}}&mdash;{{end}}</td></tr>
+            <tr><th>Last sign-in</th><td>{{formatTime (.Account.GetDateTime "lastLoginAt")}} <span class="text-body-secondary small">{{.Account.GetString "lastLoginIp"}}</span></td></tr>
+            <tr><th>Created</th><td>{{formatTime (.Account.GetDateTime "created")}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {{if .CanViewLogins}}
+    <div class="card card-primary card-outline">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-clock-rotate-left me-1"></i>Recent sign-ins</h3></div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>When</th><th>Result</th><th>IP</th></tr></thead>
+          <tbody>
+            {{range .RecentLogins}}
+            <tr>
+              <td class="small text-body-secondary">{{formatTime (.GetDateTime "created")}}</td>
+              <td>
+                {{$r := .GetString "result"}}
+                {{if eq $r "success"}}<span class="badge text-bg-success">success</span>
+                {{else}}<span class="badge text-bg-danger">{{$r}}</span>{{end}}
+              </td>
+              <td class="small">{{.GetString "ip"}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="3" class="text-center text-body-secondary py-3">No sign-ins recorded.</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {{end}}
+  </div>
+
+  <div class="col-lg-7">
+    {{/* ---- employee profile ---- */}}
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-id-badge me-1"></i>Employee profile
+          {{if .Employee}}<span class="badge text-bg-success ms-1">attached</span>
+          {{else}}<span class="badge text-bg-secondary ms-1">not attached</span>{{end}}
+        </h3>
+        {{if and .Employee .CanEditProfile}}
+        <div class="card-tools">
+          <form method="post" class="d-inline" action="/identity/accounts/{{.Account.Id}}/employee/detach"
+                onsubmit="return confirm('Detach the employee profile? The account and its history are kept.');">
+            <input type="hidden" name="_csrf" value="{{.CSRF}}">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Detach</button>
+          </form>
+        </div>
+        {{end}}
+      </div>
+
+      {{if .CanEditProfile}}
+      <form method="post" action="/identity/accounts/{{.Account.Id}}/employee">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <div class="card-body">
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="employeeNo">Employee number</label>
+            <div class="col-sm-8"><input type="text" class="form-control" id="employeeNo" name="employeeNo"
+              value="{{if .Employee}}{{.Employee.GetString "employeeNo"}}{{end}}"></div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="empDept">Department</label>
+            <div class="col-sm-8">
+              <select class="form-select" id="empDept" name="department">
+                <option value="">&mdash; none &mdash;</option>
+                {{$d := ""}}{{if .Employee}}{{$d = .Employee.GetString "department"}}{{end}}
+                {{range .Departments}}<option value="{{.Value}}" {{if eq .Value $d}}selected{{end}}>{{.Label}}</option>{{end}}
+              </select>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="empPos">Position</label>
+            <div class="col-sm-8">
+              <select class="form-select" id="empPos" name="position">
+                <option value="">&mdash; none &mdash;</option>
+                {{$p := ""}}{{if .Employee}}{{$p = .Employee.GetString "position"}}{{end}}
+                {{range .Positions}}<option value="{{.Value}}" {{if eq .Value $p}}selected{{end}}>{{.Label}}</option>{{end}}
+              </select>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="empMgr">Line manager</label>
+            <div class="col-sm-8">
+              <select class="form-select" id="empMgr" name="manager">
+                <option value="">&mdash; none &mdash;</option>
+                {{$m := ""}}{{if .Employee}}{{$m = .Employee.GetString "manager"}}{{end}}
+                {{range .Managers}}<option value="{{.Value}}" {{if eq .Value $m}}selected{{end}}>{{.Label}}</option>{{end}}
+              </select>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="empType">Employment type</label>
+            <div class="col-sm-8">
+              <select class="form-select" id="empType" name="employmentType">
+                {{$t := ""}}{{if .Employee}}{{$t = .Employee.GetString "employmentType"}}{{end}}
+                <option value="fulltime" {{if eq $t "fulltime"}}selected{{end}}>Full time</option>
+                <option value="parttime" {{if eq $t "parttime"}}selected{{end}}>Part time</option>
+                <option value="intern" {{if eq $t "intern"}}selected{{end}}>Intern</option>
+                <option value="contractor" {{if eq $t "contractor"}}selected{{end}}>Contractor</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="empStatus">Employment status</label>
+            <div class="col-sm-8">
+              <select class="form-select" id="empStatus" name="status">
+                {{$s := ""}}{{if .Employee}}{{$s = .Employee.GetString "status"}}{{end}}
+                <option value="probation" {{if eq $s "probation"}}selected{{end}}>Probation</option>
+                <option value="active" {{if eq $s "active"}}selected{{end}}>Active</option>
+                <option value="on_leave" {{if eq $s "on_leave"}}selected{{end}}>On leave</option>
+                <option value="resigned" {{if eq $s "resigned"}}selected{{end}}>Resigned</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="empHire">Hire date</label>
+            <div class="col-sm-8"><input type="date" class="form-control" id="empHire" name="hireDate"
+              value="{{if .Employee}}{{.Employee.GetString "hireDate"}}{{end}}"></div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="empEmail">Work email</label>
+            <div class="col-sm-8"><input type="email" class="form-control" id="empEmail" name="workEmail"
+              value="{{if .Employee}}{{.Employee.GetString "workEmail"}}{{end}}"></div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="empPhone">Work phone</label>
+            <div class="col-sm-8"><input type="text" class="form-control" id="empPhone" name="workPhone"
+              value="{{if .Employee}}{{.Employee.GetString "workPhone"}}{{end}}"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fas fa-save me-1"></i>{{if .Employee}}Save profile{{else}}Attach profile{{end}}
+          </button>
+        </div>
+      </form>
+      {{else}}
+      <div class="card-body text-body-secondary">
+        {{if .Employee}}Attached. You do not have permission to change it.{{else}}Not attached.{{end}}
+      </div>
+      {{end}}
+    </div>
+
+    {{/* ---- admin profile ---- */}}
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-user-shield me-1"></i>Admin profile
+          {{if .Admin}}<span class="badge text-bg-success ms-1">attached</span>
+          {{else}}<span class="badge text-bg-secondary ms-1">no back-office access</span>{{end}}
+          {{if and .Admin (.Admin.GetBool "isProtected")}}<span class="badge text-bg-warning ms-1">protected</span>{{end}}
+        </h3>
+        {{if and .Admin .CanEditProfile}}
+        <div class="card-tools">
+          {{if not (.Admin.GetBool "isProtected")}}
+          <form method="post" class="d-inline" action="/identity/accounts/{{.Account.Id}}/admin/detach"
+                onsubmit="return confirm('Detach the admin profile? Its sessions are revoked immediately.');">
+            <input type="hidden" name="_csrf" value="{{.CSRF}}">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Detach</button>
+          </form>
+          {{end}}
+        </div>
+        {{end}}
+      </div>
+
+      {{if .CanEditProfile}}
+      <form method="post" action="/identity/accounts/{{.Account.Id}}/admin">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <div class="card-body">
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="admStatus">Status</label>
+            <div class="col-sm-8">
+              <select class="form-select" id="admStatus" name="status">
+                {{$s := "active"}}{{if .Admin}}{{$s = .Admin.GetString "status"}}{{end}}
+                <option value="active" {{if eq $s "active"}}selected{{end}}>Active</option>
+                <option value="disabled" {{if eq $s "disabled"}}selected{{end}}>Disabled</option>
+                <option value="locked" {{if eq $s "locked"}}selected{{end}}>Locked</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <label class="col-sm-4 col-form-label" for="admDept">Department</label>
+            <div class="col-sm-8">
+              <select class="form-select" id="admDept" name="department">
+                <option value="">&mdash; none &mdash;</option>
+                {{$d := ""}}{{if .Admin}}{{$d = .Admin.GetString "department"}}{{end}}
+                {{range .Departments}}<option value="{{.Value}}" {{if eq .Value $d}}selected{{end}}>{{.Label}}</option>{{end}}
+              </select>
+              <div class="form-text">Used for row-level data scope. Mirrored from the employee profile.</div>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-sm-8 offset-sm-4">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="admMfa" name="mfaRequired"
+                       {{if and .Admin (.Admin.GetBool "mfaRequired")}}checked{{end}}>
+                <label class="form-check-label" for="admMfa">Require multi-factor authentication</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fas fa-save me-1"></i>{{if .Admin}}Save profile{{else}}Attach profile{{end}}
+          </button>
+        </div>
+      </form>
+      {{else}}
+      <div class="card-body text-body-secondary">
+        {{if .Admin}}Attached. You do not have permission to change it.{{else}}Not attached.{{end}}
+      </div>
+      {{end}}
+
+      {{if and .Admin .CanAssignRoles}}
+      <form method="post" action="/identity/accounts/{{.Account.Id}}/roles">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <div class="card-body border-top">
+          <p class="text-body-secondary small mb-2">
+            Effective permissions are the union of every selected role. A profile with no role can sign in but sees nothing.
+          </p>
+          {{range .RoleOptions}}
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="role-{{.ID}}" name="roles" value="{{.ID}}"
+                   {{if .Selected}}checked{{end}}>
+            <label class="form-check-label" for="role-{{.ID}}">
+              {{.Name}} <code class="small">{{.Code}}</code>
+              {{if .IsSystem}}<span class="badge text-bg-secondary">system</span>{{end}}
+              {{if .Description}}<span class="text-body-secondary small d-block">{{.Description}}</span>{{end}}
+            </label>
+          </div>
+          {{else}}
+          <p class="text-body-secondary mb-0">No roles exist yet. Create one under Access control.</p>
+          {{end}}
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i>Save roles</button>
+        </div>
+      </form>
+      {{end}}
+    </div>
+
+    {{if .CanViewSessions}}
+    <div class="card card-primary card-outline">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-desktop me-1"></i>Sessions</h3></div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Created</th><th>Device</th><th>IP</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {{range .Sessions}}
+            <tr>
+              <td class="small text-body-secondary">{{formatTime (.GetDateTime "created")}}</td>
+              <td class="small">{{.GetString "device"}}</td>
+              <td class="small">{{.GetString "ip"}}</td>
+              <td>
+                {{if (.GetDateTime "revokedAt").IsZero}}<span class="badge text-bg-success">active</span>
+                {{else}}<span class="badge text-bg-secondary">revoked</span>{{end}}
+              </td>
+              <td class="text-end">
+                {{if and $.CanRevokeSessions (.GetDateTime "revokedAt").IsZero}}
+                <form method="post" class="d-inline" action="/identity/sessions/{{.Id}}/revoke">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <input type="hidden" name="back" value="/identity/accounts/{{$.Account.Id}}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+                </form>
+                {{end}}
+              </td>
+            </tr>
+            {{else}}
+            <tr><td colspan="5" class="text-center text-body-secondary py-3">No sessions.</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}

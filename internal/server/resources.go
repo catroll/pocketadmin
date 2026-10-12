@@ -26,6 +26,7 @@ func identityResources() []resource {
 			Order:      "-created",
 			Filter:     "deletedAt = ''",
 			LabelField: "email",
+			HasDetail:  true,
 		},
 		{
 			// The sign-in history is append-only through the application, so the

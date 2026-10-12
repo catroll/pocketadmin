@@ -17,6 +17,7 @@ func (s *Server) registerIdentityRoutes(panel *gin.RouterGroup) {
 	for _, r := range identityResources() {
 		s.resourceRoutes(panel, r)
 	}
+	s.registerAccountRoutes(panel)
 }
 
 // registerOrganizationRoutes mounts the department, position and staff screens.

@@ -225,7 +225,8 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 		Nav:       s.navCollections(),
 		Flash:     s.flashFrom(c),
 		Actor:     actor,
-		Can:       s.hasPermissionFunc(c),
+		Perms:     actorPermissions(actor),
+		Superuser: actor != nil && actor.IsSuperuser,
 		Menus:     s.navFromActor(c),
 	}
 }

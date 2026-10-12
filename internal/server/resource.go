@@ -52,6 +52,10 @@ type resource struct {
 	// submission, so a crafted post cannot rewrite a materialised path.
 	DerivedFields []string
 
+	// HasDetail marks a resource with its own detail screen at BasePath/:id, so
+	// the list offers a view action next to edit and delete.
+	HasDetail bool
+
 	// LabelField is the field used when this collection is shown as a relation
 	// option. Empty falls back to the collection's own presentable field.
 	LabelField string
@@ -158,6 +162,7 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 		Sort:         c.Query("sort"),
 		Dir:          c.Query("dir"),
 		QueryPrefix:  buildQueryPrefix(query, perPage),
+		HasDetail:    r.HasDetail,
 		CanCreate:    actor.Can(r.CreatePerm),
 		CanDelete:    actor.Can(r.DeletePerm),
 		CanUpdate:    actor.Can(r.UpdatePerm),

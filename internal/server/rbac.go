@@ -185,15 +185,12 @@ func (s *Server) navFromActor(c *gin.Context) []rbac.MenuNode {
 	return s.menus.Visible(s.actor(c))
 }
 
-// hasPermissionFunc exposes permission checks to templates, so a page can hide a
-// button the actor cannot use rather than rendering it and failing on submit.
-func (s *Server) hasPermissionFunc(c *gin.Context) func(string) bool {
-	return func(code string) bool {
-		if code == "" {
-			return true
-		}
-		return s.actor(c).Can(code)
+// actorPermissions returns the actor's permission set for template rendering.
+func actorPermissions(actor *rbac.Actor) permission.Set {
+	if actor == nil {
+		return permission.NewSet()
 	}
+	return actor.Permissions
 }
 
 // allPermissions is a template helper listing every declared point, grouped for

@@ -3,8 +3,21 @@ package server
 import (
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/permission"
 	"pocketadmin/internal/rbac"
 )
+
+// Can reports whether the signed-in account holds a permission point.
+//
+// A superuser holds everything, so a damaged RBAC configuration can always be
+// repaired from the panel. An empty code means "no permission needed" and is
+// always allowed, which keeps navigation entries without a code visible.
+func (b base) Can(code string) bool {
+	if code == "" || b.Superuser {
+		return true
+	}
+	return b.Perms.Has(code)
+}
 
 // base carries the data that every rendered page needs.
 //
@@ -25,10 +38,12 @@ type base struct {
 	// authentication. Templates use it to hide controls the user cannot use.
 	Actor *rbac.Actor
 
-	// Can reports whether the actor holds a permission point, so a template can
-	// hide an action rather than render it and fail on submit:
-	// {{if .Can "rbac:role:create"}}.
-	Can func(code string) bool
+	// Perms is the actor's permission set and Superuser marks break-glass, so a
+	// template can hide an action rather than render it and fail on submit:
+	// {{if .Can "rbac:role:create"}}. Can is a method rather than a func field
+	// because templates invoke methods with arguments, not fields.
+	Perms     permission.Set
+	Superuser bool
 
 	// Menus is the navigation tree projected from the actor's permissions.
 	Menus []rbac.MenuNode
@@ -226,6 +241,9 @@ type resourceListPage struct {
 
 	// PerPageItems are the selectable page sizes, including the current one.
 	PerPageItems []int
+
+	// HasDetail renders a view action linking to the resource's detail screen.
+	HasDetail bool
 
 	// Capability flags hide controls the actor may not use, so a page never
 	// offers an action that would fail on submit.
