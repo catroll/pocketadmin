@@ -16,6 +16,8 @@ Operational reference, outside the specification set:
 | Document | Answers |
 | --- | --- |
 | [`operations.md`](operations.md) | How do I configure, run and extend it? Configuration precedence, logging, endpoints, source layout, security posture. |
+| [`decisions.md`](decisions.md) | Why is it built this way? Decisions recorded at the point of decision, each with the reasoning and what it gave up. |
+| [`module-brief.md`](module-brief.md) | How do I add a module? The conventions a new module must follow, and the verification it must pass. Written for a contributor or agent starting without prior context. |
 
 ## Status
 
@@ -27,6 +29,8 @@ Operational reference, outside the specification set:
 | `design.md` | draft (revision 2) — awaiting review |
 | `business-design.md` | draft (revision 2) — awaiting review |
 | `features.md` | feature list |
+| `decisions.md` | living document — appended as decisions are taken |
+| `module-brief.md` | living document — updated when a convention changes |
 
 No implementation work starts until the capability map is approved
 (`spec-driven-development` Phase 0 gate).
