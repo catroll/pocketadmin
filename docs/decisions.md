@@ -359,6 +359,58 @@ confirming the product value is untouched.
 **Given up.** A single settings screen. Two pages is more to navigate and is the
 correct amount for two audiences.
 
+### D-021 — The cron expression parser is this repository's own
+
+**Decision.** Five-field cron parsing and next-occurrence computation are
+implemented in `internal/jobs/schedule.go` rather than taken from a dependency.
+
+**Why.** The two candidates were both unsatisfactory, and the reasoning is worth
+recording because the default is supposed to be "take the newest maintained
+option". I checked the release channels rather than recalling them:
+
+| Candidate | Latest | Released |
+| --- | --- | --- |
+| `github.com/robfig/cron/v3` | v3.0.1 | 2020-01-04 |
+| `github.com/netresearch/go-cron` | v0.16.1 | 2026-09-22 |
+
+The original has not been released in over six years. The maintained option is a
+fork, and it is pre-1.0, so it makes no API-stability promise -- which for a
+scheduler the platform will depend on for years is a real cost rather than a
+theoretical one. Neither is clearly the right answer.
+
+Against that: the problem is bounded and its semantics are fixed by decades of
+convention. Fifty lines of parsing and a hundred of date arithmetic, with tests.
+The alternates are "a six-year-old release" and "a pre-1.0 fork", and a
+dependency that cannot be vouched for is worse than one that is understood.
+
+**Given up.** Correctness rests on this repository's tests rather than on a
+library's user base. The tests cover the cases that actually break hand-written
+evaluators: the day-of-month and day-of-week union rule, the leap-day gap, a date
+that does not exist in any year, and a daily schedule firing at the local hour.
+
+If the fork reaches 1.0, re-evaluate.
+
+### D-022 — A closed audit enum has to be widened at startup, not in a migration
+
+**Decision.** `audit.EnsureEventEnum` runs at startup and appends any catalogue
+event the stored `security_audit_logs.event` select is missing.
+
+**Why.** Found by narrowing a stored enum and restarting, which is what an upgrade
+looks like. The migration that creates the collection builds the enum from the
+event catalogue, so a fresh database is always correct -- but migrations do not run
+again, so an upgraded one keeps the enum it was created with and a new event is
+rejected at write time. The action has already happened and its record does not
+exist.
+
+The very same defect had already been found and fixed for the permission action
+enum, which makes the general rule worth stating: **a closed select built from a
+compile-time catalogue needs a self-heal at startup, because the catalogue and the
+stored schema advance independently.** Only additions are made; removing a value
+would invalidate rows already stored under it.
+
+**Given up.** A startup step that writes to the schema. It is a no-op once the two
+agree, and it logs what it added when they do not.
+
 ---
 
 ## Pending

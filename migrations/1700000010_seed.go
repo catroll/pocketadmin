@@ -116,6 +116,9 @@ func seededMenus() []menuSeed {
 			Path: "/settings/product", Icon: "far fa-circle",
 			Permission: permission.SettingsProductView, Sort: 20},
 
+		{Name: "jobs", Title: "Scheduled tasks", Type: "menu", Path: "/jobs",
+			Icon: "fas fa-clock", Sort: 80, Permission: permission.JobsJobList},
+
 		// The raw data browser is not delegated to roles, so it is flagged rather
 		// than permission-gated. Without a code an unflagged node would be visible
 		// to everyone.

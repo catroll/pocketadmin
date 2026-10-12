@@ -102,6 +102,11 @@ func run() error {
 		return err
 	}
 
+	// The scheduler runs the platform's scheduled tasks. It is stopped on the way
+	// out so a task is not interrupted halfway through a write.
+	stopScheduler := panel.StartScheduler()
+	defer stopScheduler()
+
 	// One port, two routers: PocketBase owns its API and bundled dashboard
 	// prefixes, Gin serves everything else. Dispatching with a stdlib mux keeps
 	// PocketBase requests out of Gin's response writer entirely.

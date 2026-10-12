@@ -21,15 +21,25 @@ type Event string
 // most worth reviewing, so the catalogue is extended rather than truncated. The
 // extension is recorded in docs/decisions.md D-011.
 const (
-	EventPermissionDenied     Event = "permission_denied"
-	EventPasswordChanged      Event = "password_changed"
-	EventPasswordReset        Event = "password_reset"
-	EventRoleChanged          Event = "role_changed"
-	EventProfileAttached      Event = "profile_attached"
-	EventProfileDetached      Event = "profile_detached"
-	EventAccountLocked        Event = "account_locked"
-	EventSessionRevoked       Event = "session_revoked"
-	EventSettingsChanged      Event = "settings_changed"
+	EventPermissionDenied Event = "permission_denied"
+	EventPasswordChanged  Event = "password_changed"
+	EventPasswordReset    Event = "password_reset"
+	EventRoleChanged      Event = "role_changed"
+	EventProfileAttached  Event = "profile_attached"
+	EventProfileDetached  Event = "profile_detached"
+	EventAccountLocked    Event = "account_locked"
+	EventSessionRevoked   Event = "session_revoked"
+	EventSettingsChanged  Event = "settings_changed"
+
+	// Scheduled tasks. These are separate events rather than one "job changed"
+	// because the question an investigator asks is which of them happened: a
+	// schedule change is a configuration change, a manual run is somebody
+	// executing work now, and pruning is the audit log deleting its own entries.
+	EventJobScheduleChanged Event = "job_schedule_changed"
+	EventJobStateChanged    Event = "job_state_changed"
+	EventJobRunManually     Event = "job_run_manually"
+	EventRetentionPruned    Event = "retention_pruned"
+
 	EventAPIKeyCreated        Event = "api_key_created"
 	EventAPIKeyRevoked        Event = "api_key_revoked"
 	EventDataExported         Event = "data_exported"
@@ -88,6 +98,10 @@ func AllEvents() []Event {
 		EventAccountLocked,
 		EventSessionRevoked,
 		EventSettingsChanged,
+		EventJobScheduleChanged,
+		EventJobStateChanged,
+		EventJobRunManually,
+		EventRetentionPruned,
 		EventAPIKeyCreated,
 		EventAPIKeyRevoked,
 		EventDataExported,

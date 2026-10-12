@@ -19,6 +19,7 @@ const (
 	ModuleStorage      = "storage"
 	ModuleAudit        = "audit"
 	ModuleSettings     = "settings"
+	ModuleJobs         = "jobs"
 )
 
 // Point is a single permission point.
@@ -137,6 +138,13 @@ const (
 	SettingsProductView   = "settings:product:view"
 	SettingsProductUpdate = "settings:product:update"
 
+	// Jobs: the catalogue of task handlers is fixed in code, so these govern
+	// scheduling and history rather than what a task does.
+	JobsJobList    = "jobs:job:list"
+	JobsJobUpdate  = "jobs:job:update"
+	JobsJobExecute = "jobs:job:execute"
+	JobsRunList    = "jobs:run:list"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -213,6 +221,11 @@ func All() []Point {
 		{SettingsAdminUpdate, "Change the back-office settings", ModuleSettings, "admin", "update", "button"},
 		{SettingsProductView, "View the product settings", ModuleSettings, "product", "view", "menu"},
 		{SettingsProductUpdate, "Change the product settings", ModuleSettings, "product", "update", "button"},
+
+		{JobsJobList, "List scheduled tasks", ModuleJobs, "job", "list", "menu"},
+		{JobsJobUpdate, "Change a task's schedule or state", ModuleJobs, "job", "update", "button"},
+		{JobsJobExecute, "Run a task now", ModuleJobs, "job", "execute", "button"},
+		{JobsRunList, "View task run history", ModuleJobs, "run", "list", "api"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

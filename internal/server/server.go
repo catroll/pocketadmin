@@ -18,6 +18,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"pocketadmin/internal/config"
+	"pocketadmin/internal/jobs"
 	"pocketadmin/internal/logging"
 	"pocketadmin/internal/rbac"
 	"pocketadmin/internal/settings"
@@ -65,6 +66,9 @@ type Server struct {
 
 	// settings is the typed configuration engine backing both settings surfaces.
 	settings *settings.Engine
+
+	// scheduler runs due tasks, or nil when it has not been started.
+	scheduler *jobs.Scheduler
 
 	// guards records the permission each route requires, keyed
 	// "METHOD /path". selfCheckRoutes compares it against the router.

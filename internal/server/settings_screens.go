@@ -191,6 +191,14 @@ func scalarString(value any) string {
 	}
 }
 
+// Named severities, so a call site reads as what it means rather than as a
+// string that could be anything.
+const (
+	severityInfo     = audit.SeverityInfo
+	severityWarning  = audit.SeverityWarning
+	severityCritical = audit.SeverityCritical
+)
+
 // auditEffectiveEvent returns the audit event for a settings change.
 //
 // Both surfaces record the same event: it is one kind of thing that happened, and
