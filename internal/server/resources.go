@@ -5,6 +5,7 @@ import (
 
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/identity"
 	"pocketadmin/internal/permission"
 )
 
@@ -27,6 +28,7 @@ func identityResources() []resource {
 			Filter:     "deletedAt = ''",
 			LabelField: "email",
 			HasDetail:  true,
+			BeforeSave: normaliseAccountPhone,
 		},
 		{
 			// The sign-in history is append-only through the application, so the
@@ -224,6 +226,16 @@ func rbacResources() []resource {
 // ---------------------------------------------------------------------------
 // Resource hooks
 // ---------------------------------------------------------------------------
+
+// normaliseAccountPhone stores a phone number in one shape.
+//
+// The unique index compares stored values, so two accounts whose numbers differ
+// only by formatting would both be accepted and then be indistinguishable to a
+// notification transport.
+func normaliseAccountPhone(_ *Server, rec *core.Record, _ bool) error {
+	rec.Set("phone", identity.NormalisePhone(rec.GetString("phone")))
+	return nil
+}
 
 // refuseIfReferenced blocks a delete while another collection still points at
 // the record.
