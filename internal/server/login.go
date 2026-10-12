@@ -107,6 +107,19 @@ func (s *Server) loginPlatformAccount(c *gin.Context, rec *core.Record, email, p
 		return
 	}
 
+	// A correct password is only the first factor when one is enrolled. Parking
+	// the sign-in here rather than issuing a session means an abandoned second
+	// step leaves nothing usable behind.
+	if rec.GetBool("mfaEnabled") {
+		if !s.beginPendingMFA(c, rec, next) {
+			s.renderLoginFailure(c, email, next, "Could not start the second step. Please try again.")
+			return
+		}
+		s.logLogin(c, rec.Id, email, "mfa_required", "password accepted, awaiting the second factor", "low")
+		c.Redirect(http.StatusSeeOther, "/login/mfa")
+		return
+	}
+
 	if !s.startSession(c, rec.Id, sessionKindUser) {
 		s.renderLoginFailure(c, email, next, "Could not start a session. Please try again.")
 		return

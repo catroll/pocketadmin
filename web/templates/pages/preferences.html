@@ -111,6 +111,114 @@
       </div>
     </form>
 
+    {{/* ---- two-factor authentication ---- */}}
+    <div class="card {{if .MFA.Enabled}}card-success{{else}}card-secondary{{end}} card-outline">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-shield-halved me-1"></i>Two-factor authentication
+          {{if .MFA.Enabled}}<span class="badge text-bg-success ms-1">enabled</span>
+          {{else}}<span class="badge text-bg-secondary ms-1">not enabled</span>{{end}}
+        </h3>
+      </div>
+      <div class="card-body">
+
+        {{if .MFA.PendingSecret}}
+        {{/* Enrolment in progress: the secret becomes real only once a code from
+             it has been confirmed, so a failed scan cannot lock anyone out. */}}
+        <p>
+          Add this secret to your authenticator app, then confirm with the six-digit code it shows.
+        </p>
+        <div class="mb-3">
+          <label class="form-label">Secret (enter it manually if you cannot scan)</label>
+          <input type="text" class="form-control font-monospace" readonly
+                 value="{{.MFA.PendingSecret}}" onclick="this.select()">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Provisioning link</label>
+          <input type="text" class="form-control font-monospace small" readonly
+                 value="{{.MFA.PendingURI}}" onclick="this.select()">
+          <div class="form-text">
+            Some apps accept this link directly. A QR code is not shown because rendering
+            one would add a dependency for a convenience that manual entry already covers.
+          </div>
+        </div>
+
+        <form method="post" action="/preferences/mfa/enable" class="row g-2 align-items-end">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="col-sm-5">
+            <label class="form-label" for="mfaCode">Code from the app</label>
+            <input type="text" class="form-control font-monospace" id="mfaCode" name="code"
+                   inputmode="numeric" autocomplete="one-time-code" required>
+          </div>
+          <div class="col-sm-7">
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-check me-1"></i>Confirm and enable
+            </button>
+          </div>
+        </form>
+        <form method="post" action="/preferences/mfa/cancel" class="mt-2">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <button type="submit" class="btn btn-link btn-sm p-0">Cancel enrolment</button>
+        </form>
+
+        {{else if .MFA.Enabled}}
+        <p class="mb-2">
+          Signing in requires a code from your authenticator app.
+          Enrolled {{.MFA.EnrolledAt}}.
+        </p>
+        <p class="text-body-secondary small">
+          Unused recovery codes: <strong>{{.MFA.RecoveryLeft}}</strong>.
+          {{if eq .MFA.RecoveryLeft 0}}You have none left; regenerate a set.{{end}}
+        </p>
+
+        <form method="post" action="/preferences/mfa/recovery" class="row g-2 align-items-end mb-3">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="col-sm-5">
+            <label class="form-label" for="regenPw">Regenerate recovery codes</label>
+            <input type="password" class="form-control" id="regenPw" name="password"
+                   autocomplete="current-password">
+          </div>
+          <div class="col-sm-7">
+            <button type="submit" class="btn btn-secondary">Regenerate</button>
+          </div>
+        </form>
+
+        <form method="post" action="/preferences/mfa/disable" class="row g-2 align-items-end border-top pt-3">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="col-sm-5">
+            <label class="form-label" for="disPw">Password</label>
+            <input type="password" class="form-control" id="disPw" name="password"
+                   autocomplete="current-password" required>
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" for="disCode">Current code</label>
+            <input type="text" class="form-control font-monospace" id="disCode" name="code"
+                   inputmode="numeric" autocomplete="one-time-code" required>
+          </div>
+          <div class="col-sm-3">
+            <button type="submit" class="btn btn-outline-danger w-100">Disable</button>
+          </div>
+          <div class="col-12">
+            <div class="form-text">Both are required: neither a borrowed session nor a stolen phone is enough alone.</div>
+          </div>
+        </form>
+
+        {{else}}
+        <p class="mb-2">
+          Add a second factor so a password alone is not enough to sign in. This uses an
+          authenticator app, which needs no mail or SMS transport.
+        </p>
+        <form method="post" action="/preferences/mfa/start">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-shield-halved me-1"></i>Set up two-factor authentication
+          </button>
+        </form>
+        {{end}}
+
+      </div>
+    </div>
+
     {{/* A separate form: changing a credential is not a preference, and it must
          not be submitted by the ordinary save. */}}
     <form method="post" action="/preferences/password">

@@ -127,6 +127,8 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 		public.POST("/logout", s.handleLogout)
 	}
 
+	s.registerMFARoutes(public)
+
 	// Authenticated panel routes.
 	//
 	// Group middleware runs between the two nesting levels, so limitBody and

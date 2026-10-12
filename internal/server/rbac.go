@@ -174,9 +174,13 @@ func (s *Server) selfCheckRoutes() error {
 			continue
 		}
 
-		// Login and logout are intentionally public: login must be reachable
-		// before an actor exists, and logout only clears a session.
-		if route.Path == "/login" || route.Path == "/logout" {
+		// Login, the second factor and logout are intentionally public: the first
+		// two must be reachable before an actor exists, and logout only clears a
+		// session. The second factor is public by necessity rather than by choice:
+		// the account is not signed in until it is verified, which is the whole
+		// point of it.
+		switch route.Path {
+		case "/login", "/logout", "/login/mfa":
 			continue
 		}
 

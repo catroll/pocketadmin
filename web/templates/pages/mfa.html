@@ -1,0 +1,46 @@
+{{define "content"}}
+{{/* The second-factor prompt. The account is not signed in until this succeeds,
+     so the page carries no navigation and no session controls. */}}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card card-warning card-outline">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-shield-halved me-1"></i>Two-factor authentication</h3>
+      </div>
+
+      <form method="post" action="/login/mfa">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <div class="card-body">
+          <p class="text-body-secondary">
+            Enter the six-digit code from your authenticator app for
+            <strong>{{if .Email}}{{.Email}}{{else}}this account{{end}}</strong>.
+          </p>
+
+          {{if .Error}}
+          <div class="alert alert-danger py-2">
+            <i class="fas fa-exclamation-triangle me-1"></i>{{.Error}}
+          </div>
+          {{end}}
+
+          <div class="mb-3">
+            <label class="form-label" for="code">Code</label>
+            <input type="text" class="form-control form-control-lg text-center font-monospace"
+                   id="code" name="code" inputmode="text" autocomplete="one-time-code"
+                   autofocus required
+                   style="letter-spacing:.3em">
+            <div class="form-text">
+              A recovery code also works here, and is used up when it does.
+            </div>
+          </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a href="/login" class="btn btn-secondary">Back to sign in</a>
+          <button type="submit" class="btn btn-warning">
+            <i class="fas fa-right-to-bracket me-1"></i>Verify
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{{end}}

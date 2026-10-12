@@ -21,6 +21,7 @@ func (s *Server) registerIdentityRoutes(panel *gin.RouterGroup) {
 	s.registerAccountActionRoutes(panel)
 	s.registerImpersonationRoutes(panel)
 	s.registerPreferenceRoutes(panel)
+	s.registerMFAManagementRoutes(panel)
 }
 
 // registerOrganizationRoutes mounts the department, position and staff screens.

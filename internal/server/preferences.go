@@ -42,6 +42,9 @@ type preferencesPage struct {
 	Languages []formOption
 	Timezones []formOption
 	PageSizes []int
+
+	// MFA is the two-factor enrolment state for the signed-in account.
+	MFA mfaEnrolment
 }
 
 // registerPreferenceRoutes mounts the self-service preferences screen.
@@ -187,6 +190,7 @@ func (s *Server) handlePreferencesForm(c *gin.Context) {
 		Languages:        preferenceLanguages(),
 		Timezones:        preferenceTimezones(),
 		PageSizes:        []int{10, 20, 25, 50, 100},
+		MFA:              s.mfaStateFor(s.ownAccountQuiet(c), s.cfg.AppName),
 	})
 }
 
@@ -233,6 +237,20 @@ func (s *Server) handlePreferencesSave(c *gin.Context) {
 
 	s.setFlash(c, "success", "Preferences saved.")
 	c.Redirect(http.StatusSeeOther, "/preferences")
+}
+
+// ownAccountQuiet loads the signed-in account without side effects, for pages
+// that only need to read its state.
+func (s *Server) ownAccountQuiet(c *gin.Context) *core.Record {
+	actor := s.actor(c)
+	if actor == nil || actor.IsSuperuser {
+		return nil
+	}
+	rec, err := s.app.FindRecordById(rbac.CollectionUsers, actor.UserID)
+	if err != nil {
+		return nil
+	}
+	return rec
 }
 
 // preferencesFor loads the signed-in account's admin-context preferences.

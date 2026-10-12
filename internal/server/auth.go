@@ -91,6 +91,16 @@ func (s *Server) requireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sess := sessions.Default(c)
 
+		// A sign-in waiting on its second factor is not unauthenticated, it is
+		// half-authenticated. Clearing the session here would discard the pending
+		// state and strand the user: any protected page they happened to open
+		// would silently end the sign-in they were part way through.
+		if s.hasPendingMFA(c) {
+			c.Redirect(http.StatusSeeOther, "/login/mfa")
+			c.Abort()
+			return
+		}
+
 		uid, _ := sess.Get(sessionUserKey).(string)
 		if uid == "" {
 			s.clearSession(c)
