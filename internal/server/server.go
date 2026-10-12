@@ -13,12 +13,12 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"golang.org/x/crypto/bcrypt"
 
 	"pocketadmin/internal/config"
 	"pocketadmin/internal/logging"
+	"pocketadmin/internal/version"
 	webassets "pocketadmin/web"
 )
 
@@ -32,8 +32,6 @@ const (
 	// sessionCookieName is the panel's own session cookie. It is intentionally
 	// distinct from anything PocketBase sets.
 	sessionCookieName = "pocketadmin_session"
-
-	panelVersion = "0.1.0"
 )
 
 // hiddenCollections are PocketBase's internal bookkeeping collections. They are
@@ -192,8 +190,8 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 		CSRF:      csrfToken,
 		UserEmail: email,
 		AppName:   s.cfg.AppName,
-		PBVersion: pocketbase.Version,
-		PanelVer:  panelVersion,
+		PBVersion: version.PocketBase(),
+		PanelVer:  version.Panel,
 		Nav:       s.navCollections(),
 		Flash:     s.flashFrom(c),
 	}

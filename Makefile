@@ -12,6 +12,17 @@
 SHELL := /bin/bash
 BINARY := bin/pocketadmin
 
+# PocketBase initialises its Version variable to the placeholder "(untracked)"
+# and its own release build overwrites it at link time. Replicate that so
+# PocketBase's bundled dashboard does not display the placeholder either. The
+# value is read from go.mod so it cannot drift from the dependency actually
+# compiled in; if Go is unavailable the variable is empty and the build still
+# succeeds.
+PB_VERSION := $(shell . ./scripts/goenv.sh >/dev/null 2>&1; \
+	go list -m -f '{{.Version}}' github.com/pocketbase/pocketbase 2>/dev/null \
+	| sed 's/^v//')
+LDFLAGS := $(if $(PB_VERSION),-X github.com/pocketbase/pocketbase.Version=$(PB_VERSION))
+
 CONFIG ?=
 DATA_DIR ?=
 ADDR ?=
@@ -31,7 +42,7 @@ assets: ## Vendor AdminLTE and its plugins into web/static/vendor
 
 .PHONY: build
 build: ## Compile the server binary
-	source scripts/goenv.sh && go build -o $(BINARY) .
+	source scripts/goenv.sh && go build -ldflags "$(LDFLAGS)" -o $(BINARY) .
 
 .PHONY: run
 run: build ## Build and run the panel
