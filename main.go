@@ -1,3 +1,5 @@
+// Command pocketadmin serves an AdminLTE management panel on top of an
+// embedded PocketBase instance.
 package main
 
 import (
@@ -13,21 +15,18 @@ import (
 	pbcmd "github.com/pocketbase/pocketbase/cmd"
 
 	"pocketadmin/internal/config"
+	"pocketadmin/internal/logging"
 	"pocketadmin/internal/pbapp"
 	"pocketadmin/internal/server"
 )
 
-// normaliseArgs rebuilds argv from the resolved configuration so that
-// PocketBase's cobra parser cannot mistake a flag value for a subcommand.
-func normaliseArgs(cfg *config.Config) []string {
-	args := []string{os.Args[0], "--dir=" + cfg.DataDir}
-	if cfg.Dev {
-		args = append(args, "--dev")
-	}
-	return append(args, cfg.Args...)
-}
-
 func main() {
+	// Install JSON logging on stdout before anything else so that even a
+	// configuration failure is reported in the expected format.
+	if _, err := logging.Setup(config.DefaultLogLevel, config.DefaultLogFormat); err != nil {
+		panic(err)
+	}
+
 	if err := run(); err != nil {
 		slog.Error("fatal", "error", err)
 		os.Exit(1)
@@ -36,6 +35,12 @@ func main() {
 
 func run() error {
 	cfg, err := config.Load(os.Args[1:])
+	if err != nil {
+		return err
+	}
+
+	// Re-install the logger with the level and format from the configuration.
+	logger, err := logging.Setup(cfg.Log.Level, cfg.Log.Format)
 	if err != nil {
 		return err
 	}
@@ -63,7 +68,7 @@ func run() error {
 	}
 	defer func() {
 		if err := app.ClearBootstrap(); err != nil {
-			slog.Warn("cleanup failed", "error", err)
+			logger.Warn("cleanup failed", "error", err)
 		}
 	}()
 
@@ -76,7 +81,7 @@ func run() error {
 		return err
 	}
 
-	panel, err := server.New(app, cfg)
+	panel, err := server.New(app, cfg, logger)
 	if err != nil {
 		return err
 	}
@@ -102,10 +107,14 @@ func run() error {
 
 	serveErr := make(chan error, 1)
 	go func() {
-		slog.Info("PocketAdmin listening",
+		logger.Info("panel listening",
 			"url", "http://"+cfg.Addr,
+			"pocketbaseUI", "http://"+cfg.Addr+"/_/",
 			"dataDir", cfg.DataDir,
-			"pocketbaseUI", "http://"+cfg.Addr+"/_/")
+			"configFile", cfg.ConfigFile,
+			"logLevel", cfg.Log.Level,
+			"logFormat", cfg.Log.Format,
+		)
 
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serveErr <- err
@@ -116,11 +125,21 @@ func run() error {
 	case err := <-serveErr:
 		return err
 	case <-ctx.Done():
-		slog.Info("shutting down")
+		logger.Info("shutdown signal received")
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	return httpServer.Shutdown(shutdownCtx)
+}
+
+// normaliseArgs rebuilds argv from the resolved configuration so that
+// PocketBase's cobra parser cannot mistake a flag value for a subcommand.
+func normaliseArgs(cfg *config.Config) []string {
+	args := []string{os.Args[0], "--dir=" + cfg.DataDir}
+	if cfg.Dev {
+		args = append(args, "--dev")
+	}
+	return append(args, cfg.Args...)
 }

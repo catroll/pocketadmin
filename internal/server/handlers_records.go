@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -100,15 +101,16 @@ func (s *Server) handleRecordList(c *gin.Context) {
 	prefix.Set("perPage", strconv.Itoa(perPage))
 
 	pageData := recordsPage{
-		base:        s.newBase(c, fmt.Sprintf("%s · Records", col.Name), "collections"),
-		Collection:  col,
-		Columns:     columns,
-		Rows:        rows,
-		Query:       query,
-		Sort:        sortField,
-		Dir:         dir,
-		NextDir:     nextDir,
-		QueryPrefix: prefix.Encode(),
+		base:           s.newBase(c, fmt.Sprintf("%s · Records", col.Name), "collections"),
+		Collection:     col,
+		Columns:        columns,
+		Rows:           rows,
+		Query:          query,
+		Sort:           sortField,
+		Dir:            dir,
+		NextDir:        nextDir,
+		QueryPrefix:    prefix.Encode(),
+		PerPageOptions: perPageOptions(perPage),
 		Pagination: pagination{
 			Page:       page,
 			PerPage:    perPage,
@@ -329,6 +331,26 @@ func (s *Server) countRecords(col *core.Collection, filter string, params map[st
 
 func listURL(col *core.Collection) string {
 	return fmt.Sprintf("/collections/%s/records", url.PathEscape(col.Name))
+}
+
+// perPageOptions returns the page sizes offered by the record list.
+//
+// The current value is always included so that a perPage configured outside
+// the standard set (via YAML, env or query string) is still represented in the
+// selector instead of silently falling back to the first option.
+func perPageOptions(current int) []int {
+	options := []int{10, 20, 30, 50, 100}
+
+	for _, v := range options {
+		if v == current {
+			return options
+		}
+	}
+
+	options = append(options, current)
+	sort.Ints(options)
+
+	return options
 }
 
 // pageWindow returns at most seven page numbers centred on the current page.

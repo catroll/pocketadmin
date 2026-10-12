@@ -30,11 +30,9 @@
       <label class="mr-1 mb-1 small text-muted" for="perPage">Per page</label>
       <select id="perPage" name="perPage" class="form-control form-control-sm mr-2 mb-1">
         {{$current := .Pagination.PerPage}}
-        <option value="10" {{if eq $current 10}}selected{{end}}>10</option>
-        <option value="20" {{if eq $current 20}}selected{{end}}>20</option>
-        <option value="30" {{if eq $current 30}}selected{{end}}>30</option>
-        <option value="50" {{if eq $current 50}}selected{{end}}>50</option>
-        <option value="100" {{if eq $current 100}}selected{{end}}>100</option>
+        {{range .PerPageOptions}}
+        <option value="{{.}}" {{if eq . $current}}selected{{end}}>{{.}}</option>
+        {{end}}
       </select>
 
       <button class="btn btn-default btn-sm mb-1" type="submit">Apply</button>

@@ -1,0 +1,36 @@
+# PocketAdmin configuration.
+#
+# Every key is optional and the values below are the built-in defaults. Copy
+# this file to "pocketadmin.yaml" (or point -config / POCKETADMIN_CONFIG at it)
+# to override them.
+#
+# Precedence, lowest to highest:
+#   built-in defaults  <  this file  <  environment variables  <  command-line flags
+#
+# Unknown keys are rejected at startup so that a typo fails loudly instead of
+# being silently ignored.
+
+# TCP address the HTTP server listens on.
+addr: 127.0.0.1:8090
+
+# PocketBase data directory. The SQLite database, uploaded files and the
+# generated session signing key all live here.
+dataDir: ./pb_data
+
+# Default number of records per page in record listings (1-500).
+perPage: 30
+
+# Mark the session cookie as HTTPS-only. Enable this whenever the panel is
+# served over TLS.
+secureCookie: false
+
+# Enable PocketBase dev mode (verbose SQL and HTTP logging).
+dev: false
+
+# Application logging. One JSON object per line on stdout.
+log:
+  # debug | info | warn | error
+  level: info
+
+  # json | text
+  format: json

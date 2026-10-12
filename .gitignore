@@ -6,3 +6,6 @@
 
 # PocketBase data directory (SQLite database, uploads, session key)
 /pb_data/
+
+# Machine-local configuration; commit pocketadmin.example.yaml instead.
+/pocketadmin.yaml

@@ -100,6 +100,10 @@ type recordsPage struct {
 	// QueryPrefix carries only the filters that must survive a sort or page
 	// change (q, perPage). Sort/dir/page are appended explicitly by the links.
 	QueryPrefix string
+
+	// PerPageOptions are the selectable page sizes. The configured default is
+	// always included so it can be rendered as the selected option.
+	PerPageOptions []int
 }
 
 type pagination struct {

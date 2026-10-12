@@ -67,29 +67,74 @@ go build -o bin/pocketadmin .
 
 ## Configuration
 
-Flags (each also has an environment-variable equivalent):
+Runtime settings come from an optional **YAML** file. Precedence, lowest to
+highest:
 
-| Flag              | Env                        | Default            | Description                              |
-| ----------------- | -------------------------- | ------------------ | ---------------------------------------- |
-| `-addr`           | `POCKETADMIN_ADDR`         | `127.0.0.1:8090`   | HTTP listen address                      |
-| `-dir`            | `POCKETADMIN_DATA_DIR`     | `./pb_data`        | PocketBase data directory                |
-| `-per-page`       | —                          | `30`               | Default records per page                 |
-| `-secure-cookie`  | —                          | `false`            | Mark the session cookie HTTPS-only       |
-| `-dev`            | —                          | `false`            | PocketBase dev logging                   |
+```
+built-in defaults  <  pocketadmin.yaml  <  environment variables  <  CLI flags
+```
+
+Copy [`pocketadmin.example.yaml`](pocketadmin.example.yaml) to
+`pocketadmin.yaml` (or point `-config` / `POCKETADMIN_CONFIG` at a path). A
+missing `pocketadmin.yaml` is not an error — the panel starts on pure defaults.
+Unknown keys are rejected at startup so a typo fails loudly.
+
+```yaml
+addr: 127.0.0.1:8090      # HTTP listen address
+dataDir: ./pb_data        # PocketBase data directory (1-500 below)
+perPage: 30               # default records per page
+secureCookie: false       # mark the session cookie HTTPS-only
+dev: false                # PocketBase dev mode
+log:
+  level: info             # debug | info | warn | error
+  format: json            # json | text
+```
+
+| Flag             | Environment                | YAML key       | Default          |
+| ---------------- | -------------------------- | -------------- | ---------------- |
+| `-config`        | `POCKETADMIN_CONFIG`       | —              | `pocketadmin.yaml` |
+| `-addr`          | `POCKETADMIN_ADDR`         | `addr`         | `127.0.0.1:8090` |
+| `-dir`           | `POCKETADMIN_DATA_DIR`     | `dataDir`      | `./pb_data`      |
+| `-per-page`      | `POCKETADMIN_PER_PAGE`     | `perPage`      | `30`             |
+| `-secure-cookie` | `POCKETADMIN_SECURE_COOKIE`| `secureCookie` | `false`          |
+| `-dev`           | `POCKETADMIN_DEV`          | `dev`          | `false`          |
+| `-log-level`     | `POCKETADMIN_LOG_LEVEL`    | `log.level`    | `info`           |
+| `-log-format`    | `POCKETADMIN_LOG_FORMAT`   | `log.format`   | `json`           |
 
 The session signing key is **never** a hard-coded default: set
-`POCKETADMIN_SESSION_KEY`, or let the app generate one on first run and persist
-it as `pb_data/admin_session.key` (mode `0600`).
+`POCKETADMIN_SESSION_KEY` (at least 32 characters), or let the app generate one
+on first run and persist it as `pb_data/admin_session.key` (mode `0600`).
 
 Any first positional argument is forwarded to PocketBase's own CLI, so
 `pocketadmin superuser upsert …`, `pocketadmin superuser otp …` and friends work
 as usual.
 
+## Logging
+
+Application logs go through `log/slog` as **one JSON object per line on
+stdout**:
+
+```json
+{"time":"2026-10-12T19:50:43Z","level":"INFO","msg":"http request","method":"GET","path":"/dashboard","status":200,"latency":1810000,"clientIp":"127.0.0.1","bytes":8421}
+```
+
+Every request is logged once by Gin middleware, levelled by response status
+(5xx → error, 4xx → warn, otherwise info). Startup and shutdown are logged as
+`panel listening` / `shutdown signal received`.
+
+PocketBase's *own* operational logs are independent of this: it always persists
+them to the `_logs` collection (browsable in the PocketBase dashboard at `/_/`)
+and only echoes them to stdout in dev mode. Set `log.format: text` for
+human-readable output during local debugging.
+
+
 ## Layout
 
 ```
-main.go                       flags → PocketBase bootstrap → Gin server
-internal/config/              runtime configuration
+main.go                       flags/YAML → logging → PocketBase bootstrap → Gin
+pocketadmin.example.yaml      annotated configuration template
+internal/config/              YAML + env + flag configuration resolution
+internal/logging/             log/slog JSON handler and the Gin request logger
 internal/pbapp/               PocketBase instance + API handler mounted into Gin
 internal/server/
   server.go                   Gin engine, routes, middleware wiring
@@ -105,7 +150,7 @@ web/
   static/                     app.css, app.js and the vendored AdminLTE bundle
 scripts/
   goenv.sh                    workspace-local Go caches + module proxy
-  vendor-assets.sh            downloads/AdminLTE + plugins into web/static/vendor
+  vendor-assets.sh            downloads AdminLTE + plugins into web/static/vendor
 ```
 
 ### Why the caches are local

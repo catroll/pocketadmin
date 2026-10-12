@@ -4,11 +4,21 @@
 # environment, so every target sources scripts/goenv.sh first. That script
 # points GOMODCACHE/GOCACHE/GOPATH inside .cache/ and selects a reachable
 # module proxy.
+#
+# Runtime settings come from pocketadmin.yaml. The variables below are empty by
+# default so the YAML file stays authoritative; set one to override it on the
+# command line.
 
 SHELL := /bin/bash
 BINARY := bin/pocketadmin
-DATA_DIR ?= ./pb_data
-ADDR ?= 127.0.0.1:8090
+
+CONFIG ?=
+DATA_DIR ?=
+ADDR ?=
+
+FLAGS := $(if $(CONFIG),-config $(CONFIG),) \
+         $(if $(DATA_DIR),-dir $(DATA_DIR),) \
+         $(if $(ADDR),-addr $(ADDR),)
 
 .PHONY: help
 help: ## Show this help
@@ -25,11 +35,11 @@ build: ## Compile the server binary
 
 .PHONY: run
 run: build ## Build and run the panel
-	./$(BINARY) -dir $(DATA_DIR) -addr $(ADDR)
+	./$(BINARY) $(FLAGS)
 
 .PHONY: dev
 dev: ## Run with PocketBase dev logging
-	source scripts/goenv.sh && go run . -dir $(DATA_DIR) -addr $(ADDR) -dev
+	source scripts/goenv.sh && go run . $(FLAGS) -dev
 
 .PHONY: test
 test: ## Run the Go test suite
@@ -51,7 +61,7 @@ tidy: ## Sync go.mod / go.sum
 superuser: build ## Create/update a superuser (EMAIL=… PASSWORD=…)
 	@test -n "$(EMAIL)" || (echo "EMAIL is required, eg. make superuser EMAIL=me@example.com PASSWORD=secret123"; exit 1)
 	@test -n "$(PASSWORD)" || (echo "PASSWORD is required"; exit 1)
-	./$(BINARY) -dir $(DATA_DIR) superuser upsert "$(EMAIL)" "$(PASSWORD)"
+	./$(BINARY) $(FLAGS) superuser upsert "$(EMAIL)" "$(PASSWORD)"
 
 .PHONY: clean
 clean: ## Remove build output and disposable caches

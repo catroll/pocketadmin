@@ -4,6 +4,7 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
@@ -17,6 +18,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"pocketadmin/internal/config"
+	"pocketadmin/internal/logging"
 	webassets "pocketadmin/web"
 )
 
@@ -58,7 +60,7 @@ type Server struct {
 // The returned handler serves only the panel. PocketBase's API is mounted
 // alongside it by the caller (see main.go), so PocketBase requests never pass
 // through Gin's response writer.
-func New(app core.App, cfg *config.Config) (*Server, error) {
+func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error) {
 	templates, err := buildTemplates()
 	if err != nil {
 		return nil, err
@@ -80,7 +82,7 @@ func New(app core.App, cfg *config.Config) (*Server, error) {
 	r := gin.New()
 	r.MaxMultipartMemory = 16 << 20
 	r.HTMLRender = htmlRenderer{templates: templates}
-	r.Use(gin.Logger(), gin.Recovery())
+	r.Use(logging.RequestLogger(logger), gin.Recovery())
 
 	store := cookie.NewStore(cfg.SessionKey)
 	store.Options(sessions.Options{
