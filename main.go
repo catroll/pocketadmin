@@ -19,6 +19,7 @@ import (
 	"pocketadmin/internal/organization"
 	"pocketadmin/internal/pbapp"
 	"pocketadmin/internal/server"
+	"pocketadmin/internal/tree"
 
 	// Registering the platform's schema migrations is a side effect of the
 	// package's init functions.
@@ -85,6 +86,11 @@ func run() error {
 	// means every write path -- this panel, PocketBase's REST API, a future
 	// importer -- maintains the derived data the same way.
 	organization.Register(app)
+
+	// The folder tree is the same hierarchy with different nouns, so it uses the
+	// same implementation rather than a second copy that could forget the cycle
+	// check.
+	tree.Register(app, tree.Options{Collection: "file_folders", Label: "folder"})
 
 	api, err := pbapp.APIHandler(app)
 	if err != nil {

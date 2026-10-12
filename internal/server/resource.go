@@ -11,6 +11,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 
 	"pocketadmin/internal/rbac"
+	"pocketadmin/internal/tree"
 )
 
 // resource describes a managed collection: where it lives, which permission
@@ -102,6 +103,11 @@ type resource struct {
 	// BeforeDelete runs before a delete and may refuse it, for example when the
 	// row is still referenced. Returning an error aborts with a message.
 	BeforeDelete func(s *Server, rec *core.Record) error
+
+	// AfterDelete runs once the row is gone, for side effects that must not
+	// happen while the row still exists -- removing an object whose last
+	// reference just disappeared, for example. It cannot refuse the delete.
+	AfterDelete func(s *Server, rec *core.Record)
 }
 
 // parentID returns the parent record id this request is scoped to, or "".
@@ -453,8 +459,8 @@ func (s *Server) resourceDelete(c *gin.Context, r resource) {
 		return
 	}
 
-	if r.AfterSave != nil {
-		r.AfterSave(s, rec, false)
+	if r.AfterDelete != nil {
+		r.AfterDelete(s, rec)
 	}
 
 	s.setFlash(c, "success", r.Singular+" deleted.")
@@ -695,39 +701,11 @@ func leadWithLabel(cols []column, col *core.Collection) []column {
 }
 
 // maxTreeDepth bounds a depth walk so a parent cycle cannot hang a request.
-const maxTreeDepth = 12
+const maxTreeDepth = 32
 
 // treeDepth returns how far a record sits below the root of its hierarchy.
-//
-// A stored `level` is trusted when present, because the tree's own invariants
-// maintain it. Otherwise the depth is walked up the parent chain, which is what
-// a hierarchy without a materialised path needs.
 func treeDepth(app core.App, col *core.Collection, rec *core.Record, parentField string) int {
-	if col.Fields.GetByName("level") != nil {
-		if level := rec.GetInt("level"); level > 0 {
-			return level - 1
-		}
-	}
-
-	if parentField == "" || app == nil {
-		return 0
-	}
-
-	depth := 0
-	current := rec
-	for i := 0; i < maxTreeDepth; i++ {
-		parentID := current.GetString(parentField)
-		if parentID == "" {
-			break
-		}
-		depth++
-		next, err := app.FindRecordById(col, parentID)
-		if err != nil || next == nil {
-			break
-		}
-		current = next
-	}
-	return depth
+	return tree.Depth(app, col, rec, parentField, "level")
 }
 
 // parentLabel resolves a readable name for the record this sub-list belongs to,

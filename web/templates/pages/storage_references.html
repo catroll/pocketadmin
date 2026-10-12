@@ -1,0 +1,59 @@
+{{define "content"}}
+{{/* What points at a library file. The reference count is derived from these
+     rows rather than trusted from the stored column, so deleting a file is
+     refused while anything here still points at it. */}}
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-link me-1"></i>References to {{.File.GetString "name"}}
+    </h3>
+    <div class="card-tools">
+      <a href="/storage/files" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Back to the library
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body border-bottom">
+    <dl class="row mb-0 small">
+      <dt class="col-sm-2">Type</dt><dd class="col-sm-4"><code>{{.File.GetString "mimeType"}}</code></dd>
+      <dt class="col-sm-2">Size</dt><dd class="col-sm-4">{{bytes .File.GetInt "size"}}</dd>
+      <dt class="col-sm-2">Checksum</dt><dd class="col-sm-4"><code class="small">{{.File.GetString "checksum"}}</code></dd>
+      <dt class="col-sm-2">Stored count</dt><dd class="col-sm-4">{{.File.GetInt "refCount"}}</dd>
+    </dl>
+  </div>
+
+  <div class="card-body table-responsive p-0">
+    <table class="table table-sm table-striped mb-0">
+      <thead>
+        <tr><th>Owner type</th><th>Owner id</th><th>Field</th><th>Created</th><th class="text-end">Actions</th></tr>
+      </thead>
+      <tbody>
+        {{range .Attachments}}
+        <tr>
+          <td><code>{{.GetString "ownerType"}}</code></td>
+          <td class="small">{{.GetString "ownerId"}}</td>
+          <td>{{if .GetString "field"}}<code>{{.GetString "field"}}</code>{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
+          <td class="small text-body-secondary">{{formatTime (.GetDateTime "created")}}</td>
+          <td class="text-end">
+            {{if $.CanDetach}}
+            <form method="post" class="d-inline" action="/storage/attachments/{{.Id}}/detach"
+                  onsubmit="return confirm('Detach this reference?');">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Detach</button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr>
+          <td colspan="5" class="text-center text-body-secondary py-4">
+            Nothing references this file.
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

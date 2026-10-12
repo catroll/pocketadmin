@@ -86,6 +86,14 @@ func seededMenus() []menuSeed {
 		{Name: "rbac.dictionaries", Title: "Dictionaries", Parent: "rbac", Type: "menu",
 			Path: "/rbac/dictionaries", Icon: "far fa-circle", Permission: permission.RBACDictionaryList, Sort: 40},
 
+		{Name: "storage", Title: "Files", Type: "directory", Icon: "fas fa-folder-open", Sort: 50},
+		{Name: "storage.files", Title: "Library", Parent: "storage", Type: "menu",
+			Path: "/storage/files", Icon: "far fa-circle",
+			Permission: permission.StorageFileList, Sort: 10},
+		{Name: "storage.folders", Title: "Folders", Parent: "storage", Type: "menu",
+			Path: "/storage/folders", Icon: "far fa-circle",
+			Permission: permission.StorageFolderList, Sort: 20},
+
 		// The raw data browser is not delegated to roles, so it is flagged rather
 		// than permission-gated. Without a code an unflagged node would be visible
 		// to everyone.

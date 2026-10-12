@@ -63,6 +63,15 @@ func seedPermissionPoints(app core.App) error {
 		return nil
 	}
 
+	// The action column is a closed select, so a permission point whose action is
+	// not in it cannot be written -- the row is rejected and the point silently
+	// cannot be granted. Widening it here rather than in each module's migration
+	// keeps the seeder independent of migration order: a module adds a constant
+	// and an action, and this makes room for it on whatever database runs next.
+	if err := ensurePermissionActions(app, col); err != nil {
+		return err
+	}
+
 	for _, p := range permissionPoints() {
 		rec, err := app.FindFirstRecordByFilter("permissions", "code = {:code}", map[string]any{"code": p.Code})
 		if err != nil || rec == nil {

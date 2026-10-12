@@ -32,6 +32,26 @@ perPage: 30
 # served over TLS.
 secureCookie: false
 
+# Where the local storage driver keeps library file bytes. Relative paths are
+# resolved against dataDir. Empty means a "storage" directory inside dataDir,
+# which is where the bytes belong by default: beside the database that indexes
+# them.
+storageDir: ""
+
+# Largest accepted upload, in bytes. The storage module refuses anything larger
+# before writing it.
+#
+# These two upload settings belong to the settings module in the specification
+# and are read from configuration until that module exists (see docs/decisions.md
+# D-012). They will move to the settings screens without changing the storage
+# code.
+uploadMaxSize: 33554432
+
+# Upload allow-list, matched against the extension derived from the content
+# sniffed out of the file -- never against the name the client sent. An empty
+# list means the built-in default.
+uploadAllowedExtensions: []
+
 # Enable PocketBase dev mode (verbose SQL and HTTP logging).
 dev: false
 

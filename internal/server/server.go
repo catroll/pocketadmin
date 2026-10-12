@@ -20,6 +20,7 @@ import (
 	"pocketadmin/internal/config"
 	"pocketadmin/internal/logging"
 	"pocketadmin/internal/rbac"
+	"pocketadmin/internal/storage"
 	"pocketadmin/internal/version"
 	webassets "pocketadmin/web"
 )
@@ -57,6 +58,10 @@ type Server struct {
 	// menus projects the navigation an actor may see.
 	menus *rbac.Projector
 
+	// files is the storage driver backing the file library, or nil when storage
+	// could not be initialised. Handlers check for nil rather than assuming.
+	files storage.Driver
+
 	// guards records the permission each route requires, keyed
 	// "METHOD /path". selfCheckRoutes compares it against the router.
 	guards map[string]string
@@ -87,6 +92,7 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 		dummyPasswordHash: string(dummy),
 		resolver:          rbac.NewResolver(app),
 		menus:             rbac.NewProjector(app),
+		files:             openStorageDriver(cfg),
 		guards:            make(map[string]string),
 	}
 

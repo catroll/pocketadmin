@@ -9,6 +9,7 @@ import (
 	"pocketadmin/internal/organization"
 	"pocketadmin/internal/permission"
 	"pocketadmin/internal/rbac"
+	"pocketadmin/internal/tree"
 
 	// Registers the platform's migrations as a side effect.
 	_ "pocketadmin/migrations"
@@ -35,6 +36,7 @@ func newTestApp(t *testing.T) core.App {
 	// main registers the model-level invariants after migrating; the test app
 	// must match, or it would assert behaviour production does not have.
 	organization.Register(app)
+	tree.Register(app, tree.Options{Collection: "file_folders", Label: "folder"})
 
 	// The data directory comes from t.TempDir, so there is nothing else to
 	// release once the test ends.

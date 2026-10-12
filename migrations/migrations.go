@@ -119,3 +119,41 @@ func multiRel(app core.App, name, target string, maxSelect int) *core.RelationFi
 		MaxSelect:    maxSelect,
 	}
 }
+
+// ensurePermissionActions widens the permission action enum to cover every action
+// the declared permission points use.
+//
+// It is called by the seeder rather than by each module's migration because the
+// seed migration runs before the later modules' migrations: a module that added
+// an action and relied on its own migration to widen the enum would have its
+// permission point rejected by the seed that runs first.
+func ensurePermissionActions(app core.App, col *core.Collection) error {
+	fld, ok := col.Fields.GetByName("action").(*core.SelectField)
+	if !ok {
+		return nil
+	}
+
+	changed := false
+	for _, p := range permissionPoints() {
+		if p.Action == "" || containsString(fld.Values, p.Action) {
+			continue
+		}
+		fld.Values = append(fld.Values, p.Action)
+		changed = true
+	}
+
+	if !changed {
+		return nil
+	}
+	return app.Save(col)
+}
+
+// containsString reports whether a slice holds a value.
+func containsString(values []string, want string) bool {
+	for _, v := range values {
+		if v == want {
+			return true
+		}
+	}
+	return false
+}

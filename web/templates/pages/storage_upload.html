@@ -1,0 +1,76 @@
+{{define "content"}}
+{{/* Upload screen. The bytes are inspected before anything is written: the
+     content type is sniffed from the file itself and the policy is applied to
+     that, not to whatever extension the client sent. */}}
+<div class="row">
+  <div class="col-lg-7">
+    <form method="post" action="/storage/files/upload" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <div class="card card-primary card-outline">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-upload me-1"></i>Upload files</h3>
+          <div class="card-tools">
+            <a href="/storage/files" class="btn btn-secondary btn-sm">
+              <i class="fas fa-arrow-left me-1"></i>Back to the library
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label" for="folder">Folder</label>
+            <select class="form-select" id="folder" name="folder">
+              <option value="">&mdash; library root &mdash;</option>
+              {{range .Folders}}
+              <option value="{{.Value}}" {{if eq .Value $.Folder}}selected{{end}}>{{.Label}}</option>
+              {{end}}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="file">Files</label>
+            <input type="file" class="form-control" id="file" name="file" multiple required>
+            <div class="form-text">
+              Several files may be selected at once. Each is inspected and stored
+              individually, and an upload of content that already exists reuses the
+              stored object rather than writing a second copy.
+            </div>
+          </div>
+
+          {{if .Policy.MaxSize}}
+          <p class="text-body-secondary small mb-0">
+            Largest accepted upload: {{bytes .Policy.MaxSize}}.
+          </p>
+          {{end}}
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-upload me-1"></i>Upload
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card card-secondary card-outline">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-circle-info me-1"></i>What is accepted</h3></div>
+      <div class="card-body small">
+        <p>
+          The type is decided by reading the file, not by its name or the extension
+          the browser reported. A file whose content is not on the list below is
+          refused however it is named.
+        </p>
+        <div class="mb-2">
+          {{range .Policy.AllowedExtensions}}
+          <span class="badge text-bg-light border">{{.}}</span>
+          {{end}}
+        </div>
+        <p class="text-body-secondary mb-0">
+          Non-image files are served as downloads. Images render inline except SVG,
+          which can carry script and therefore also downloads.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

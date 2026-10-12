@@ -82,6 +82,21 @@ type Config struct {
 	// and the footer.
 	AppName string
 
+	// StorageDir is where the local storage driver keeps library file bytes.
+	// Empty means a "storage" directory inside DataDir.
+	StorageDir string
+
+	// UploadMaxSize is the largest accepted upload in bytes. Zero means the
+	// storage package's default.
+	//
+	// Per D-012 these belong to the settings module (wave 3); they live here
+	// until it exists so the storage module is complete and testable on its own.
+	UploadMaxSize int64
+
+	// UploadAllowedExtensions is the upload allow-list, matched against the
+	// extension derived from the sniffed content type. Empty means the default.
+	UploadAllowedExtensions []string
+
 	// DataDir is the PocketBase data directory (SQLite database, uploaded
 	// files and the generated session key).
 	DataDir string
@@ -118,13 +133,16 @@ type Config struct {
 // deliberate false or zero value; a partial file therefore overrides only the
 // keys it actually sets.
 type fileConfig struct {
-	Addr         *string `yaml:"addr"`
-	AppName      *string `yaml:"appName"`
-	DataDir      *string `yaml:"dataDir"`
-	PerPage      *int    `yaml:"perPage"`
-	SecureCookie *bool   `yaml:"secureCookie"`
-	Dev          *bool   `yaml:"dev"`
-	Log          *struct {
+	Addr                    *string   `yaml:"addr"`
+	AppName                 *string   `yaml:"appName"`
+	DataDir                 *string   `yaml:"dataDir"`
+	StorageDir              *string   `yaml:"storageDir"`
+	UploadMaxSize           *int64    `yaml:"uploadMaxSize"`
+	UploadAllowedExtensions *[]string `yaml:"uploadAllowedExtensions"`
+	PerPage                 *int      `yaml:"perPage"`
+	SecureCookie            *bool     `yaml:"secureCookie"`
+	Dev                     *bool     `yaml:"dev"`
+	Log                     *struct {
 		Level  *string `yaml:"level"`
 		Format *string `yaml:"format"`
 	} `yaml:"log"`
@@ -215,6 +233,16 @@ func Load(args []string) (*Config, error) {
 	}
 	cfg.DataDir = absDataDir
 
+	// The storage root is resolved against the data directory so a relative
+	// setting keeps working when the process is started from elsewhere. Leaving
+	// it empty means "storage inside the data directory", which is where the
+	// bytes belong by default: beside the database they are indexed by.
+	if cfg.StorageDir == "" {
+		cfg.StorageDir = filepath.Join(absDataDir, "storage")
+	} else if !filepath.IsAbs(cfg.StorageDir) {
+		cfg.StorageDir = filepath.Join(absDataDir, cfg.StorageDir)
+	}
+
 	if cfg.SessionKey, err = resolveSessionKey(cfg.DataDir); err != nil {
 		return nil, err
 	}
@@ -252,6 +280,15 @@ func applyFile(cfg *Config, path string, required bool) error {
 	}
 	if fc.AppName != nil {
 		cfg.AppName = *fc.AppName
+	}
+	if fc.StorageDir != nil {
+		cfg.StorageDir = *fc.StorageDir
+	}
+	if fc.UploadMaxSize != nil {
+		cfg.UploadMaxSize = *fc.UploadMaxSize
+	}
+	if fc.UploadAllowedExtensions != nil {
+		cfg.UploadAllowedExtensions = *fc.UploadAllowedExtensions
 	}
 	if fc.DataDir != nil {
 		cfg.DataDir = *fc.DataDir

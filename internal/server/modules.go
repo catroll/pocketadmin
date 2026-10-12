@@ -8,6 +8,7 @@ import "github.com/gin-gonic/gin"
 // startup self-check can prove no state-changing route was left unprotected.
 func (s *Server) registerModuleRoutes(panel *gin.RouterGroup) {
 	s.registerIdentityRoutes(panel)
+	s.registerStorageRoutes(panel)
 	s.registerOrganizationRoutes(panel)
 	s.registerRBACRoutes(panel)
 }

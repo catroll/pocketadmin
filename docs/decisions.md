@@ -210,6 +210,57 @@ module complete and testable on its own.
 **Given up.** A module is briefly "complete except that one value comes from
 elsewhere". This is recorded here so it is not mistaken for an oversight.
 
+### D-013 — One tree implementation, not one per hierarchy
+
+**Decision.** The materialised-path logic lives in `internal/tree`. `departments`
+(from the organisation module) and `file_folders` (from storage) are both
+instances of it.
+
+**Why.** The folder tree needed exactly what the department tree already had:
+the path embeds the record's own id, which PocketBase assigns during the save, so
+it cannot be computed before one; a move rewrites the whole subtree in one
+transaction or the prefix predicate that row-level scoping reads is left
+half-applied; and a node must not move beneath its own descendant.
+
+The second copy is where the cycle check gets forgotten — and forgetting it is
+silent until someone builds a loop. The department tree's own history is the
+evidence: its logic was originally in a handler, and a department created through
+the REST API ended up with an empty path.
+
+**Given up.** Touching working, verified code (the department tree) to make the
+change. The regression was caught by the existing tests for department path
+derivation and cache invalidation, which is precisely why they exist.
+
+### D-014 — Storage keys are content-addressed, and deletion checks for sharers
+
+**Decision.** A stored object's key is derived from the SHA-256 of its content.
+Two uploads of identical bytes address the same object. Deleting a file row
+removes the object only if no other row still addresses the same key.
+
+**Why.** Deduplication then costs nothing to implement — the second upload
+computes the same key and finds the object already present. The hazard is the
+other side of it: two rows sharing one object means deleting one row can destroy
+the other's bytes. Checking for remaining sharers after the row is gone is the
+only moment the question has a clean answer.
+
+**Given up.** Changing a file's content in place, which content addressing makes
+impossible by construction. That is correct for a library: a file is immutable,
+and a new version is a new file.
+
+### D-015 — The storage driver refuses unclean keys rather than sanitising them
+
+**Decision.** `LocalDriver` rejects any key that is not already a clean relative
+path, instead of normalising it and continuing.
+
+**Why.** Found by the test written for it. The first implementation cleaned keys,
+so `../escaped.txt` became `escaped.txt` — contained, and therefore not a
+traversal, but it silently addressed a different object than the caller named.
+Keys here are generated from a content hash, so a valid key never needs
+normalising, which makes rejection both stricter and safer than repair. Aliasing
+of that kind is a correctness bug even when it is not an escape.
+
+**Given up.** Tolerance of caller-supplied keys. There are none.
+
 ---
 
 ## Pending

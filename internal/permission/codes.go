@@ -16,6 +16,7 @@ const (
 	ModuleIdentity     = "identity"
 	ModuleOrganization = "organization"
 	ModuleRBAC         = "rbac"
+	ModuleStorage      = "storage"
 )
 
 // Point is a single permission point.
@@ -101,6 +102,22 @@ const (
 	RBACDictionaryUpdate = "rbac:dictionary:update"
 	RBACDictionaryDelete = "rbac:dictionary:delete"
 
+	// Storage governs the file library. Record-owned files -- an avatar, a
+	// product image -- use native PocketBase file fields on their owning record
+	// and are deliberately not covered here: they are part of editing that
+	// record, not of the library.
+	StorageFolderList       = "storage:folder:list"
+	StorageFolderCreate     = "storage:folder:create"
+	StorageFolderUpdate     = "storage:folder:update"
+	StorageFolderDelete     = "storage:folder:delete"
+	StorageFileList         = "storage:file:list"
+	StorageFileUpload       = "storage:file:upload"
+	StorageFileUpdate       = "storage:file:update"
+	StorageFileDelete       = "storage:file:delete"
+	StorageFileDownload     = "storage:file:download"
+	StorageAttachmentList   = "storage:attachment:list"
+	StorageAttachmentManage = "storage:attachment:manage"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -155,6 +172,18 @@ func All() []Point {
 		{RBACDictionaryCreate, "Create a dictionary", ModuleRBAC, "dictionary", "create", "button"},
 		{RBACDictionaryUpdate, "Update a dictionary", ModuleRBAC, "dictionary", "update", "button"},
 		{RBACDictionaryDelete, "Delete a dictionary", ModuleRBAC, "dictionary", "delete", "button"},
+
+		{StorageFolderList, "List folders", ModuleStorage, "folder", "list", "menu"},
+		{StorageFolderCreate, "Create a folder", ModuleStorage, "folder", "create", "button"},
+		{StorageFolderUpdate, "Rename or move a folder", ModuleStorage, "folder", "update", "button"},
+		{StorageFolderDelete, "Delete a folder", ModuleStorage, "folder", "delete", "button"},
+		{StorageFileList, "List files", ModuleStorage, "file", "list", "menu"},
+		{StorageFileUpload, "Upload files", ModuleStorage, "file", "upload", "button"},
+		{StorageFileUpdate, "Update file metadata", ModuleStorage, "file", "update", "button"},
+		{StorageFileDelete, "Delete a file", ModuleStorage, "file", "delete", "button"},
+		{StorageFileDownload, "Download a file", ModuleStorage, "file", "download", "api"},
+		{StorageAttachmentList, "List an attachment's references", ModuleStorage, "attachment", "list", "api"},
+		{StorageAttachmentManage, "Attach or detach a file", ModuleStorage, "attachment", "manage", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }
