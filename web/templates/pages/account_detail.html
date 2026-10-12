@@ -14,6 +14,15 @@
             <i class="fas fa-pen me-1"></i>Edit
           </a>
           {{end}}
+          {{if and (.Can "identity:account:execute") (not (.Account.GetBool "isProtected"))}}
+          <form method="post" class="d-inline" action="/identity/accounts/{{.Account.Id}}/impersonate"
+                onsubmit="return confirm('View the panel as this account? Writes are blocked and the action is logged.');">
+            <input type="hidden" name="_csrf" value="{{.CSRF}}">
+            <button type="submit" class="btn btn-outline-warning btn-sm">
+              <i class="fas fa-user-secret me-1"></i>Impersonate
+            </button>
+          </form>
+          {{end}}
           <a href="/identity/accounts" class="btn btn-secondary btn-sm">Back</a>
         </div>
       </div>

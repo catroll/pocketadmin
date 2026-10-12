@@ -3,6 +3,7 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -131,7 +132,7 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 	// Group middleware runs between the two nesting levels, so limitBody and
 	// csrf wrap requireAuth exactly once per request.
 	panel := r.Group("/")
-	panel.Use(limitBody(maxUploadBody), s.csrf(), s.requireAuth())
+	panel.Use(limitBody(maxUploadBody), s.csrf(), s.requireAuth(), s.blockWritesWhileImpersonating())
 	{
 		s.safe(panel, http.MethodGet, "/", func(c *gin.Context) {
 			c.Redirect(http.StatusSeeOther, "/dashboard")
@@ -189,10 +190,51 @@ func (s *Server) renderErrorPage(c *gin.Context, code int, title, detail string)
 	})
 }
 
+// pageBuffer collects a rendered page so it can be inspected before it is sent.
+//
+// It exists because render.Render writes to an http.ResponseWriter: catching a
+// template error before the status is committed needs somewhere to write that is
+// not the client.
+type pageBuffer struct {
+	bytes.Buffer
+	status int
+	header http.Header
+}
+
+func newPageBuffer() *pageBuffer {
+	return &pageBuffer{status: http.StatusOK, header: make(http.Header)}
+}
+
+func (b *pageBuffer) Header() http.Header { return b.header }
+
+func (b *pageBuffer) WriteHeader(status int) { b.status = status }
+
+func (b *pageBuffer) Write(p []byte) (int, error) { return b.Buffer.Write(p) }
+
 // render writes a page using the per-page template set registered in
 // htmlRenderer.
+//
+// The page is rendered into a buffer before anything is written. Gin streams a
+// template straight to the response, so an execution error halfway down produces
+// a 200 with a half-drawn page: the browser shows a layout that simply stops, and
+// nothing in the response says why. Buffering turns that into a 500 and a logged
+// error while the headers can still be changed.
 func (s *Server) render(c *gin.Context, status int, name string, data any) {
-	c.HTML(status, name, data)
+	buf := newPageBuffer()
+
+	if err := s.http.HTMLRender.Instance(name, data).Render(buf); err != nil {
+		slog.Error("could not render a page", "template", name, "error", err)
+		c.String(http.StatusInternalServerError, "Could not render this page.")
+		return
+	}
+
+	for key, values := range buf.header {
+		for _, v := range values {
+			c.Writer.Header().Add(key, v)
+		}
+	}
+
+	c.Data(status, "text/html; charset=utf-8", buf.Bytes())
 }
 
 // newBase assembles the data shared by every page.
@@ -215,21 +257,23 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 	csrfToken, _ := csrf.(string)
 
 	return base{
-		Title:            title,
-		Active:           active,
-		CSRF:             csrfToken,
-		UserEmail:        email,
-		AppName:          s.cfg.AppName,
-		PBVersion:        version.PocketBase(),
-		PanelVer:         version.Panel,
-		Nav:              s.navCollections(),
-		Flash:            s.flashFrom(c),
-		Actor:            actor,
-		Perms:            actorPermissions(actor),
-		Superuser:        actor != nil && actor.IsSuperuser,
-		Menus:            s.navFromActor(c),
-		Theme:            s.preferenceTheme(c),
-		SidebarCollapsed: s.preferenceSidebarCollapsed(c),
+		Title:             title,
+		Active:            active,
+		CSRF:              csrfToken,
+		UserEmail:         email,
+		AppName:           s.cfg.AppName,
+		PBVersion:         version.PocketBase(),
+		PanelVer:          version.Panel,
+		Nav:               s.navCollections(),
+		Flash:             s.flashFrom(c),
+		Actor:             actor,
+		Perms:             actorPermissions(actor),
+		Superuser:         actor != nil && actor.IsSuperuser,
+		Menus:             s.navFromActor(c),
+		Theme:             s.preferenceTheme(c),
+		SidebarCollapsed:  s.preferenceSidebarCollapsed(c),
+		Impersonating:     s.impersonatorID(c) != "",
+		ImpersonatorEmail: s.impersonatorEmail(c),
 	}
 }
 

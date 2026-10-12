@@ -33,6 +33,24 @@
       </div>
     </div>
 
+    {{if .Impersonating}}
+    <div class="alert alert-warning rounded-0 border-0 border-bottom mb-0 d-flex align-items-center justify-content-between"
+         role="alert">
+      <div>
+        <i class="fas fa-user-secret me-2"></i>
+        <strong>Impersonating.</strong>
+        You are viewing the panel as <strong>{{.UserEmail}}</strong>, signed in by
+        <strong>{{.ImpersonatorEmail}}</strong>. Writes are blocked.
+      </div>
+      <form method="post" action="/impersonation/stop" class="mb-0">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <button type="submit" class="btn btn-sm btn-dark">
+          <i class="fas fa-right-from-bracket me-1"></i>Stop impersonating
+        </button>
+      </form>
+    </div>
+    {{end}}
+
     <div class="app-content">
       <div class="container-fluid">
         {{template "flash" .}}

@@ -182,6 +182,14 @@ func (s *Server) handleEmployeeProfileSave(c *gin.Context) {
 	s.syncAdminDepartment(user.Id, rec.GetString("department"))
 	s.resolver.Invalidate(user.Id)
 
+	s.audit(c, auditEntry{
+		Action:     auditProfileAttach,
+		Resource:   "employee_profile",
+		ResourceID: rec.Id,
+		Summary:    "Employee profile saved.",
+		SubjectID:  user.Id, SubjectEmail: user.Email(),
+	})
+
 	if isNew {
 		s.setFlash(c, "success", "Employee profile attached.")
 	} else {
@@ -208,6 +216,14 @@ func (s *Server) handleEmployeeProfileDetach(c *gin.Context) {
 	if err := s.app.Delete(rec); err != nil {
 		s.setFlash(c, "danger", "Could not detach the employee profile: "+err.Error())
 	} else {
+		s.audit(c, auditEntry{
+			Action:     auditProfileDetach,
+			Resource:   "employee_profile",
+			ResourceID: rec.Id,
+			Risk:       "medium",
+			Summary:    "Employee profile detached.",
+			SubjectID:  user.Id, SubjectEmail: user.Email(),
+		})
 		s.setFlash(c, "success", "Employee profile detached. The account is unchanged.")
 	}
 	c.Redirect(http.StatusSeeOther, "/identity/accounts/"+user.Id)
@@ -324,6 +340,15 @@ func (s *Server) handleAccountRolesSave(c *gin.Context) {
 	}
 
 	s.resolver.Invalidate(user.Id)
+	s.audit(c, auditEntry{
+		Action:     auditRoleAssign,
+		Resource:   "admin_profile",
+		ResourceID: rec.Id,
+		Risk:       "high",
+		Summary:    fmt.Sprintf("Roles updated to %d role(s).", len(roles)),
+		Detail:     map[string]any{"roles": roles},
+		SubjectID:  user.Id, SubjectEmail: user.Email(),
+	})
 	s.setFlash(c, "success", "Roles updated.")
 	c.Redirect(http.StatusSeeOther, "/identity/accounts/"+user.Id)
 }
@@ -345,6 +370,16 @@ func (s *Server) handleSessionRevoke(c *gin.Context) {
 	if err := s.revokeSessionRecord(rec, reason); err != nil {
 		s.setFlash(c, "danger", "Could not revoke the session: "+err.Error())
 	} else {
+		if userID := rec.GetString("user"); userID != "" {
+			s.audit(c, auditEntry{
+				Action:     auditSessionRevoke,
+				Resource:   "session",
+				ResourceID: rec.Id,
+				Risk:       "medium",
+				Summary:    "Session revoked (" + reason + ").",
+				SubjectID:  userID,
+			})
+		}
 		s.setFlash(c, "success", "Session revoked.")
 	}
 

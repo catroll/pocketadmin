@@ -94,7 +94,15 @@ func (s *Server) handleAccountStatus(c *gin.Context) {
 		s.resolver.Invalidate(user.Id)
 	}
 
-	s.logLogin(c, user.Id, user.Email(), "status_change", fmt.Sprintf("%s -> %s", previous, status), "medium")
+	s.audit(c, auditEntry{
+		Action:     auditStatusChange,
+		Resource:   "account",
+		ResourceID: user.Id,
+		Risk:       "medium",
+		Summary:    fmt.Sprintf("Account status changed from %s to %s.", previous, status),
+		Detail:     map[string]any{"from": previous, "to": status},
+		SubjectID:  user.Id, SubjectEmail: user.Email(),
+	})
 	s.setFlash(c, "success", fmt.Sprintf("Account status changed to %s.", status))
 	c.Redirect(http.StatusSeeOther, "/identity/accounts/"+user.Id)
 }
@@ -139,7 +147,14 @@ func (s *Server) handleAccountPasswordReset(c *gin.Context) {
 		slog.Warn("could not revoke sessions after a password reset", "user", user.Id, "error", err)
 	}
 
-	s.logLogin(c, user.Id, user.Email(), "password_reset", "set by an administrator", "medium")
+	s.audit(c, auditEntry{
+		Action:     auditPasswordReset,
+		Resource:   "account",
+		ResourceID: user.Id,
+		Risk:       "medium",
+		Summary:    "Password set by an administrator; every session revoked.",
+		SubjectID:  user.Id, SubjectEmail: user.Email(),
+	})
 	s.setFlash(c, "success", "Password set and every session revoked.")
 	c.Redirect(http.StatusSeeOther, "/identity/accounts/"+user.Id)
 }
@@ -180,7 +195,14 @@ func (s *Server) handleAccountSoftDelete(c *gin.Context) {
 	}
 	s.resolver.Invalidate(user.Id)
 
-	s.logLogin(c, user.Id, user.Email(), "soft_delete", "marked deleted", "high")
+	s.audit(c, auditEntry{
+		Action:     auditSoftDelete,
+		Resource:   "account",
+		ResourceID: user.Id,
+		Risk:       "high",
+		Summary:    "Account marked deleted; sessions revoked.",
+		SubjectID:  user.Id, SubjectEmail: user.Email(),
+	})
 	s.setFlash(c, "success", "Account marked deleted and its sessions revoked. The record is kept.")
 	c.Redirect(http.StatusSeeOther, "/identity/accounts")
 }
@@ -200,6 +222,14 @@ func (s *Server) handleAccountRestore(c *gin.Context) {
 		return
 	}
 
+	s.audit(c, auditEntry{
+		Action:     auditRestore,
+		Resource:   "account",
+		ResourceID: user.Id,
+		Risk:       "medium",
+		Summary:    "Account restored.",
+		SubjectID:  user.Id, SubjectEmail: user.Email(),
+	})
 	s.setFlash(c, "success", "Account restored. Its profiles are unchanged.")
 	c.Redirect(http.StatusSeeOther, "/identity/accounts/"+user.Id)
 }
@@ -217,6 +247,14 @@ func (s *Server) handleAccountRevokeAllSessions(c *gin.Context) {
 		return
 	}
 
+	s.audit(c, auditEntry{
+		Action:     auditSessionRevokeAll,
+		Resource:   "account",
+		ResourceID: user.Id,
+		Risk:       "medium",
+		Summary:    "Every session for the account was revoked.",
+		SubjectID:  user.Id, SubjectEmail: user.Email(),
+	})
 	s.setFlash(c, "success", "Every session for this account was revoked.")
 	c.Redirect(http.StatusSeeOther, "/identity/accounts/"+user.Id)
 }

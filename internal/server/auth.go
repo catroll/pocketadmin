@@ -139,6 +139,13 @@ func (s *Server) requireAuth() gin.HandlerFunc {
 				return
 			}
 
+			// An impersonated request still resolves the target's authority, which
+			// is the point: the operator sees what that account sees. The operator's
+			// own id is carried alongside so the banner and the write block know.
+			if operatorID, _ := sess.Get(sessionImpersonatorKey).(string); operatorID != "" {
+				c.Set(ctxImpersonator, operatorID)
+			}
+
 			c.Set(ctxActor, a)
 			c.Set(ctxUser, rec)
 			c.Next()

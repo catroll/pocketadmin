@@ -53,6 +53,11 @@ type base struct {
 	Theme            string
 	SidebarCollapsed bool
 
+	// Impersonating marks a support session viewing the panel as someone else,
+	// with the operator's address for the banner.
+	Impersonating     bool
+	ImpersonatorEmail string
+
 	// CurrentCollection highlights the active collection in the sidebar.
 	CurrentCollection string
 }

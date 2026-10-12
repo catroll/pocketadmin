@@ -165,31 +165,3 @@ func (s *Server) handleLogout(c *gin.Context) {
 	s.clearSession(c)
 	c.Redirect(http.StatusSeeOther, "/login")
 }
-
-// logLogin appends a sign-in attempt to the login log.
-//
-// Failures are logged too, including attempts that matched no account, so the
-// history is useful for spotting credential stuffing.
-func (s *Server) logLogin(c *gin.Context, userID, identifier, result, reason, risk string) {
-	col, err := s.app.FindCollectionByNameOrId("login_logs")
-	if err != nil {
-		return
-	}
-
-	rec := core.NewRecord(col)
-	if userID != "" {
-		rec.Set("user", userID)
-	}
-	rec.Set("context", sessionContextAdmin)
-	rec.Set("identifier", truncate(identifier, 255))
-	rec.Set("ip", c.ClientIP())
-	rec.Set("userAgent", truncate(c.Request.UserAgent(), sessionUserAgentMaxLen))
-	rec.Set("device", deviceLabel(c.Request.UserAgent()))
-	rec.Set("result", result)
-	rec.Set("reason", truncate(reason, 255))
-	rec.Set("riskLevel", risk)
-
-	if err := s.app.Save(rec); err != nil {
-		slog.Warn("could not write a login log entry", "error", err)
-	}
-}
