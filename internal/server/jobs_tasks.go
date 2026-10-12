@@ -14,6 +14,7 @@ import (
 	"pocketadmin/internal/developer"
 	"pocketadmin/internal/jobs"
 	"pocketadmin/internal/membership"
+	"pocketadmin/internal/order"
 	"pocketadmin/internal/subscription"
 	"pocketadmin/internal/workbench"
 )
@@ -37,6 +38,7 @@ func (s *Server) RegisterJobHandlers() {
 		s.registerAPIKeyExpiryJob()
 		s.registerMembershipJob()
 		s.registerSubscriptionJob()
+		s.registerOrderJob()
 	})
 }
 
@@ -411,6 +413,33 @@ func (s *Server) registerSubscriptionJob() {
 				return "nothing was due", nil
 			}
 			return fmt.Sprintf("renewed %d, %d awaiting payment", renewed, late), nil
+		},
+	})
+}
+
+// registerOrderJob closes the orders whose payment window has passed.
+//
+// An unpaid order holds stock nobody else can buy, so an abandoned one is a product
+// taken off the shelf by somebody who walked away. Closing it returns the stock and
+// records why on the timeline, so the order does not simply stop.
+func (s *Server) registerOrderJob() {
+	jobs.Register(jobs.Handler{
+		Code:        "orders.expire",
+		Name:        "Unpaid order expiry",
+		Description: "Closes orders whose payment window passed, releasing the stock they were holding.",
+		// Every fifteen minutes. The window is measured in hours, so a few minutes of
+		// lateness costs nothing and a shorter interval would be a query per minute
+		// for no gain.
+		DefaultCron: "*/15 * * * *",
+		Run: func(ctx context.Context, _ map[string]any) (string, error) {
+			closed, err := order.ExpireUnpaid(s.app, time.Now())
+			if err != nil {
+				return "", err
+			}
+			if closed == 0 {
+				return "no order had expired", nil
+			}
+			return fmt.Sprintf("closed %d unpaid order(s)", closed), nil
 		},
 	})
 }

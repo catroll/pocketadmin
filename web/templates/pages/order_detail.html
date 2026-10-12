@@ -1,0 +1,170 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <h4 class="mb-0 font-monospace">{{.Record.GetString "orderNo"}}</h4>
+    <div class="small text-body-secondary">
+      {{.Email}} &middot; {{.Record.GetString "source"}} &middot;
+      {{formatTime (.Record.GetDateTime "created")}}
+      {{if .MemberTier}} &middot; <span class="badge text-bg-info">{{.MemberTier}}</span>{{end}}
+    </div>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    <a href="/orders" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Orders</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title">Items</h3>
+        <div class="card-tools">
+          {{if eq (.Record.GetString "status") "pending_payment"}}<span class="badge text-bg-warning">awaiting payment</span>
+          {{else if eq (.Record.GetString "status") "paid"}}<span class="badge text-bg-info">paid</span>
+          {{else if eq (.Record.GetString "status") "fulfilling"}}<span class="badge text-bg-primary">fulfilling</span>
+          {{else if eq (.Record.GetString "status") "completed"}}<span class="badge text-bg-success">completed</span>
+          {{else}}<span class="badge text-bg-secondary">{{.Record.GetString "status"}}</span>{{end}}
+        </div>
+      </div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Item</th><th class="text-end">Unit</th><th class="text-end">Qty</th><th class="text-end">Subtotal</th><th class="text-end">Discount</th><th class="text-end">Total</th></tr></thead>
+          <tbody>
+            {{range .ItemRows}}
+            <tr class="small">
+              <td>
+                <div>{{.Name}}</div>
+                <div class="text-body-secondary">
+                  {{if .Variant}}{{.Variant}} &middot; {{end}}{{if .SKU}}<code>{{.SKU}}</code>{{end}}
+                  {{if .RefundedQty}}<span class="badge text-bg-danger">{{.RefundedQty}} refunded</span>{{end}}
+                </div>
+              </td>
+              <td class="text-end">{{.UnitPrice}}</td>
+              <td class="text-end">{{.Quantity}}</td>
+              <td class="text-end">{{.Subtotal}}</td>
+              <td class="text-end">{{.Discount}}</td>
+              <td class="text-end fw-semibold">{{.Total}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="6" class="text-center text-body-secondary py-3">No items.</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <dl class="row mb-0 small">
+          <dt class="col-8 text-end">Subtotal</dt><dd class="col-4 text-end mb-1">{{.Subtotal}}</dd>
+          {{if .Record.GetFloat "memberDiscount"}}
+          <dt class="col-8 text-end">Membership discount</dt><dd class="col-4 text-end mb-1 text-success">&minus;{{.MemberDiscount}}</dd>
+          {{end}}
+          {{if .Record.GetFloat "couponDiscount"}}
+          <dt class="col-8 text-end">Coupon discount</dt><dd class="col-4 text-end mb-1 text-success">&minus;{{.CouponDiscount}}</dd>
+          {{end}}
+          {{if .Record.GetFloat "shippingFee"}}
+          <dt class="col-8 text-end">Shipping</dt><dd class="col-4 text-end mb-1">{{.Shipping}}</dd>
+          {{end}}
+          {{if .Record.GetFloat "taxAmount"}}
+          <dt class="col-8 text-end">Tax</dt><dd class="col-4 text-end mb-1">{{.Tax}}</dd>
+          {{end}}
+          <dt class="col-8 text-end fw-semibold">Total</dt>
+          <dd class="col-4 text-end mb-1 fw-semibold">{{.GrandTotal}}</dd>
+          <dt class="col-8 text-end">Paid</dt><dd class="col-4 text-end mb-0">{{.Paid}}</dd>
+          {{if .Record.GetFloat "amountRefunded"}}
+          <dt class="col-8 text-end">Refunded</dt><dd class="col-4 text-end mb-0 text-danger">{{.Refunded}}</dd>
+          {{end}}
+        </dl>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Timeline</h3></div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {{range .Events}}
+          <li class="list-group-item small">
+            <span class="badge text-bg-light">{{.GetString "event"}}</span>
+            {{if .GetString "fromStatus"}}
+            <code class="small">{{.GetString "fromStatus"}}</code> &rarr; <code class="small">{{.GetString "toStatus"}}</code>
+            {{end}}
+            <span class="text-body-secondary ms-2">{{formatTime (.GetDateTime "created")}}</span>
+            {{if .GetString "reason"}}<div class="text-body-secondary">{{.GetString "reason"}}</div>{{end}}
+          </li>
+          {{else}}
+          <li class="list-group-item text-center text-body-secondary py-3">No events.</li>
+          {{end}}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    {{if and .CanFulfil .NextStates}}
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Move the order on</h3></div>
+      <div class="card-body">
+        <form method="post" action="/orders/{{.Record.Id}}/transition" class="d-grid gap-2">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <input type="text" class="form-control form-control-sm" name="reason" placeholder="Reason (optional)">
+          {{range .NextStates}}
+          <button name="status" value="{{.}}" class="btn btn-sm btn-outline-primary">Mark as {{.}}</button>
+          {{end}}
+        </form>
+        <div class="form-text mt-2">
+          Only the moves the state machine allows are offered. A paid order is refunded rather than
+          cancelled, so the customer gets their money back.
+        </div>
+      </div>
+    </div>
+    {{end}}
+
+    {{if .CanCancel}}
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">End the order</h3></div>
+      <div class="card-body">
+        <form method="post" action="/orders/{{.Record.Id}}/cancel">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="mb-2">
+            <label class="form-label small" for="reason">Reason</label>
+            <input type="text" class="form-control form-control-sm" id="reason" name="reason" required>
+          </div>
+          <div class="d-grid gap-2">
+            <button name="action" value="cancel" class="btn btn-sm btn-outline-danger">Cancel the order</button>
+            <button name="action" value="close" class="btn btn-sm btn-outline-secondary">Close the order</button>
+          </div>
+          <div class="form-text">The stock held for it is returned to the catalogue.</div>
+        </form>
+      </div>
+    </div>
+    {{end}}
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Notes</h3></div>
+      <div class="card-body">
+        {{if .Record.GetString "customerNote"}}
+        <div class="mb-2">
+          <div class="small text-body-secondary">From the customer</div>
+          <div class="small">{{.Record.GetString "customerNote"}}</div>
+        </div>
+        {{end}}
+        <form method="post" action="/orders/{{.Record.Id}}/note">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <label class="form-label small" for="adminNote">Administrator note</label>
+          <textarea class="form-control form-control-sm" id="adminNote" name="adminNote" rows="3">{{.Record.GetString "adminNote"}}</textarea>
+          <div class="form-text">Kept apart from the customer's note, which is not shown to them.</div>
+          {{if .CanNote}}<button class="btn btn-sm btn-primary mt-2 w-100">Save the note</button>{{end}}
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Addresses</h3></div>
+      <div class="card-body small">
+        <div class="text-body-secondary">Shipping</div>
+        <pre class="small mb-2">{{json (.Record.Get "shippingAddress")}}</pre>
+        <div class="text-body-secondary">Billing</div>
+        <pre class="small mb-0">{{json (.Record.Get "billingAddress")}}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

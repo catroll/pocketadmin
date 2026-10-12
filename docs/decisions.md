@@ -949,6 +949,103 @@ again.
 **Given up.** An expired subscription still occupies the account's history and a
 support agent has to know the difference. The status list shows it.
 
+### D-048 — An order records what it cost, so the breakdown is stored and never recomputed
+
+**Decision.** `orders` holds the whole amount breakdown, and `order_items` holds a
+snapshot of the product name, variant label, SKU, image and unit price. Nothing is
+looked up from the catalogue when an order is read.
+
+**Why.** A price edited next month must not change what an order placed today says it
+cost. That is the difference between a record and a view, and it is the difference
+that decides whether a two-year-old invoice can be defended. The product and variant
+relations are kept alongside the snapshots for reporting only.
+
+**Given up.** A catalogue rename does not propagate to past orders, which is correct
+and occasionally surprising to an operator reading a list. The snapshot is what was
+sold; the relation is what it is called now.
+
+### D-049 — The state machine refuses a cancellation of a paid order and says to refund instead
+
+**Decision.** `pending_payment` may become paid, fulfilling, cancelled or closed. A
+paid, fulfilling or completed order may not become cancelled or closed; the refusal
+says to refund it.
+
+**Why.** The two look like the same intent to somebody who has not done it before, and
+only one of them returns the customer's money. "The system would not let me" is not an
+answer an operator can give a customer, so every refusal names both ends of the move
+and lists what is legal from where the order is. The legal moves on the screen are read
+from the same table, because a second list is a second place for the two to disagree.
+
+Terminal states are terminal: a refunded order stays refunded. A refund is not undone,
+it is followed by a new order.
+
+**Given up.** An operator who genuinely wants to cancel a paid order has to refund it
+first. That is the intended friction.
+
+### D-050 — The payment status is derived from the amounts, not set by the caller
+
+**Decision.** `PaymentStatusFor` computes the payment status from the grand total, the
+amount paid and the amount refunded.
+
+**Why.** An order that says it is paid and shows nothing received is a reconciliation
+failure waiting to happen, and the failure surfaces at month end rather than at the
+moment it is introduced. Deriving the status from the amounts makes the two impossible
+to disagree.
+
+A partial payment is recorded against the amounts **without a status transition**, so no
+timeline entry claims the order changed state when it only became partly paid.
+
+**Given up.** Nothing. The derivation is one function and one test.
+
+### D-051 — A rate and a percentage are different units and need different conversions
+
+**Decision.** `rateToBasisPoints` (a fraction, ×10000) and `percentageToBasisPoints` (a
+percentage, ×100) are separate functions, and both round rather than truncate.
+
+**Why.** Two real defects, found by writing the test that should have passed.
+
+The membership rate is a fraction meaning "charge ninety percent". Deriving its
+complement first looks equivalent and is not: `1 - 0.9` is `0.09999999999999998` in
+binary floating point, which truncated to 999 basis points and under-discounted every
+membership by one minor unit.
+
+The tax path had the same defect from the other side. `8.2 * 100` is
+`819.9999999999999`, so a straight conversion to basis points taxed at 8.19%, and the
+error is invisible on any single receipt.
+
+Rounding to the nearest basis point is the closest a float can honestly get to the
+number somebody typed. Both cases are locked down by a regression test.
+
+**Given up.** Nothing, but the general lesson is recorded: any float that becomes an
+integer in this codebase is a place to look for a truncation.
+
+### D-052 — A failed stock reservation discards the order, releasing only what was taken
+
+**Decision.** `ReserveStock` reports the stock it actually took, and `discard` gives
+back exactly that before deleting the order, its items and its timeline.
+
+**Why.** Two defects, both found by driving the running binary rather than by reading
+the code.
+
+The first: the reservation runs after the order is written, because a ledger entry
+names the order that took the stock. When it failed, the order stayed behind -- an
+order that exists, holds nothing, and can be paid for by somebody nobody can fulfil. It
+surfaced as an order count one higher than the orders that had actually been placed.
+
+The second, found while fixing the first: releasing everything the order asked for
+credits stock that was never taken. An order for 999 of 8 left the catalogue holding
+1001. The reservation now returns what it took and the cleanup returns exactly that.
+
+A third, found by the regression test: the cleanup could not delete the order at all,
+because `order_events.order` is a required relation and the timeline row was written
+before the reservation ran. The deletion failed, logged, and left the order in place --
+a cleanup that looks like it worked.
+
+**Given up.** The reservation is not atomic with the order write. A crash between them
+leaves an order with no stock held, which the reconciliation can find and a retry can
+repair. A transaction would be better and is not expressible through the record API
+here.
+
 ---
 
 ## Pending

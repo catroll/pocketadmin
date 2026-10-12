@@ -29,6 +29,7 @@ const (
 	ModuleMembership    = "membership"
 	ModulePromotions    = "promotions"
 	ModuleSubscriptions = "subscriptions"
+	ModuleOrders        = "orders"
 )
 
 // Point is a single permission point.
@@ -246,7 +247,21 @@ const (
 	SubscriptionList       = "subscriptions:subscription:list"
 	SubscriptionManage     = "subscriptions:subscription:manage"
 	SubscriptionCancel     = "subscriptions:subscription:cancel"
-	SubscriptionCycleList  = "subscriptions:cycle:list" // RBACSettingsManage guards the settings surfaces. The surfaces themselves are
+	SubscriptionCycleList  = "subscriptions:cycle:list"
+
+	// Orders. Creating an order on somebody's behalf is separate from moving one
+	// through its lifecycle, and cancelling a paid order is guarded on its own
+	// because it is a decision about money.
+	OrderList   = "orders:order:list"
+	OrderView   = "orders:order:view"
+	OrderCreate = "orders:order:create"
+	OrderEdit   = "orders:order:edit"
+	OrderFulfil = "orders:order:fulfil"
+	OrderCancel = "orders:order:cancel"
+	OrderNote   = "orders:order:note"
+	OrderExport = "orders:order:export"
+
+	// RBACSettingsManage guards the settings surfaces. The surfaces themselves are
 	// separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
 )
@@ -386,6 +401,14 @@ func All() []Point {
 		{SubscriptionManage, "Change a subscription", ModuleSubscriptions, "subscription", "manage", "button"},
 		{SubscriptionCancel, "Cancel a subscription", ModuleSubscriptions, "subscription", "cancel", "button"},
 		{SubscriptionCycleList, "View billing cycles", ModuleSubscriptions, "cycle", "list", "api"},
+		{OrderList, "List orders", ModuleOrders, "order", "list", "menu"},
+		{OrderView, "Open an order", ModuleOrders, "order", "view", "api"},
+		{OrderCreate, "Create an order on behalf of an account", ModuleOrders, "order", "create", "button"},
+		{OrderEdit, "Edit an order awaiting payment", ModuleOrders, "order", "edit", "button"},
+		{OrderFulfil, "Fulfil and complete an order", ModuleOrders, "order", "fulfil", "button"},
+		{OrderCancel, "Cancel or close an order", ModuleOrders, "order", "cancel", "button"},
+		{OrderNote, "Add an administrator note", ModuleOrders, "order", "note", "button"},
+		{OrderExport, "Export orders as CSV", ModuleOrders, "order", "export", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

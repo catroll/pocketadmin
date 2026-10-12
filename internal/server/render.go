@@ -37,6 +37,9 @@ var pageDefs = []pageDef{
 	{name: "mfa.html", pageFile: "pages/mfa.html", layoutFile: "layout_auth.html", layoutName: "layout_auth"},
 	{name: "org_chart.html", pageFile: "pages/org_chart.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "storage_upload.html", pageFile: "pages/storage_upload.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "orders.html", pageFile: "pages/orders.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "order_detail.html", pageFile: "pages/order_detail.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "order_form.html", pageFile: "pages/order_form.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "subscriptions.html", pageFile: "pages/subscriptions.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "subscription_plans.html", pageFile: "pages/subscription_plans.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "subscription_detail.html", pageFile: "pages/subscription_detail.html", layoutFile: "layout.html", layoutName: "layout"},
@@ -120,11 +123,29 @@ func buildTemplates() (map[string]*template.Template, error) {
 	return out, nil
 }
 
+// loop returns the integers from zero to n-1, for repeating a form row a fixed
+// number of times.
+//
+// HTML forms cannot add rows without JavaScript, so a fixed set of blank rows is how
+// a multi-item form is built. seq counts from one; this counts from zero, which is
+// what an index comparison in a template needs.
+func loop(n int) []int {
+	if n <= 0 {
+		return nil
+	}
+	out := make([]int, n)
+	for i := range out {
+		out[i] = i
+	}
+	return out
+}
+
 func templateFuncs() template.FuncMap {
 	return template.FuncMap{
 		"add":        func(a, b int) int { return a + b },
 		"sub":        func(a, b int) int { return a - b },
 		"seq":        seq,
+		"loop":       loop,
 		"dict":       dict,
 		"hasPrefix":  strings.HasPrefix,
 		"upper":      strings.ToUpper,
