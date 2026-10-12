@@ -6,41 +6,19 @@ import (
 
 	"github.com/pocketbase/pocketbase/core"
 
-	"pocketadmin/internal/organization"
 	"pocketadmin/internal/permission"
 	"pocketadmin/internal/rbac"
-	"pocketadmin/internal/tree"
+	"pocketadmin/internal/testsupport"
 
 	// Registers the platform's migrations as a side effect.
 	_ "pocketadmin/migrations"
 )
 
-// newTestApp boots an isolated application with the platform's migrations
-// applied: a fresh temporary data directory, so every test sees the seeded
-// schema and nothing else.
+// newTestApp delegates to the shared bootstrap so every package's tests run
+// against the same application as production.
 func newTestApp(t *testing.T) core.App {
 	t.Helper()
-
-	app := core.NewBaseApp(core.BaseAppConfig{
-		DataDir:       t.TempDir(),
-		EncryptionEnv: "pocketadmin_test",
-	})
-
-	if err := app.Bootstrap(); err != nil {
-		t.Fatalf("bootstrap test app: %v", err)
-	}
-	if err := app.RunAllMigrations(); err != nil {
-		t.Fatalf("run migrations: %v", err)
-	}
-
-	// main registers the model-level invariants after migrating; the test app
-	// must match, or it would assert behaviour production does not have.
-	organization.Register(app)
-	tree.Register(app, tree.Options{Collection: "file_folders", Label: "folder"})
-
-	// The data directory comes from t.TempDir, so there is nothing else to
-	// release once the test ends.
-	return app
+	return testsupport.NewApp(t)
 }
 
 // TestPermissionConstantsMatchDatabase is the drift guard the design calls for.

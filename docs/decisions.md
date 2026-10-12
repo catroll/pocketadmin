@@ -317,6 +317,48 @@ leaks. Each encoding now has a test.
 **Given up.** Nothing. A JSON body is still stored as text when it is not
 form-encoded.
 
+### D-019 — Two settings categories are added beyond the documented key list
+
+**Decision.** The admin surface gains a `storage` category (upload size,
+allow-list, image dimension bounds) and an `audit` category (the four retention
+periods). Neither appears in the seeded key table in `database-design.md` § 3.8.
+
+**Why.** Both are gaps in the specification rather than decisions against it.
+`features.md` gives the file library an upload policy and the audit module
+retention periods with per-type settings, and a policy has to be configured
+somewhere. The alternative was to leave both in `config.Config`, which would mean
+an operator editing a file and restarting the process to change a size limit --
+exactly the arrangement the settings module exists to replace.
+
+The extension is recorded here rather than edited into the specification, because
+the specification is the thing being implemented against and quietly widening it
+is how a specification stops describing the system.
+
+**Given up.** The documented key list is no longer exhaustive. It should be
+updated when the specification is next revised.
+
+### D-020 — The two settings surfaces share a table and an engine, not a permission
+
+**Decision.** One `settings` table, one validation engine, two registries and two
+permissions. The back office and the storefront are separate pages, separate
+audit categories and separately granted.
+
+**Why.** They are separate concerns that happen to store the same shape of thing,
+which is the same relationship orders and refunds have. Configuring the back
+office is not the same authority as configuring the storefront, and an operator
+may reasonably hold one and not the other; a single permission would force them
+together.
+
+The isolation -- "neither surface can write the other's keys" -- is a property of
+the types rather than a check: a write walks a `Registry`, and a `Registry`
+contains only its own surface's declarations, so a key belonging to the other
+surface cannot be named. A crafted form that includes one is not rejected, it is
+never looked at. Verified by posting a product key to the admin surface and
+confirming the product value is untouched.
+
+**Given up.** A single settings screen. Two pages is more to navigate and is the
+correct amount for two audiences.
+
 ---
 
 ## Pending

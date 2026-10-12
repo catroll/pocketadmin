@@ -1,0 +1,109 @@
+{{define "settingsField"}}
+{{/* The page-level flags are passed in explicitly: inside a template the
+     dollar sign refers to that template's own argument, not to the page. */}}
+{{$f := .field}}{{$canUpdate := .canUpdate}}
+{{if eq $f.Input "switch"}}
+<div class="form-check form-switch">
+  <input type="checkbox" class="form-check-input" id="f-{{$f.Name}}" name="{{$f.Name}}"
+         {{if $f.Checked}}checked{{end}} {{if not $canUpdate}}disabled{{end}}>
+  <label class="form-check-label" for="f-{{$f.Name}}">{{$f.Label}}</label>
+  {{if $f.Public}}<span class="badge text-bg-info ms-1" title="Readable without signing in">public</span>{{end}}
+</div>
+{{if $f.Help}}<div class="form-text">{{$f.Help}}</div>{{end}}
+
+{{else if eq $f.Input "select"}}
+<select class="form-select" id="f-{{$f.Name}}" name="{{$f.Name}}" {{if not $canUpdate}}disabled{{end}}>
+  <option value="">&mdash; not set &mdash;</option>
+  {{range $f.Options}}
+  <option value="{{.}}" {{if eq . $f.Value}}selected{{end}}>{{.}}</option>
+  {{end}}
+</select>
+{{if $f.Help}}<div class="form-text">{{$f.Help}}</div>{{end}}
+
+{{else if eq $f.Input "json"}}
+<textarea class="form-control font-monospace" id="f-{{$f.Name}}" name="{{$f.Name}}" rows="4"
+          spellcheck="false" {{if not $canUpdate}}readonly{{end}}>{{$f.Value}}</textarea>
+{{if $f.Help}}<div class="form-text">{{$f.Help}} Stored as JSON.</div>{{end}}
+
+{{else if eq $f.Input "number"}}
+<input type="number" class="form-control" id="f-{{$f.Name}}" name="{{$f.Name}}" value="{{$f.Value}}"
+       {{if $f.Step}}step="{{$f.Step}}"{{end}}
+       {{if $f.Min}}min="{{$f.Min}}"{{end}} {{if $f.Max}}max="{{$f.Max}}"{{end}}
+       {{if not $canUpdate}}readonly{{end}}>
+{{if $f.Help}}<div class="form-text">{{$f.Help}}</div>{{end}}
+
+{{else}}
+<input type="text" class="form-control" id="f-{{$f.Name}}" name="{{$f.Name}}" value="{{$f.Value}}"
+       {{if $f.Pattern}}pattern="{{$f.Pattern}}"{{end}} {{if not $canUpdate}}readonly{{end}}>
+{{if $f.Help}}<div class="form-text">{{$f.Help}}</div>{{end}}
+{{end}}
+{{end}}
+
+{{define "content"}}
+{{/* One surface's settings, one card per category and one form per card. A form
+     per category rather than one for the page means a validation failure names a
+     category, and it is what makes "this page writes only its own keys" visible:
+     each form submits one category of one surface. */}}
+
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <p class="text-body-secondary mb-0">
+      {{if eq .Surface "admin"}}
+      Configuration for this panel: branding, sign-in policy, notifications and the banner.
+      {{else}}
+      Configuration for the customer-facing storefront. Separate from the panel's own settings,
+      with a separate permission, because they are separate concerns.
+      {{end}}
+    </p>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    {{if eq .Surface "admin"}}
+    <a href="/settings/product" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-store me-1"></i>Storefront settings
+    </a>
+    {{else}}
+    <a href="/settings/admin" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-gears me-1"></i>Back-office settings
+    </a>
+    {{end}}
+  </div>
+</div>
+
+{{if not .CanUpdate}}
+<div class="alert alert-secondary py-2">
+  <i class="fas fa-lock me-1"></i>You can see these settings but not change them.
+</div>
+{{end}}
+
+{{range .Groups}}
+<form method="post" action="{{$.BasePath}}" id="{{.Category}}">
+  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+  <input type="hidden" name="category" value="{{.Category}}">
+
+  <div class="card card-primary card-outline">
+    <div class="card-header">
+      <h3 class="card-title"><i class="fas fa-sliders me-1"></i>{{.Title}}</h3>
+      <div class="card-tools">
+        {{if $.CanUpdate}}
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="fas fa-save me-1"></i>Save
+        </button>
+        {{end}}
+      </div>
+    </div>
+    <div class="card-body">
+      {{if .Description}}<p class="text-body-secondary small">{{.Description}}</p>{{end}}
+      {{range .Fields}}
+      <div class="row mb-3">
+        <div class="col-sm-4">
+          <label class="form-label" for="f-{{.Name}}">{{.Label}}</label>
+          <div class="small text-body-secondary"><code>{{.Name}}</code></div>
+        </div>
+        <div class="col-sm-8">{{template "settingsField" dict "field" . "canUpdate" $.CanUpdate}}</div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</form>
+{{end}}
+{{end}}

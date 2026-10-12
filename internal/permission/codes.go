@@ -18,6 +18,7 @@ const (
 	ModuleRBAC         = "rbac"
 	ModuleStorage      = "storage"
 	ModuleAudit        = "audit"
+	ModuleSettings     = "settings"
 )
 
 // Point is a single permission point.
@@ -127,6 +128,15 @@ const (
 	AuditExceptionList = "audit:exception:list"
 	AuditExport        = "audit:log:export"
 
+	// Settings has two surfaces that share one table and one engine. They carry
+	// separate permissions because they are separate concerns: configuring the
+	// back office is not the same authority as configuring the storefront, and an
+	// operator may reasonably hold one and not the other.
+	SettingsAdminView     = "settings:admin:view"
+	SettingsAdminUpdate   = "settings:admin:update"
+	SettingsProductView   = "settings:product:view"
+	SettingsProductUpdate = "settings:product:update"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -198,6 +208,11 @@ func All() []Point {
 		{AuditSecurityList, "View the security audit log", ModuleAudit, "security", "list", "menu"},
 		{AuditExceptionList, "View the exception log", ModuleAudit, "exception", "list", "menu"},
 		{AuditExport, "Export a log as CSV", ModuleAudit, "log", "export", "button"},
+
+		{SettingsAdminView, "View the back-office settings", ModuleSettings, "admin", "view", "menu"},
+		{SettingsAdminUpdate, "Change the back-office settings", ModuleSettings, "admin", "update", "button"},
+		{SettingsProductView, "View the product settings", ModuleSettings, "product", "view", "menu"},
+		{SettingsProductUpdate, "Change the product settings", ModuleSettings, "product", "update", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

@@ -7,10 +7,17 @@
 package storage
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"image"
+	// The decoders register themselves; measuring a PNG or JPEG needs them
+	// imported even though they are not named.
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"net/http"
 	"os"
@@ -190,6 +197,13 @@ type Policy struct {
 
 	// MaxSize is the largest accepted upload in bytes. Zero means no limit.
 	MaxSize int64
+
+	// MaxImageWidth and MaxImageHeight reject an image larger than the bound.
+	// Zero disables the check. They are not a substitute for a size limit: a
+	// highly compressed image can be enormous in pixels and small in bytes, and
+	// decoding it is what costs memory.
+	MaxImageWidth  int
+	MaxImageHeight int
 }
 
 // DefaultPolicy is used until the settings module supplies configured values.
@@ -208,6 +222,25 @@ func DefaultPolicy() Policy {
 		},
 		MaxSize: 32 << 20, // 32 MiB
 	}
+}
+
+// AllowsImage reports whether an image's dimensions are within the bounds.
+//
+// A non-image, or an image whose dimensions could not be read, is allowed: the
+// type check has already decided the file may be stored, and refusing an image
+// because its header could not be parsed would reject valid files from a format
+// this build does not decode.
+func (p Policy) AllowsImage(inspected Inspected) bool {
+	if inspected.Kind != "image" || inspected.Width == 0 || inspected.Height == 0 {
+		return true
+	}
+	if p.MaxImageWidth > 0 && inspected.Width > p.MaxImageWidth {
+		return false
+	}
+	if p.MaxImageHeight > 0 && inspected.Height > p.MaxImageHeight {
+		return false
+	}
+	return true
 }
 
 // Allows reports whether an extension is permitted.
@@ -239,6 +272,11 @@ type Inspected struct {
 	// Kind is the coarse library tag: image, document, archive, video, audio or
 	// other.
 	Kind string
+
+	// Width and Height are set for an image whose header could be read, and zero
+	// otherwise. Only the formats the standard library decodes are measured.
+	Width  int
+	Height int
 }
 
 // Inspect reads a stream, computes its checksum, and decides what it is.
@@ -266,13 +304,43 @@ func Inspect(r io.Reader) (Inspected, error) {
 	mimeType := http.DetectContentType(head)
 	extension := ExtensionFor(mimeType)
 
+	width, height := imageDimensions(mimeType, head)
+
 	return Inspected{
 		MimeType:  mimeType,
 		Extension: extension,
 		Checksum:  hex.EncodeToString(hash.Sum(nil)),
 		Size:      int64(n) + rest,
 		Kind:      KindFor(mimeType),
+		Width:     width,
+		Height:    height,
 	}, nil
+}
+
+// imageDimensions reads an image's size from its header.
+//
+// Only the formats the standard library decodes are measured, which is why the
+// result is advisory: the caller applies a bound when it has one and skips the
+// check when it does not. The header is all DecodeConfig reads, so an enormous
+// image is not decoded to measure it -- the size is taken from the head that was
+// read anyway.
+func imageDimensions(mimeType string, head []byte) (int, int) {
+	if !strings.HasPrefix(mimeType, "image/") {
+		return 0, 0
+	}
+	// The standard library has no WebP decoder and an SVG has no pixel size, so
+	// both report zero and are skipped by the bound.
+	switch mimeType {
+	case "image/png", "image/jpeg", "image/gif":
+	default:
+		return 0, 0
+	}
+
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(head))
+	if err != nil {
+		return 0, 0
+	}
+	return cfg.Width, cfg.Height
 }
 
 // extensionByMime maps a sniffed content type to a stored extension.

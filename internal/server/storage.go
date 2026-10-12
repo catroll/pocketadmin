@@ -181,6 +181,16 @@ func (s *Server) handleUpload(c *gin.Context) {
 			continue
 		}
 
+		// A dimension bound is separate from a byte bound: a highly compressed
+		// image can be small on disk and enormous in pixels, and decoding it is
+		// what costs memory.
+		if !policy.AllowsImage(inspected) {
+			problems = append(problems, fmt.Sprintf("%s: %dx%d exceeds the %dx%d limit",
+				storage.SafeName(header.Filename), inspected.Width, inspected.Height,
+				policy.MaxImageWidth, policy.MaxImageHeight))
+			continue
+		}
+
 		key := storage.Key(inspected.Checksum)
 
 		// The object may already exist because another row addresses the same
@@ -263,23 +273,6 @@ func describeType(inspected storage.Inspected) string {
 		return "a " + strings.TrimPrefix(inspected.Extension, ".") + " file (" + inspected.MimeType + ")"
 	}
 	return inspected.MimeType
-}
-
-// uploadPolicy returns the active policy.
-//
-// Per D-012 the values belong to the settings module, which is a later wave, so
-// they come from configuration with conservative defaults until then. The mapping
-// lives here rather than in config so that config does not have to know about the
-// storage package.
-func (s *Server) uploadPolicy() storage.Policy {
-	policy := storage.DefaultPolicy()
-	if s.cfg.UploadMaxSize > 0 {
-		policy.MaxSize = s.cfg.UploadMaxSize
-	}
-	if len(s.cfg.UploadAllowedExtensions) > 0 {
-		policy.AllowedExtensions = s.cfg.UploadAllowedExtensions
-	}
-	return policy
 }
 
 // ---------------------------------------------------------------------------

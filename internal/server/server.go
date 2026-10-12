@@ -20,6 +20,7 @@ import (
 	"pocketadmin/internal/config"
 	"pocketadmin/internal/logging"
 	"pocketadmin/internal/rbac"
+	"pocketadmin/internal/settings"
 	"pocketadmin/internal/storage"
 	"pocketadmin/internal/version"
 	webassets "pocketadmin/web"
@@ -62,6 +63,9 @@ type Server struct {
 	// could not be initialised. Handlers check for nil rather than assuming.
 	files storage.Driver
 
+	// settings is the typed configuration engine backing both settings surfaces.
+	settings *settings.Engine
+
 	// guards records the permission each route requires, keyed
 	// "METHOD /path". selfCheckRoutes compares it against the router.
 	guards map[string]string
@@ -93,6 +97,7 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 		resolver:          rbac.NewResolver(app),
 		menus:             rbac.NewProjector(app),
 		files:             openStorageDriver(cfg),
+		settings:          settings.NewEngine(app),
 		guards:            make(map[string]string),
 	}
 

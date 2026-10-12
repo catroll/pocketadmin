@@ -1,0 +1,127 @@
+package settings
+
+// productKeys declares the customer-facing surface.
+//
+// Nothing here can be reached from the back-office registry, and the reverse is
+// also true: the engine writes through a Registry, so a key belonging to the other
+// surface is not addressable from a page. That is the "neither surface can write
+// the other's keys" requirement expressed as a property of the types rather than
+// as a check someone has to remember.
+func productKeys() []Key {
+	return []Key{
+		// site ---------------------------------------------------------------
+		{Category: "site", Key: "siteName", Type: TypeString, Default: "PocketAdmin",
+			Description: "Name of the storefront.", Public: true},
+		{Category: "site", Key: "siteUrl", Type: TypeString, Default: "",
+			Description: "Canonical address, used in links sent to customers.", Public: true},
+		{Category: "site", Key: "logo", Type: TypeFile, Default: "",
+			Description: "Storefront logo.", Public: true},
+		{Category: "site", Key: "favicon", Type: TypeFile, Default: "",
+			Description: "Storefront browser tab icon.", Public: true},
+		{Category: "site", Key: "description", Type: TypeString, Default: "",
+			Description: "Short description used for search results and link previews.", Public: true},
+		{Category: "site", Key: "keywords", Type: TypeString, Default: "",
+			Description: "Comma-separated search keywords.", Public: true},
+		{Category: "site", Key: "icp", Type: TypeString, Default: "",
+			Description: "Filing number shown in the storefront footer.", Public: true},
+		{Category: "site", Key: "copyright", Type: TypeString, Default: "",
+			Description: "Copyright line shown in the storefront footer.", Public: true},
+		{Category: "site", Key: "timezone", Type: TypeString, Default: "UTC",
+			Description: "Timezone dates are displayed in.", Public: true},
+		{Category: "site", Key: "language", Type: TypeSelect, Default: "en",
+			Description: "Default storefront language.", Public: true,
+			Options: []string{"en", "zh-CN"}},
+		{Category: "site", Key: "currency", Type: TypeString, Default: "USD",
+			Description: "Currency amounts are recorded in. Money is stored in minor units.", Public: true},
+		{Category: "site", Key: "currencyFormat", Type: TypeSelect, Default: "symbol",
+			Description: "How an amount is rendered.",
+			Options:     []string{"symbol", "code", "none"}, Public: true},
+
+		// auth ---------------------------------------------------------------
+		{Category: "auth", Key: "methods", Type: TypeJSON, Default: []any{"password"},
+			Description: "Sign-in methods offered to customers."},
+		{Category: "auth", Key: "oauthProviders", Type: TypeJSON, Default: []any{},
+			Description: "Identity providers offered, resolved through integrations."},
+		{Category: "auth", Key: "mfaRequired", Type: TypeBool, Default: false,
+			Description: "Require a second factor for every customer."},
+		{Category: "auth", Key: "sessionTimeoutMinutes", Type: TypeNumber, Default: float64(20160),
+			Description: "How long a customer session stays valid.",
+			Min:         ptr(5), Max: ptr(525600)},
+		{Category: "auth", Key: "trustedDeviceDays", Type: TypeNumber, Default: float64(30),
+			Description: "How long a device may skip the second factor.",
+			Min:         ptr(0), Max: ptr(365)},
+		{Category: "auth", Key: "maxLoginAttempts", Type: TypeNumber, Default: float64(8),
+			Description: "Consecutive failures before a customer account locks.",
+			Min:         ptr(1), Max: ptr(100)},
+		{Category: "auth", Key: "lockoutMinutes", Type: TypeNumber, Default: float64(15),
+			Description: "How long a customer lockout lasts.",
+			Min:         ptr(1), Max: ptr(10080)},
+
+		// registration -------------------------------------------------------
+		{Category: "registration", Key: "enabled", Type: TypeBool, Default: false,
+			Description: "Allow customers to create their own accounts."},
+		{Category: "registration", Key: "method", Type: TypeSelect, Default: "email",
+			Description: "Identifier a new account is created with.",
+			Options:     []string{"email", "phone", "username"}},
+		{Category: "registration", Key: "requireVerification", Type: TypeBool, Default: true,
+			Description: "Require the identifier to be verified before the account works."},
+		{Category: "registration", Key: "defaultTier", Type: TypeString, Default: "",
+			Description: "Membership tier granted on registration."},
+		{Category: "registration", Key: "agreementRequired", Type: TypeBool, Default: true,
+			Description: "Require acceptance of the terms."},
+		{Category: "registration", Key: "invitationOnly", Type: TypeBool, Default: false,
+			Description: "Only an invitation code may create an account."},
+
+		// announcement -------------------------------------------------------
+		{Category: "announcement", Key: "enabled", Type: TypeBool, Default: false,
+			Description: "Show announcements on the storefront."},
+		{Category: "announcement", Key: "position", Type: TypeSelect, Default: "top",
+			Description: "Where an announcement appears.",
+			Options:     []string{"top", "home", "modal"}},
+		{Category: "announcement", Key: "displayMode", Type: TypeSelect, Default: "banner",
+			Description: "How an announcement is presented.",
+			Options:     []string{"banner", "modal", "inline"}},
+		{Category: "announcement", Key: "dismissible", Type: TypeBool, Default: true,
+			Description: "Whether a reader may hide an announcement."},
+
+		// feature ------------------------------------------------------------
+		{Category: "feature", Key: "catalog.enabled", Type: TypeBool, Default: true,
+			Description: "Product catalogue."},
+		{Category: "feature", Key: "cart.enabled", Type: TypeBool, Default: true,
+			Description: "Shopping cart."},
+		{Category: "feature", Key: "checkout.enabled", Type: TypeBool, Default: true,
+			Description: "Checkout. Turning this off leaves the catalogue browsable."},
+		{Category: "feature", Key: "coupons.enabled", Type: TypeBool, Default: true,
+			Description: "Coupon redemption."},
+		{Category: "feature", Key: "membership.enabled", Type: TypeBool, Default: true,
+			Description: "Membership tiers and plans."},
+		{Category: "feature", Key: "subscriptions.enabled", Type: TypeBool, Default: false,
+			Description: "Recurring billing."},
+		{Category: "feature", Key: "reviews.enabled", Type: TypeBool, Default: false,
+			Description: "Product reviews."},
+		{Category: "feature", Key: "wishlist.enabled", Type: TypeBool, Default: false,
+			Description: "Customer wishlists."},
+		{Category: "feature", Key: "maintenanceMode", Type: TypeBool, Default: false,
+			Description: "Serve the maintenance message instead of the storefront."},
+		{Category: "feature", Key: "maintenanceMessage", Type: TypeString, Default: "",
+			Description: "Message shown while maintenance mode is on."},
+
+		// commerce -----------------------------------------------------------
+		{Category: "commerce", Key: "defaultCurrency", Type: TypeString, Default: "USD",
+			Description: "Currency new orders are recorded in."},
+		{Category: "commerce", Key: "taxDisplayMode", Type: TypeSelect, Default: "exclusive",
+			Description: "Whether listed prices include tax.",
+			Options:     []string{"inclusive", "exclusive"}},
+		{Category: "commerce", Key: "taxRate", Type: TypeNumber, Default: float64(0),
+			Description: "Tax rate as a percentage.",
+			Min:         ptr(0), Max: ptr(100)},
+		{Category: "commerce", Key: "unpaidOrderTimeoutMinutes", Type: TypeNumber, Default: float64(30),
+			Description: "How long an unpaid order is held before it closes and releases stock.",
+			Min:         ptr(1), Max: ptr(10080)},
+		{Category: "commerce", Key: "refundWindowDays", Type: TypeNumber, Default: float64(7),
+			Description: "How long after payment a refund may be requested.",
+			Min:         ptr(0), Max: ptr(3650)},
+		{Category: "commerce", Key: "invoicePrefix", Type: TypeString, Default: "INV",
+			Description: "Prefix for generated invoice numbers."},
+	}
+}
