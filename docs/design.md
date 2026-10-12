@@ -558,6 +558,19 @@ for panel traffic. The collection rules in `database-design.md` § 4 exist to
 protect the *public* `/api` surface. Any code that serves panel data must pass
 through the permission middleware.
 
+There are therefore two enforcement points and one vocabulary: both the panel's
+permission checks and the collection rules name the same `permissions.code`
+values, so this is one model checked at two doors rather than two models that can
+drift apart. Rules govern callers arriving from outside; the middleware governs
+the panel.
+
+The boundary is enforced by tests rather than by review. `internal/rbac` holds a
+drift test between the permission constants and the `permissions` collection, and
+`internal/rbac/apirules_test.go` asserts that no collection is half-open and
+validates the rules of any that is opened. What neither covers is a handler that
+reaches for `core.App` without a permission guard: the startup self-check in
+§ 12.4 is what catches that, and only for state-changing routes.
+
 ### 12.3 Bootstrap and recovery
 
 - The seeded bootstrap administrator is `isProtected`; disabling or deleting it

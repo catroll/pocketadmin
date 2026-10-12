@@ -1216,6 +1216,22 @@ Collections that must be readable without authentication (site name, logo) are
 exposed through a purpose-built Gin endpoint reading specific public product
 settings, never by loosening a collection rule.
 
+The two invariants above are enforced by tests in `internal/rbac/apirules_test.go`
+rather than left to review:
+
+- Every platform collection is either **closed** (all five rules `null`) or
+  **deliberately open** (all five written). A half-open collection is the state
+  that slips through, because it produces no error and no failing screen.
+- Every rule on an open collection is validated: a blank rule is rejected
+  (it admits everyone, and `null` is how closed is spelled), every code-shaped
+  literal must be a declared permission point, and every `@request.auth.<name>`
+  must resolve to a real field or a real back-relation.
+
+The second check exists because PocketBase does not fail on an unknown field in a
+filter: it evaluates it, and a rule such as `@request.auth.adminProfile ?= ""`
+matches every record. A rule that admits everyone while reading as a restriction
+is worse than one that errors, so field names are checked against the schema.
+
 ## 6. Relationship overview
 
 ### Platform
