@@ -199,6 +199,10 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 	// middleware would never run and every machine caller would receive an HTML
 	// redirect instead of JSON. The first version of this was mounted on the
 	// group and did exactly that.
+	// The provider callback endpoint is mounted here for the same reason the machine
+	// API is: its caller has no session, and the panel group would redirect it to the
+	// sign-in page before it was ever read.
+	s.registerPaymentWebhooks(r)
 	s.registerDeveloperAPIRoutes(r)
 
 	// The health endpoints are on the root router because they must be reachable

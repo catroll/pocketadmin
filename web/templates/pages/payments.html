@@ -1,0 +1,152 @@
+{{define "content"}}
+{{if .OpenIntents}}
+<div class="card card-warning card-outline mb-3">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-hourglass-half me-1"></i>Waiting for payment</h3>
+    <div class="card-tools small text-body-secondary">
+      An intent that outlives the order holding its stock would let somebody pay for goods already back on the shelf.
+    </div>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Order</th><th>Amount</th><th>Method</th><th>Attempts</th><th>Expires</th><th>Status</th></tr></thead>
+      <tbody>
+        {{range .OpenIntents}}
+        <tr class="small">
+          <td>{{if .OrderID}}<a href="/orders/{{.OrderID}}" class="font-monospace">{{.OrderNo}}</a>{{end}}</td>
+          <td>{{.Amount}}</td>
+          <td>{{.Method}}</td>
+          <td>{{.Attempts}}</td>
+          <td class="{{if .Expiring}}text-danger{{end}}">{{.Expires}}</td>
+          <td><span class="badge text-bg-warning">{{.Status}}</span></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <form method="get" action="/payments" class="row g-2 align-items-end">
+      <div class="col-sm-3">
+        <label class="form-label small" for="q">Search</label>
+        <input type="search" class="form-control form-control-sm" id="q" name="q" value="{{.Query}}"
+               placeholder="Order number or provider id">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="status">Status</label>
+        <select class="form-select form-select-sm" id="status" name="status">
+          <option value="">Any</option>
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="method">Method</label>
+        <select class="form-select form-select-sm" id="method" name="method">
+          <option value="">Any</option>
+          {{$m := .Method}}{{range .Methods}}<option value="{{.}}" {{if eq . $m}}selected{{end}}>{{.}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-sm-3">
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" id="unreconciled" name="unreconciled" value="1" {{if .Unreconciled}}checked{{end}}>
+          <label class="form-check-label small" for="unreconciled">Only unreconciled</label>
+        </div>
+      </div>
+      <div class="col-sm-2"><button class="btn btn-sm btn-secondary w-100">Filter</button></div>
+    </form>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    {{if .CanReconcile}}
+    <a href="/payments/reconcile" class="btn btn-outline-secondary btn-sm"><i class="fas fa-scale-balanced me-1"></i>Reconcile</a>
+    {{end}}
+  </div>
+</div>
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-credit-card me-1"></i>Transactions</h3>
+    <div class="card-tools small text-body-secondary">
+      A replayed callback is counted, not applied. The count is how a duplicate storm becomes visible.
+    </div>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Order</th><th>Provider id</th><th>Amount</th><th>Method</th><th>When</th><th>Callbacks</th><th>Status</th></tr></thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td class="small">{{if .OrderID}}<a href="/orders/{{.OrderID}}" class="font-monospace">{{.OrderNo}}</a>{{end}}</td>
+          <td class="small">
+            {{if .ProviderID}}<code>{{.ProviderID}}</code>{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}
+            {{if .Manual}}<span class="badge text-bg-info">by hand</span>{{end}}
+          </td>
+          <td class="small fw-semibold">{{.Amount}}</td>
+          <td class="small">{{.Method}}</td>
+          <td class="small">{{.Created}}</td>
+          <td class="small">
+            {{if gt .Callbacks 1}}<span class="badge text-bg-warning">{{.Callbacks}}</span>{{else}}{{.Callbacks}}{{end}}
+          </td>
+          <td>
+            {{if eq .Status "succeeded"}}<span class="badge text-bg-success">succeeded</span>
+            {{else if eq .Status "failed"}}<span class="badge text-bg-danger">failed</span>
+            {{else if eq .Status "pending"}}<span class="badge text-bg-warning">pending</span>
+            {{else if eq .Status "processing"}}<span class="badge text-bg-info">processing</span>
+            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+            {{if .Reconciled}}<span class="badge text-bg-light" title="Confirmed against a settlement report">reconciled</span>{{end}}
+          </td>
+        </tr>
+        {{if .Failure}}
+        <tr><td colspan="7" class="small text-danger py-1">{{.Failure}}</td></tr>
+        {{end}}
+        {{else}}
+        <tr><td colspan="7" class="text-center text-body-secondary py-4">No payments match.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{if .CanRecord}}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-hand-holding-dollar me-1"></i>Record a payment by hand</h3>
+  </div>
+  <div class="card-body">
+    <form method="post" action="/payments/manual" class="row g-2 align-items-end">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <div class="col-sm-3">
+        <label class="form-label small" for="order">Order number</label>
+        <input type="text" class="form-control form-control-sm font-monospace" id="order" name="order" required
+               placeholder="ORD-202610-00001">
+        <div class="form-text">The order's identifier, from its page.</div>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="amount">Amount</label>
+        <input type="text" class="form-control form-control-sm" id="amount" name="amount" required placeholder="0.00">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="method">Method</label>
+        <select class="form-select form-select-sm" id="method" name="method">
+          <option value="bank_transfer">bank transfer</option>
+          <option value="cash">cash</option>
+          <option value="other">other</option>
+        </select>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label small" for="reason">Reason</label>
+        <input type="text" class="form-control form-control-sm" id="reason" name="reason" required
+               placeholder="Required: this is the only evidence there is">
+      </div>
+      <div class="col-sm-1"><button class="btn btn-primary btn-sm w-100">Record</button></div>
+    </form>
+    <div class="form-text mt-2">
+      This is the one path that credits an order with no provider confirming anything, so it is audited at
+      critical and the operator is recorded.
+    </div>
+  </div>
+</div>
+{{end}}
+{{end}}

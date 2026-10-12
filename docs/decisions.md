@@ -1046,6 +1046,126 @@ leaves an order with no stock held, which the reconciliation can find and a retr
 repair. A transaction would be better and is not expressible through the record API
 here.
 
+### D-053 — A provider transaction id is the idempotency key, and a replay is not an error
+
+**Decision.** A callback is matched to a transaction by the provider's own identifier,
+which carries a partial unique index. A callback naming a transaction already recorded
+as succeeded increments `callbackCount` and changes nothing. It is answered with
+**200 and a "duplicate" status**, not with a failure.
+
+**Why.** Providers retry. A callback that timed out on the network arrives again,
+sometimes several times, sometimes hours later. Without an idempotency key the second
+arrival charges the order again, and the customer finds out from their statement. The
+key is the provider's identifier rather than anything this system generates, because
+the duplicate arrives from outside and has to be recognisable without a lookup table of
+intents.
+
+Answering a replay with a failure would be worse than answering it with nothing. A
+provider that receives an error retries, so refusing a duplicate makes it retry the
+duplicate forever -- a callback storm manufactured by the receiver.
+
+The count is kept rather than discarded. A duplicate storm should look like one event
+seen six times, not like nothing at all, and the count is what makes it visible.
+
+**Given up.** A provider that reuses a transaction identifier for a genuinely different
+attempt would have that attempt ignored. No provider does this, and the alternative --
+trusting an identifier only sometimes -- is not a rule.
+
+### D-054 — A succeeded transaction is never altered; corrections go through a refund
+
+**Decision.** A callback that contradicts a succeeded transaction is refused. The
+transaction stays succeeded and the order stays credited.
+
+**Why.** The specification requires it, and the reason is that the alternative
+destroys the record. A transaction that can be un-succeeded by a later message has no
+defensible state: a reconciliation six months later cannot tell whether the payment
+happened. A refund is a record of its own, with its own approval, and the pair is
+what an auditor reads.
+
+A failure that later succeeds **is** applied, because that is a genuine change of state
+rather than a contradiction.
+
+**Given up.** A provider that actually reverses a payment in place needs a refund to be
+created, which is more work for the operator and the correct amount of work.
+
+### D-055 — The amount on a callback is compared, never trusted
+
+**Decision.** A transaction records the amount from the intent, not from the callback.
+A callback reporting a different amount is flagged and the mismatch is audited at
+critical; the order is credited what was requested.
+
+**Why.** A provider that took a different amount from the one requested is a
+discrepancy somebody has to look at. Accepting the reported figure would make the
+order's own totals wrong and would let a forged callback -- correctly signed, because
+the attacker has the secret -- inflate a credit.
+
+The safe direction to be wrong in is the one that does not credit money, so an
+unrecognised provider status becomes pending rather than succeeded.
+
+**Given up.** A legitimate overpayment or underpayment has to be corrected by hand
+rather than absorbed. That is what a discrepancy is for.
+
+### D-056 — A callback endpoint is declared signature-guarded rather than exempted
+
+**Decision.** `signatureGuarded` is a named registration helper. The startup self-check
+still aborts on any state-changing route without a guard, and the webhook passes it by
+declaring that its authority is an HMAC.
+
+**Why.** The self-check fired the moment the endpoint was added, which is the behaviour
+that was designed for. The obvious fix -- adding the path to the exemption list beside
+`/login` -- would have been the wrong one: an exemption list grows quietly, and the
+next unguarded route would be added the same way.
+
+A named helper is greppable. The next person to add a route of this kind has to write
+the word "signature", which is a claim they can be asked to defend.
+
+The endpoint is also closed by default rather than open by default: it refuses every
+request when the provider has no signing secret, so a misconfiguration fails safe.
+
+**Given up.** One more concept in the server package. The alternative is a list nobody
+reads.
+
+### D-057 — A status vocabulary is a contract between modules, and guessing one fails silently
+
+**Decision.** The webhook checks a provider's status against `integration.StatusEnabled`
+rather than a string literal.
+
+**Why.** A real defect, and the worst-shaped one in this module. The integrations
+vocabulary is `enabled`, `disabled`, `testing`, `error`; the handler checked for
+`"active"`. Every correctly configured provider therefore returned an empty signing
+secret, every callback was refused, and the endpoint looked like it was working
+correctly -- it refused forged callbacks for the right reason and legitimate ones for a
+reason nobody could see. It surfaced only by reading the log line rather than the HTTP
+response.
+
+The general lesson is recorded: a status compared against a literal in another module's
+vocabulary is a comparison that cannot be checked by the compiler and will not fail
+loudly.
+
+**Given up.** Nothing. The constant existed.
+
+### D-058 — Reconciliation reports differences and repairs nothing
+
+**Decision.** `Reconcile` compares a settlement report against the local transactions,
+marks agreed transactions as reconciled, and returns a list of differences. It changes
+no amount and no credit.
+
+**Why.** A mismatch is a question about money. A system that silently adjusts its own
+figures to agree with a file it was handed has destroyed the evidence of whatever went
+wrong, and the file may itself be wrong.
+
+It looks both ways. A settlement for a transaction this system has never seen is money
+the shop has and does not know about; a transaction recorded here as succeeded that the
+report does not mention is the shape of a forged callback. Only the second direction is
+restricted to transactions old enough to have settled, because a payment taken an hour
+ago has not reached a statement yet and reporting it would make every reconciliation
+noisy enough to ignore.
+
+A report listing the same transaction twice is reported rather than netted out: that is
+money that arrived twice for one sale.
+
+**Given up.** Every discrepancy needs a person. That is the point.
+
 ---
 
 ## Pending

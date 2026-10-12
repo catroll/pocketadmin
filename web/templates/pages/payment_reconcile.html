@@ -1,0 +1,86 @@
+{{define "content"}}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Settlement report</h3>
+    <div class="card-tools small text-body-secondary">
+      One line per transaction: an identifier, an amount in minor units, and optionally a fee.
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="post" action="/payments/reconcile">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <textarea class="form-control font-monospace" name="settlements" rows="10"
+                placeholder="prov-txn-1, 5000, 145&#10;prov-txn-2, 1999&#10;# a line beginning with # is ignored">{{.Raw}}</textarea>
+      <button class="btn btn-primary mt-2"><i class="fas fa-scale-balanced me-1"></i>Compare</button>
+    </form>
+  </div>
+</div>
+
+{{if .Ran}}
+<div class="row mb-3">
+  <div class="col-sm-4">
+    <div class="small-box text-bg-info">
+      <div class="inner"><h3>{{.Lines}}</h3><p>Lines read</p></div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="small-box text-bg-success">
+      <div class="inner"><h3>{{.Matched}}</h3><p>Agreed</p></div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="small-box {{if .Discrepancies}}text-bg-danger{{else}}text-bg-secondary{{end}}">
+      <div class="inner"><h3>{{len .Discrepancies}}</h3><p>Discrepancies</p></div>
+    </div>
+  </div>
+</div>
+
+{{if .Problems}}
+<div class="alert alert-warning">
+  <h5 class="alert-heading">Lines that could not be read</h5>
+  <ul class="mb-0">{{range .Problems}}<li>{{.}}</li>{{end}}</ul>
+</div>
+{{end}}
+
+{{if .Duplicates}}
+<div class="alert alert-danger">
+  <h5 class="alert-heading">The report lists the same transaction more than once</h5>
+  <p class="mb-1">{{range .Duplicates}}<code>{{.}}</code> {{end}}</p>
+  <div class="small">That is money that arrived twice for one sale, and it is reported rather than netted out.</div>
+</div>
+{{end}}
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title">Differences</h3>
+    <div class="card-tools small text-body-secondary">
+      Nothing is repaired. A mismatch is a question about money, and adjusting the figures to agree with a
+      file destroys the evidence of what went wrong.
+    </div>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-striped mb-0">
+      <thead><tr><th>Provider id</th><th>Kind</th><th>Local</th><th>Reported</th><th>Detail</th></tr></thead>
+      <tbody>
+        {{range .Discrepancies}}
+        <tr class="small">
+          <td><code>{{.ProviderTxnID}}</code></td>
+          <td>
+            {{if eq .Kind "missing_locally"}}<span class="badge text-bg-danger">not recorded here</span>
+            {{else if eq .Kind "missing_remotely"}}<span class="badge text-bg-danger">not in the report</span>
+            {{else if eq .Kind "amount"}}<span class="badge text-bg-warning">amount</span>
+            {{else}}<span class="badge text-bg-secondary">{{.Kind}}</span>{{end}}
+          </td>
+          <td>{{.Local}}</td>
+          <td>{{.Remote}}</td>
+          <td>{{.Detail}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="5" class="text-center text-body-secondary py-4">Nothing disagrees.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+{{end}}

@@ -30,6 +30,7 @@ const (
 	ModulePromotions    = "promotions"
 	ModuleSubscriptions = "subscriptions"
 	ModuleOrders        = "orders"
+	ModulePayments      = "payments"
 )
 
 // Point is a single permission point.
@@ -261,6 +262,15 @@ const (
 	OrderNote   = "orders:order:note"
 	OrderExport = "orders:order:export"
 
+	// Payments. Marking an order paid by hand is separately guarded from creating a
+	// payment, because it is the one path that records money without a provider
+	// confirming it.
+	PaymentIntentList      = "payments:intent:list"
+	PaymentIntentCreate    = "payments:intent:create"
+	PaymentTransactionList = "payments:transaction:list"
+	PaymentManualRecord    = "payments:transaction:manual"
+	PaymentReconcile       = "payments:transaction:reconcile"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves are
 	// separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -409,6 +419,11 @@ func All() []Point {
 		{OrderCancel, "Cancel or close an order", ModuleOrders, "order", "cancel", "button"},
 		{OrderNote, "Add an administrator note", ModuleOrders, "order", "note", "button"},
 		{OrderExport, "Export orders as CSV", ModuleOrders, "order", "export", "button"},
+		{PaymentIntentList, "List payment attempts", ModulePayments, "intent", "list", "api"},
+		{PaymentIntentCreate, "Start a payment", ModulePayments, "intent", "create", "button"},
+		{PaymentTransactionList, "List transactions", ModulePayments, "transaction", "list", "menu"},
+		{PaymentManualRecord, "Record an offline payment", ModulePayments, "transaction", "manual", "button"},
+		{PaymentReconcile, "Reconcile settlements", ModulePayments, "transaction", "reconcile", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

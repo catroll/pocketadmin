@@ -26,6 +26,9 @@ const (
 	// such as self-service preferences. Requiring a permission would wrongly
 	// suggest an administrator could manage someone else's settings.
 	authenticatedOnly = "\x00authenticated"
+
+	// signatureVerified marks a route whose authority is an HMAC over the request body.
+	signatureVerified = "\x00signature"
 )
 
 // actor returns the resolved actor for the request, or nil.
@@ -158,6 +161,22 @@ func (s *Server) readGuarded(g *gin.RouterGroup, method, path, code string, hand
 // route someone forgot to guard.
 func (s *Server) selfGuarded(g *gin.RouterGroup, method, path string, handlers ...gin.HandlerFunc) {
 	s.registerGuard(method, joinPath(g.BasePath(), path), authenticatedOnly)
+	g.Handle(method, path, handlers...)
+}
+
+// signatureGuarded registers a state-changing route whose authority is a verified
+// signature rather than a session.
+//
+// The caller is a payment provider, which has no account here and never will. Its
+// authority is the HMAC over the body, checked inside the handler, and the handler
+// refuses every request when no signing secret is configured -- so the endpoint is
+// closed by default rather than open by default.
+//
+// It is a named registration rather than an entry in the self-check's exemption list
+// on purpose. An exemption list grows quietly; a helper with this name is greppable,
+// and the next person to add one has to write the same word.
+func (s *Server) signatureGuarded(g *gin.RouterGroup, method, path string, handlers ...gin.HandlerFunc) {
+	s.registerGuard(method, joinPath(g.BasePath(), path), signatureVerified)
 	g.Handle(method, path, handlers...)
 }
 

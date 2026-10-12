@@ -128,6 +128,11 @@ func seededMenus() []menuSeed {
 		{Name: "announcement", Title: "Announcements", Type: "menu", Path: "/announcements",
 			Icon: "fas fa-bullhorn", Sort: 75, Permission: permission.AnnouncementList},
 
+		{Name: "payments", Title: "Payments", Type: "directory", Icon: "fas fa-credit-card", Sort: 55},
+		{Name: "payments.transactions", Title: "Transactions", Parent: "payments", Type: "menu",
+			Path: "/payments", Icon: "far fa-circle",
+			Permission: permission.PaymentTransactionList, Sort: 10},
+
 		{Name: "orders", Title: "Orders", Type: "menu", Path: "/orders",
 			Icon: "fas fa-receipt", Sort: 50, Permission: permission.OrderList},
 
