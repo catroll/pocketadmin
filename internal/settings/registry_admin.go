@@ -123,7 +123,17 @@ func adminKeys() []Key {
 			Options:     []string{"info", "success", "warning", "danger"}},
 		{Category: "banner", Key: "dismissible", Type: TypeBool, Default: true,
 			Description: "Whether a reader may hide the banner."},
+
+		// refunds ------------------------------------------------------------
+		{Category: "refund", Key: "autoApproveThreshold", Type: TypeNumber, Default: float64(0),
+			Description: "A refund at or below this amount, in minor units, is approved as soon as it is requested. " +
+				"Zero disables automatic approval, which is the default: a shop that has not thought about it should " +
+				"have a person look. A refund is never auto-approved for the person who requested it, whatever this is set to."},
+		{Category: "refund", Key: "restockOnFullRefund", Type: TypeBool, Default: true,
+			Description: "Return the goods of a fully refunded order to stock. Only applies to a refund by item: " +
+				"a refund by amount says nothing about which goods came back."},
 	}
+
 }
 
 // ptr returns a pointer to a float, for the Min and Max bounds.

@@ -31,6 +31,7 @@ const (
 	ModuleSubscriptions = "subscriptions"
 	ModuleOrders        = "orders"
 	ModulePayments      = "payments"
+	ModuleRefunds       = "refunds"
 )
 
 // Point is a single permission point.
@@ -271,6 +272,16 @@ const (
 	PaymentManualRecord    = "payments:transaction:manual"
 	PaymentReconcile       = "payments:transaction:reconcile"
 
+	// Refunds. Requesting one, deciding one and executing one are three permissions,
+	// because the whole point of the approval workflow is that they are not held by
+	// the same person.
+	RefundList     = "refunds:refund:list"
+	RefundRequest  = "refunds:refund:request"
+	RefundApprove  = "refunds:refund:approve"
+	RefundReject   = "refunds:refund:reject"
+	RefundExecute  = "refunds:refund:execute"
+	RefundSettings = "refunds:settings:manage"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves are
 	// separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -424,6 +435,12 @@ func All() []Point {
 		{PaymentTransactionList, "List transactions", ModulePayments, "transaction", "list", "menu"},
 		{PaymentManualRecord, "Record an offline payment", ModulePayments, "transaction", "manual", "button"},
 		{PaymentReconcile, "Reconcile settlements", ModulePayments, "transaction", "reconcile", "button"},
+		{RefundList, "List refunds", ModuleRefunds, "refund", "list", "menu"},
+		{RefundRequest, "Request a refund", ModuleRefunds, "refund", "request", "button"},
+		{RefundApprove, "Approve a refund", ModuleRefunds, "refund", "approve", "button"},
+		{RefundReject, "Reject a refund", ModuleRefunds, "refund", "reject", "button"},
+		{RefundExecute, "Execute an approved refund", ModuleRefunds, "refund", "execute", "button"},
+		{RefundSettings, "Change the refund policy", ModuleRefunds, "settings", "manage", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

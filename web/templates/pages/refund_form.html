@@ -1,0 +1,112 @@
+{{define "content"}}
+{{if not .OrderID}}
+<div class="card">
+  <div class="card-header"><h3 class="card-title">Which order?</h3></div>
+  <div class="card-body">
+    <form method="get" action="/refunds/new" class="row g-2 align-items-end">
+      <div class="col-sm-6">
+        <label class="form-label small" for="order">Order number</label>
+        <input type="text" class="form-control form-control-sm font-monospace" id="order" name="order" required
+               placeholder="ORD-202610-00001">
+      </div>
+      <div class="col-sm-3"><button class="btn btn-primary btn-sm">Open</button></div>
+    </form>
+  </div>
+</div>
+{{else}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <h4 class="mb-0 font-monospace">{{.OrderNo}}</h4>
+    <div class="small text-body-secondary">
+      paid {{.Paid}} &middot; refunded {{.Refunded}} &middot; <strong>{{.Remaining}} left to refund</strong>
+    </div>
+  </div>
+</div>
+
+<form method="post" action="/refunds/request">
+  <input type="hidden" name="_csrf" value="{{.CSRF}}">
+  <input type="hidden" name="order" value="{{.OrderID}}">
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card card-primary card-outline">
+        <div class="card-header"><h3 class="card-title">What kind of refund?</h3></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label small" for="mode">Mode</label>
+            <select class="form-select form-select-sm" id="mode" name="mode">
+              <option value="full">Everything that is left</option>
+              <option value="partial_amount">A partial amount</option>
+              <option value="partial_items">Particular items</option>
+            </select>
+            <div class="form-text">
+              "Everything that is left" is what remains, not what was paid: an order already partly refunded
+              cannot be refunded in full a second time.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small" for="amount">Amount (for a partial amount)</label>
+            <input type="text" class="form-control form-control-sm" id="amount" name="amount" placeholder="0.00">
+          </div>
+          {{if .Items}}
+          <div class="mb-0">
+            <label class="form-label small">Items (for particular items)</label>
+            <table class="table table-sm">
+              <thead><tr><th>Item</th><th class="text-end">Unit</th><th class="text-end">Left</th><th style="width:8rem">Refund</th></tr></thead>
+              <tbody>
+                {{range .Items}}
+                <tr class="small">
+                  <td>
+                    {{.Name}}{{if .Variant}} <span class="text-body-secondary">({{.Variant}})</span>{{end}}
+                    <input type="hidden" name="itemId" value="{{.ID}}">
+                  </td>
+                  <td class="text-end">{{.Unit}}</td>
+                  <td class="text-end">{{if .Left}}{{.Left}}{{else}}<span class="text-body-secondary">none</span>{{end}}</td>
+                  <td>
+                    <input type="number" class="form-control form-control-sm" name="itemQuantity"
+                           min="0" max="{{.Left}}" value="0" {{if not .Left}}disabled{{end}}>
+                  </td>
+                </tr>
+                {{end}}
+              </tbody>
+            </table>
+            <div class="form-text">
+              Each line's share of any order-level discount is subtracted, so refunding every item of a
+              discounted order does not give back more than was paid for it.
+            </div>
+          </div>
+          {{end}}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Why</h3></div>
+        <div class="card-body">
+          <div class="mb-2">
+            <label class="form-label small" for="reason">Reason</label>
+            <select class="form-select form-select-sm" id="reason" name="reason">
+              {{range .Reason}}<option value="{{.Code}}">{{.Label}}</option>{{end}}
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="reasonDetail">Detail</label>
+            <textarea class="form-control form-control-sm" id="reasonDetail" name="reasonDetail" rows="3"></textarea>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="restock" name="restock" value="1">
+            <label class="form-check-label small" for="restock">Put the goods back in stock when it succeeds</label>
+          </div>
+          <div class="form-text mt-2">
+            Only applies to a refund by item: a refund by amount says nothing about which goods came back.
+          </div>
+        </div>
+        <div class="card-footer d-grid">
+          <button class="btn btn-primary">Request the refund</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{{end}}
+{{end}}

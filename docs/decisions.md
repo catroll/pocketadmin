@@ -1166,6 +1166,83 @@ money that arrived twice for one sale.
 
 **Given up.** Every discrepancy needs a person. That is the point.
 
+### D-059 — A pending refund does not reserve capacity; an approval does
+
+**Decision.** `Commits` counts an approved, processing, succeeded or failed refund.
+A pending one does not. The cap is enforced inside a transaction when a refund is
+approved, against the order's `amountPaid`.
+
+**Why.** Reached by writing the test that should have passed. Counting pending refunds
+as committed means two requests for the whole order each see the other as committed and
+**neither can be approved**. A deadlock is not a conservative choice, it is a broken
+one, and it took the test to see it -- the rule had felt safer.
+
+So the specification is taken at its word: the cap is enforced *at approval time*,
+under a transaction. A request is a question rather than a reservation, and many may be
+open at once. Only the approvals are serialised, and that is the property that protects
+the money: the sum of everything approved never exceeds what was paid.
+
+A **failed** refund does keep its capacity, which is the counter-intuitive half. It may
+be retried by the retry path, and a retry does not go through an approval -- so freeing
+its capacity would let another refund be approved against the same money, and the retry
+would then overdraw with nothing to catch it. Releasing it is an explicit act:
+withdrawing the refund.
+
+**Given up.** A stale pending request holds nothing and blocks nothing, so a queue of
+requests can build up unnoticed. The list shows the pending ones, and the cap is still
+enforced where it counts.
+
+### D-060 — Nobody decides their own refund, not even automatically
+
+**Decision.** `Approve` and `Reject` refuse a reviewer who is the requester. This is
+checked before the auto-approval threshold is applied, so a refund is not auto-approved
+for the person who requested it.
+
+**Why.** An approval workflow whose approver can be the requester is a formality, and
+the reason `refunds:refund:request` and `refunds:refund:approve` are two permissions is
+that they are meant to be held by different people. The rule is enforced in the package
+rather than in the screen, because a screen can be bypassed and this cannot.
+
+The threshold does not override it. An automatic decision taken because the requester
+happens to be the only person available is still the requester deciding.
+
+**Given up.** A shop with one administrator cannot refund anything, and has to grant a
+second account the approving permission. That is the correct amount of friction for a
+control that exists to stop one person moving money to themselves.
+
+### D-061 — A refund by item subtracts the line's share of the order discount
+
+**Decision.** A refund computed from order items totals the chosen quantities at the
+prices the order recorded, then subtracts the line's proportional share of the
+order-level discount.
+
+**Why.** Without the share, refunding every item of a discounted order gives back more
+than was paid for it. A 6000 order discounted by 1000 was paid 5000, and its items
+still sum to 6000; refunding them all at their own prices returns 6000.
+
+The prices come from the order's snapshots rather than the catalogue, for the same
+reason the order stores them at all: the catalogue may have changed since, and a refund
+is against what was bought.
+
+**Given up.** The share is proportional rather than per-item, so refunding one item of a
+discounted order gives back slightly less than a person might compute by hand. The
+alternative is a per-item discount allocation that has to be stored on the order, and
+the proportional figure is the one that makes the total come out right.
+
+### D-062 — An unclassified provider refusal is not retried
+
+**Decision.** `isRetryable` returns true only for named transient codes: a timeout, a
+network error, a rate limit, an unavailable provider. An empty code with a failure
+message is not retryable.
+
+**Why.** Found by a test. The first version treated an empty code as transient, on the
+reasoning that a failure with no classification is probably a network problem. It is
+not: it means the provider refused without saying why, and retrying an unclassified
+refusal risks sending the same refund twice to a provider that is about to accept it.
+
+**Given up.** A genuinely transient failure that the provider forgot to classify needs
+a person to press the button again. That is the correct direction to be wrong in.
+
 ---
 
 ## Pending

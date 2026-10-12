@@ -1,0 +1,78 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <form method="get" action="/refunds" class="row g-2 align-items-end">
+      <div class="col-sm-4">
+        <label class="form-label small" for="q">Search</label>
+        <input type="search" class="form-control form-control-sm" id="q" name="q" value="{{.Query}}"
+               placeholder="Refund number or order">
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label small" for="status">Status</label>
+        <select class="form-select form-select-sm" id="status" name="status">
+          <option value="">Any</option>
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-sm-3">
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" id="mine" name="mine" value="1" {{if .Mine}}checked{{end}}>
+          <label class="form-check-label small" for="mine">Only what I requested</label>
+        </div>
+      </div>
+      <div class="col-sm-2"><button class="btn btn-sm btn-secondary w-100">Filter</button></div>
+    </form>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    {{if .CanRequest}}<a href="/refunds/new" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Request a refund</a>{{end}}
+  </div>
+</div>
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-rotate-left me-1"></i>Refunds</h3>
+    <div class="card-tools small text-body-secondary">
+      {{if .Threshold}}Under {{.Threshold}} a refund is approved automatically.{{else}}Automatic approval is off, so a person decides every refund.{{end}}
+      Nobody may decide their own request.
+    </div>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Refund</th><th>Order</th><th>Amount</th><th>Mode</th><th>Requested by</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td>
+            <a href="/refunds/{{.Record.Id}}" class="font-monospace">{{.RefundNo}}</a>
+            <div class="small text-body-secondary">{{.Created}}</div>
+          </td>
+          <td class="small">{{if .OrderID}}<a href="/orders/{{.OrderID}}" class="font-monospace">{{.OrderNo}}</a>{{end}}</td>
+          <td class="small fw-semibold">{{.Amount}}</td>
+          <td class="small">{{.Mode}}</td>
+          <td class="small">
+            {{.RequestedBy}}
+            {{if .IsOwnRequest}}<span class="badge text-bg-info" title="You cannot decide this one">yours</span>{{end}}
+          </td>
+          <td>
+            {{if eq .Status "pending"}}<span class="badge text-bg-warning">pending</span>
+            {{else if eq .Status "approved"}}<span class="badge text-bg-info">approved</span>
+            {{else if eq .Status "succeeded"}}<span class="badge text-bg-success">refunded</span>
+            {{else if eq .Status "rejected"}}<span class="badge text-bg-secondary">rejected</span>
+            {{else if eq .Status "failed"}}<span class="badge text-bg-danger">failed</span>
+            {{else if eq .Status "processing"}}<span class="badge text-bg-primary">sending</span>
+            {{else}}<span class="badge text-bg-dark">{{.Status}}</span>{{end}}
+            {{if .AutoApproved}}<span class="badge text-bg-light">automatic</span>{{end}}
+            {{if gt .Attempts 1}}<span class="badge text-bg-warning">{{.Attempts}} attempts</span>{{end}}
+          </td>
+          <td class="text-end">
+            <a href="/refunds/{{.Record.Id}}" class="btn btn-sm btn-secondary"><i class="fas fa-eye"></i></a>
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="7" class="text-center text-body-secondary py-4">No refunds match.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

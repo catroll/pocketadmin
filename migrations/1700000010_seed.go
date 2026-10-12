@@ -129,6 +129,8 @@ func seededMenus() []menuSeed {
 			Icon: "fas fa-bullhorn", Sort: 75, Permission: permission.AnnouncementList},
 
 		{Name: "payments", Title: "Payments", Type: "directory", Icon: "fas fa-credit-card", Sort: 55},
+		{Name: "refunds", Title: "Refunds", Type: "menu", Path: "/refunds",
+			Icon: "fas fa-rotate-left", Sort: 60, Permission: permission.RefundList},
 		{Name: "payments.transactions", Title: "Transactions", Parent: "payments", Type: "menu",
 			Path: "/payments", Icon: "far fa-circle",
 			Permission: permission.PaymentTransactionList, Sort: 10},
