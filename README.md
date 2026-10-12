@@ -31,11 +31,12 @@ expensive things to change later.
 
 | Document | Contents |
 | --- | --- |
-| [CAPABILITY-MAP.md](CAPABILITY-MAP.md) | 12 modules, dependency direction, build order, scope boundaries |
+| [CAPABILITY-MAP.md](CAPABILITY-MAP.md) | 20 modules (13 platform, 7 business), dependency direction, build order, scope boundaries |
 | [docs/requirements.md](docs/requirements.md) | Numbered functional requirements, traceability to the feature request, open questions |
-| [docs/database-design.md](docs/database-design.md) | 38 PocketBase collections with fields, indexes and relationships |
+| [docs/database-design.md](docs/database-design.md) | 55 PocketBase collections with fields, indexes and relationships |
 | [docs/design.md](docs/design.md) | Architecture, authentication, authorisation, audit, jobs, integrations, security, phasing, risks |
-| [docs/README.md](docs/README.md) | Index and module-to-document map |
+| [docs/business-design.md](docs/business-design.md) | Pricing pipeline, order state machine, payment idempotency, refund workflow, subscription billing, inventory |
+| [docs/README.md](docs/README.md) | Index, revision summary and module-to-document map |
 
 These are drafts pending review; no implementation work starts until the
 capability map is approved.

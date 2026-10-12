@@ -2,7 +2,8 @@
 
 Version: 0.1 (draft for review)
 Companion documents: [`requirements.md`](requirements.md),
-[`database-design.md`](database-design.md), [`../CAPABILITY-MAP.md`](../CAPABILITY-MAP.md)
+[`database-design.md`](database-design.md),
+[`business-design.md`](business-design.md), [`../CAPABILITY-MAP.md`](../CAPABILITY-MAP.md)
 
 ## 1. Architecture
 
@@ -122,39 +123,72 @@ startup self-check (see § 12.4).
 
 ## 2. Authentication and sessions
 
-### 2.1 Identities
+### 2.1 One account, two surfaces
 
-| Identity | Collection | Surface |
+There is exactly one auth collection — `users`, PocketBase's own. A person has
+one password, one reset flow and one identity. Authority is added by a 1:1
+profile extension:
+
+| Concept | Collection | Grants |
 | --- | --- | --- |
-| Administrator | `admins` | The panel |
-| End user | `users` | Reserved; no shipped UI in this initiative |
+| The account | `users` (auth) | Credentials and shared profile |
+| Employee profile | `employees` (base, 1:1) | Organisation membership; **no** sign-in authority of its own |
+| Admin profile | `admins` (base, 1:1) | Back-office sign-in authority, roles and data scope |
 | Break-glass | `_superusers` | PocketBase dashboard at `/_/` only |
 
 The panel currently signs administrators in through `_superusers`. That is
-replaced by `admins` (open question OQ-4), with `_superusers` retained purely so
-an operator can still reach `/_/` if the RBAC data is damaged.
+replaced by "a `users` account holding an active `admins` profile" (open question
+OQ-4), with `_superusers` retained purely so an operator can still reach `/_/` if
+the RBAC data is damaged.
+
+A middleware guard expresses the rule once:
+
+```go
+// RequireAdminProfile rejects any request whose account has no active admin profile.
+func RequireAdminProfile(app core.App) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        actor := CurrentActor(c)
+        if actor == nil || actor.AdminProfileID == "" || actor.AdminStatus != "active" {
+            c.AbortWithStatus(http.StatusForbidden)
+            return
+        }
+        c.Next()
+    }
+}
+```
+
+Detaching an admin profile (FR-identity-12) sets every `admin`-context session for
+that account to revoked, so access ends on the next request rather than at the
+next token expiry.
 
 ### 2.2 Session flow
 
-1. `POST /login` verifies credentials against `admins`, honouring the lockout
-   and captcha settings.
+1. `POST /login` verifies credentials against `users`, honouring the lockout and
+   captcha settings from the relevant settings surface, then requires an active
+   `admins` profile for the back-office route.
 2. On success a random session id is generated. Its SHA-256 is stored in
-   `admin_sessions`; the raw id lives only in the HttpOnly cookie.
+   `sessions` with `context = admin`; the raw id lives only in the HttpOnly
+   cookie.
 3. The cookie value is the session id, signed by the existing
    `gin-contrib/sessions` cookie store. The signature prevents tampering; the
    database row provides revocation. Both must be valid.
 4. Every request: verify the cookie signature, load the session row, reject if
-   revoked or expired, then slide `lastSeenAt` forward at most once a minute to
-   avoid a write per request.
-5. Sign-out, password reset, ban and explicit revocation set `revokedAt`; the
-   next request with that cookie is rejected.
+   revoked, expired or of the wrong `context`, then slide `lastSeenAt` forward at
+   most once a minute to avoid a write per request.
+5. Sign-out, password reset, ban, profile detach and explicit revocation set
+   `revokedAt`; the next request with that cookie is rejected.
 
 A database-backed session table exists because PocketBase auth tokens are
 stateless JWTs with no server-side revocation. Listing and revoking sessions is a
-stated requirement (FR-identity-5), so the panel owns its own session records.
+stated requirement (FR-identity-14), so the panel owns its session records.
 
-MFA, when enabled, uses PocketBase's OTP/MFA support on the `admins` collection
-before the session row is created.
+Because sessions carry a `context`, "administrator sessions" and "user sessions"
+are two filtered views of one table. Signing in to the back office does not grant
+a product session and vice versa, so a compromise in one surface does not carry
+into the other.
+
+MFA, when enabled, uses PocketBase's OTP/MFA support on `users` before the
+session row is created.
 
 ### 2.3 Impersonation
 
@@ -586,14 +620,21 @@ independently demonstrable and testable.
 
 | Milestone | Modules | Demonstrable outcome |
 | --- | --- | --- |
-| M1 Foundation | `identity`, `rbac` | An administrator signs in against `admins`; roles and permission points exist; the sidebar renders from the menu tree filtered by permissions. |
-| M2 Organisation and audit | `organization`, `audit`, `storage` | Departments, positions and employees are managed; every write is attributable; files can be uploaded and referenced. |
-| M3 Configuration | `settings` | Site, authentication, registration, announcement and feature settings are editable and enforced. |
+| M1 Foundation | `identity`, `rbac` | An account with an admin profile signs in; roles and permission points exist; the sidebar renders from the menu tree filtered by permissions; the employee and admin profiles attach to one account. |
+| M2 Organisation and audit | `organization`, `audit`, `storage` | Departments, positions and employee profiles are managed; every write is attributable; files can be uploaded and referenced. |
+| M3 Configuration | `settings-admin`, `settings-product` | Back-office security policy and product configuration are editable on separate pages, each enforced and each audited separately. |
 | M4 Surfaces | `announcement`, `workbench`, `jobs`, `developer` | Announcements publish on schedule; the workbench shows todos, messages, recent visits and quick links; jobs run and report; the OpenAPI document and API keys work. |
-| M5 Operations | `integrations`, `monitoring` | Mail, SMS, storage and identity providers are configurable and testable; monitoring and system information render. |
+| M5 Operations | `integrations`, `monitoring` | Mail, SMS, storage, identity and payment providers are configurable and testable; monitoring and system information render. |
+| M6 Catalogue | `catalog` | Products with variants, pricing and a stock ledger; categories; media through `storage`. |
+| M7 Entitlements | `membership`, `promotions`, `subscriptions` | Membership tiers and plans; coupons with a deterministic discount evaluator; subscription plans and cycles. |
+| M8 Orders | `orders` | An order can be placed, priced, discounted and driven through its state machine with a full timeline. |
+| M9 Money in | `payments` | A payment intent is collected through a configured provider; callbacks are verified, idempotent and reconcilable. |
+| M10 Money out | `refunds` | A partial refund is requested, approved, executed and reflected in the order's amounts. |
 
-A useful cut line exists after M2: identity, RBAC, organisation and audit alone
-constitute a coherent access-controlled admin system.
+Two useful cut lines exist. After **M5** the platform is a complete
+access-controlled admin system. After **M8** the business domain can take orders
+even if settlement is handled offline via FR-payments-6.
+
 
 ## 17. Risks
 
@@ -607,9 +648,17 @@ constitute a coherent access-controlled admin system.
 | Auto-update of a running binary | Corrupted deployment | Assisted update only, with recorded versions (FR-monitoring-8, -9). |
 | Scope creep from "membership" | Unbounded orders/payments work | OQ-1 gates it; the current design does not presuppose it. |
 | Data scope semantics misunderstood | Users see rows they should not | Scope applied by a shared repository helper with a test per scoped resource. |
+| Non-idempotent payment callback double-credits an order | Financial loss, reconciliation break | Unique `providerTxnId`; the callback is applied only on the transition into `succeeded`; `callbackCount` records replays. See `business-design.md` § 4. |
+| Refund exceeds the amount paid | Financial loss | The cap is checked at approval time inside a transaction, not at request time. |
+| Coupon evaluation diverges between preview and order | Customer disputes, wrong totals | One evaluator, called by both paths; the applied result is snapshotted onto the order so it can be replayed. |
+| Subscription dunning loops forever | Silent revenue loss, provider rate limits | Bounded retry budget; `past_due` then `cancelled`; every attempt is a `subscription_cycles` row. |
+| Stock drifts from reality | Overselling | Every quantity change is a `stock_ledger` row; stock is never written directly. |
+| Money stored as floating point | Rounding errors compounding | Integer minor units everywhere, asserted by a schema test. |
+| Business tables hard-deleted | Audit and accounting gaps | Money-bearing collections are reversed by compensating records, never deleted. |
 
 ## 18. Open questions
 
-Tracked in `requirements.md` § 5. The three that most affect this design are
-OQ-1 (membership scope), OQ-3 (whether row-level data scope is wanted at all)
-and OQ-7 (generated vs hand-written OpenAPI).
+Tracked in `requirements.md` § 5. The four that most affect this design are
+OQ-2 (which settings surface is which), OQ-3 (whether row-level data scope is
+wanted at all), OQ-7 (generated vs hand-written OpenAPI) and OQ-9 (whether
+physical-goods fulfilment is in scope).
