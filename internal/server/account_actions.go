@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/audit"
 	"pocketadmin/internal/permission"
 )
 
@@ -95,10 +96,10 @@ func (s *Server) handleAccountStatus(c *gin.Context) {
 	}
 
 	s.audit(c, auditEntry{
-		Action:     auditStatusChange,
-		Resource:   "account",
-		ResourceID: user.Id,
-		Risk:       "medium",
+		Event:      audit.EventAccountStatusChanged,
+		TargetType: "account",
+		TargetID:   user.Id,
+		Severity:   audit.SeverityWarning,
 		Summary:    fmt.Sprintf("Account status changed from %s to %s.", previous, status),
 		Detail:     map[string]any{"from": previous, "to": status},
 		SubjectID:  user.Id, SubjectEmail: user.Email(),
@@ -148,10 +149,10 @@ func (s *Server) handleAccountPasswordReset(c *gin.Context) {
 	}
 
 	s.audit(c, auditEntry{
-		Action:     auditPasswordReset,
-		Resource:   "account",
-		ResourceID: user.Id,
-		Risk:       "medium",
+		Event:      audit.EventPasswordReset,
+		TargetType: "account",
+		TargetID:   user.Id,
+		Severity:   audit.SeverityWarning,
 		Summary:    "Password set by an administrator; every session revoked.",
 		SubjectID:  user.Id, SubjectEmail: user.Email(),
 	})
@@ -196,10 +197,10 @@ func (s *Server) handleAccountSoftDelete(c *gin.Context) {
 	s.resolver.Invalidate(user.Id)
 
 	s.audit(c, auditEntry{
-		Action:     auditSoftDelete,
-		Resource:   "account",
-		ResourceID: user.Id,
-		Risk:       "high",
+		Event:      audit.EventAccountDeleted,
+		TargetType: "account",
+		TargetID:   user.Id,
+		Severity:   audit.SeverityCritical,
 		Summary:    "Account marked deleted; sessions revoked.",
 		SubjectID:  user.Id, SubjectEmail: user.Email(),
 	})
@@ -223,10 +224,10 @@ func (s *Server) handleAccountRestore(c *gin.Context) {
 	}
 
 	s.audit(c, auditEntry{
-		Action:     auditRestore,
-		Resource:   "account",
-		ResourceID: user.Id,
-		Risk:       "medium",
+		Event:      audit.EventAccountRestored,
+		TargetType: "account",
+		TargetID:   user.Id,
+		Severity:   audit.SeverityWarning,
 		Summary:    "Account restored.",
 		SubjectID:  user.Id, SubjectEmail: user.Email(),
 	})
@@ -248,10 +249,10 @@ func (s *Server) handleAccountRevokeAllSessions(c *gin.Context) {
 	}
 
 	s.audit(c, auditEntry{
-		Action:     auditSessionRevokeAll,
-		Resource:   "account",
-		ResourceID: user.Id,
-		Risk:       "medium",
+		Event:      audit.EventSessionRevoked,
+		TargetType: "account",
+		TargetID:   user.Id,
+		Severity:   audit.SeverityWarning,
 		Summary:    "Every session for the account was revoked.",
 		SubjectID:  user.Id, SubjectEmail: user.Email(),
 	})

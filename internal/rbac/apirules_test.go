@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/pocketbase/pocketbase/core"
+
+	"pocketadmin/internal/audit"
 )
 
 // This file enforces the other half of the authorisation model.
@@ -295,4 +297,46 @@ func TestEveryOpenCollectionHasValidRules(t *testing.T) {
 	}
 
 	t.Logf("validated %d open API rules", checked)
+}
+
+// TestAuditEventCatalogueMatchesTheSchema is the drift guard for the audit
+// vocabulary.
+//
+// The event column is a closed select, so an event that is declared in Go and
+// absent from the stored enum is rejected at write time -- the action happens and
+// the record of it does not exist. That is the failure mode that silently lost
+// the account-lifecycle audit trail, so the two are asserted to agree in both
+// directions rather than trusted to.
+func TestAuditEventCatalogueMatchesTheSchema(t *testing.T) {
+	app := newTestApp(t)
+
+	col, err := app.FindCollectionByNameOrId("security_audit_logs")
+	if err != nil || col == nil {
+		t.Fatal("the security audit log collection is missing")
+	}
+
+	fld, ok := col.Fields.GetByName("event").(*core.SelectField)
+	if !ok {
+		t.Fatal("the event field is missing or is not a select")
+	}
+
+	stored := make(map[string]bool, len(fld.Values))
+	for _, v := range fld.Values {
+		stored[v] = true
+	}
+
+	declared := make(map[string]bool, len(audit.AllEvents()))
+	for _, e := range audit.AllEvents() {
+		declared[string(e)] = true
+		if !stored[string(e)] {
+			t.Errorf("the event %q is declared in Go but is not in the stored enum, "+
+				"so writing it would be rejected", e)
+		}
+	}
+
+	for _, v := range fld.Values {
+		if !declared[v] {
+			t.Errorf("the stored enum has %q, which is not declared in Go", v)
+		}
+	}
 }

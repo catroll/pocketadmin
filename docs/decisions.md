@@ -261,6 +261,62 @@ of that kind is a correctness bug even when it is not an escape.
 
 **Given up.** Tolerance of caller-supplied keys. There are none.
 
+### D-016 — The sign-in history moves into the audit namespace
+
+**Decision.** `identity:loginlog:list` is retired; the sign-in history is gated by
+`audit:login:list`. The standalone list screen moves from `/identity/login-logs`
+to `/audit/logins`. Identity keeps its per-account history view, which is a
+different screen over the same rows.
+
+**Why.** `database-design.md` § 3.9 places `login_logs` in the audit module, and
+the module that owns a dataset should own the permission over it. Two permissions
+over one dataset is the confusion this avoids: a role could see the list and not
+the export, or vice versa, for no reason anyone could explain.
+
+The migration backfills the new permission onto roles that held the old one, so
+existing roles do not silently lose access to a screen they could see a moment
+earlier. That is the kind of change that gets noticed in production rather than in
+review.
+
+**Given up.** A permission rename that touches an already-verified module.
+
+### D-017 — Operation logging is middleware, not a call in each handler
+
+**Decision.** Every state-changing panel request is recorded by one middleware.
+Reads are not recorded.
+
+**Why.** A handler that forgets to log is a gap nobody notices, and the value of
+an operation log is that it is complete. Reads change nothing, and recording
+every page view would bury the entries that matter.
+
+Two consequences are handled rather than discovered later. The middleware runs
+first in the chain, because the CSRF middleware parses the form and consumes the
+body -- the first version ran after it and recorded no parameters at all. And
+because it reads the body to redact it, it reads a bounded prefix and restores
+the stream, so logging cannot become a way to exhaust memory or break a handler.
+
+**Given up.** Per-handler control over what is recorded for a specific route. If
+a route needs a richer entry, it writes a security audit event in addition.
+
+### D-018 — The redactor parses a request body by its encoding
+
+**Decision.** A urlencoded body is decoded into fields before redaction; a
+multipart body's non-file fields are collected after the handler has parsed it and
+its files are recorded by name only; JSON is walked directly.
+
+**Why.** Found by driving it. The first implementation stored a urlencoded body as
+one string, which put the field names out of the redactor's reach -- and a
+urlencoded body is the encoding a browser form actually uses, so the secrets most
+likely to appear were exactly the ones it missed. `apiKey=sk-live-xyz` reached the
+log in the clear.
+
+The general lesson is that a redactor is only as good as its understanding of the
+shapes a body arrives in, and the shape it does not understand is the one that
+leaks. Each encoding now has a test.
+
+**Given up.** Nothing. A JSON body is still stored as text when it is not
+form-encoded.
+
 ---
 
 ## Pending

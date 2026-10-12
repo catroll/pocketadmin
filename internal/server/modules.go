@@ -9,6 +9,7 @@ import "github.com/gin-gonic/gin"
 func (s *Server) registerModuleRoutes(panel *gin.RouterGroup) {
 	s.registerIdentityRoutes(panel)
 	s.registerStorageRoutes(panel)
+	s.registerAuditRoutes(panel)
 	s.registerOrganizationRoutes(panel)
 	s.registerRBACRoutes(panel)
 }

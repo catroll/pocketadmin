@@ -31,17 +31,6 @@ func identityResources() []resource {
 			BeforeSave: normaliseAccountPhone,
 		},
 		{
-			// The sign-in history is append-only through the application, so the
-			// screen is read-only.
-			Collection: "login_logs",
-			BasePath:   "/identity/login-logs",
-			Title:      "Sign-in history",
-			Singular:   "log entry",
-			Active:     "identity.accounts",
-			ListPerm:   permission.IdentityLoginLogList,
-			Order:      "-created",
-		},
-		{
 			Collection: "sessions",
 			BasePath:   "/identity/sessions",
 			Title:      "Sessions",

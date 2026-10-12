@@ -17,6 +17,7 @@ const (
 	ModuleOrganization = "organization"
 	ModuleRBAC         = "rbac"
 	ModuleStorage      = "storage"
+	ModuleAudit        = "audit"
 )
 
 // Point is a single permission point.
@@ -55,8 +56,6 @@ const (
 
 	IdentitySessionList   = "identity:session:list"
 	IdentitySessionRevoke = "identity:session:revoke"
-
-	IdentityLoginLogList = "identity:loginlog:list"
 
 	IdentityPreferenceManage = "identity:preference:manage"
 
@@ -118,6 +117,16 @@ const (
 	StorageAttachmentList   = "storage:attachment:list"
 	StorageAttachmentManage = "storage:attachment:manage"
 
+	// Audit owns the four logs. The sign-in history lives here rather than under
+	// identity because it is one of the audit surfaces; identity reads it when
+	// showing an account's history, which is a different screen over the same
+	// rows, not a different permission.
+	AuditOperationList = "audit:operation:list"
+	AuditLoginList     = "audit:login:list"
+	AuditSecurityList  = "audit:security:list"
+	AuditExceptionList = "audit:exception:list"
+	AuditExport        = "audit:log:export"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -138,7 +147,6 @@ func All() []Point {
 		{IdentityProfileAttach, "Attach or detach a profile", ModuleIdentity, "profile", "update", "button"},
 		{IdentitySessionList, "List sessions", ModuleIdentity, "session", "list", "api"},
 		{IdentitySessionRevoke, "Revoke a session", ModuleIdentity, "session", "revoke", "button"},
-		{IdentityLoginLogList, "View sign-in history", ModuleIdentity, "loginlog", "list", "api"},
 		{IdentityPreferenceManage, "Manage preferences", ModuleIdentity, "preference", "manage", "api"},
 		{IdentityImpersonate, "Impersonate an account", ModuleIdentity, "account", "execute", "button"},
 
@@ -184,6 +192,12 @@ func All() []Point {
 		{StorageFileDownload, "Download a file", ModuleStorage, "file", "download", "api"},
 		{StorageAttachmentList, "List an attachment's references", ModuleStorage, "attachment", "list", "api"},
 		{StorageAttachmentManage, "Attach or detach a file", ModuleStorage, "attachment", "manage", "button"},
+
+		{AuditOperationList, "View the operation log", ModuleAudit, "operation", "list", "menu"},
+		{AuditLoginList, "View the sign-in history", ModuleAudit, "login", "list", "menu"},
+		{AuditSecurityList, "View the security audit log", ModuleAudit, "security", "list", "menu"},
+		{AuditExceptionList, "View the exception log", ModuleAudit, "exception", "list", "menu"},
+		{AuditExport, "Export a log as CSV", ModuleAudit, "log", "export", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

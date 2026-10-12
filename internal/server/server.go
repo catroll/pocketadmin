@@ -101,7 +101,12 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 	r := gin.New()
 	r.MaxMultipartMemory = 16 << 20
 	r.HTMLRender = htmlRenderer{templates: templates}
-	r.Use(logging.RequestLogger(logger), gin.Recovery())
+	// Order matters here. The request id comes first so every later middleware and
+	// every log write can see it. The recovery replaces gin.Recovery: gin's own
+	// prints to stderr and returns 500, which keeps the server up but loses the
+	// most important thing an operator could be told, so a panic is recorded
+	// before the request fails.
+	r.Use(requestID(), s.exceptionRecovery(), logging.RequestLogger(logger))
 
 	store := cookie.NewStore(cfg.SessionKey)
 	store.Options(sessions.Options{
@@ -140,7 +145,10 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 	// Group middleware runs between the two nesting levels, so limitBody and
 	// csrf wrap requireAuth exactly once per request.
 	panel := r.Group("/")
-	panel.Use(limitBody(maxUploadBody), s.csrf(), s.requireAuth(), s.blockWritesWhileImpersonating())
+	// operationLog runs first so it sees the raw request body. The CSRF
+	// middleware parses the form, which consumes the body, and a log that
+	// records no parameters is a log that cannot say what a request asked for.
+	panel.Use(s.operationLog(), limitBody(maxUploadBody), s.csrf(), s.requireAuth(), s.blockWritesWhileImpersonating())
 	{
 		s.safe(panel, http.MethodGet, "/", func(c *gin.Context) {
 			c.Redirect(http.StatusSeeOther, "/dashboard")

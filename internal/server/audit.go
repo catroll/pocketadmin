@@ -5,53 +5,37 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
+
+	"pocketadmin/internal/audit"
 )
 
-// Audit actions recorded by the identity module.
-const (
-	auditImpersonationStart = "impersonation.start"
-	auditImpersonationStop  = "impersonation.stop"
-	auditStatusChange       = "account.status_change"
-	auditPasswordReset      = "account.password_reset"
-	auditPasswordChange     = "account.password_change"
-	auditMFAEnrolled        = "mfa.enrolled"
-	auditMFADisabled        = "mfa.disabled"
-	auditRecoveryCodeUsed   = "mfa.recovery_code_used"
-	auditRecoveryRegenerate = "mfa.recovery_codes_regenerated"
-	auditSoftDelete         = "account.soft_delete"
-	auditRestore            = "account.restore"
-	auditSessionRevoke      = "session.revoke"
-	auditSessionRevokeAll   = "session.revoke_all"
-	auditProfileAttach      = "profile.attach"
-	auditProfileDetach      = "profile.detach"
-	auditRoleAssign         = "role.assign"
-
-	auditModuleIdentity = "identity"
-)
+// defaultAuditModule is recorded when an entry does not name one.
+const defaultAuditModule = "identity"
 
 // auditEntry is one security-relevant event.
 type auditEntry struct {
-	// Action is a dotted verb such as "impersonation.start".
-	Action string
+	// Event is a declared member of the audit catalogue. It is a typed constant
+	// so an undeclared name does not compile: the collection stores a closed
+	// select, and a value outside it is rejected at write time, which is how the
+	// account-lifecycle trail was silently lost before it was typed.
+	Event audit.Event
 
-	// Module owns the action.
+	// Module owns the action, for grouping and filtering.
 	Module string
 
-	// Resource and ResourceID name what was acted on.
-	Resource   string
-	ResourceID string
+	// TargetType and TargetID name what was acted on.
+	TargetType string
+	TargetID   string
 
-	// Result is success, failure or denied.
-	Result string
-
-	// Risk ranks the entry for review: low, medium or high.
-	Risk string
+	// Severity ranks the entry for review. Empty means info.
+	Severity audit.Severity
 
 	// Summary is a human-readable line; Detail carries structured context.
 	Summary string
 	Detail  map[string]any
 
-	// SubjectID is the account acted on, when it differs from the actor.
+	// SubjectID and SubjectEmail name the account acted on, when that differs
+	// from the actor.
 	SubjectID    string
 	SubjectEmail string
 }
@@ -59,60 +43,79 @@ type auditEntry struct {
 // audit writes a security event.
 //
 // Unlike a sign-in attempt, an audit event that cannot be written is a real
-// problem: the action has already happened and the trail of it is missing. A
-// failure is logged at error level so it cannot pass quietly, which is how the
-// missing-value bug in the sign-in history went unnoticed.
+// problem: the action has already happened and the record of it is missing. A
+// failure is logged at error level and names the event, so it cannot pass
+// quietly -- which is exactly how the missing-value bug in the sign-in history
+// went unnoticed.
 func (s *Server) audit(c *gin.Context, entry auditEntry) {
-	if entry.Module == "" {
-		entry.Module = auditModuleIdentity
-	}
-	if entry.Result == "" {
-		entry.Result = "success"
-	}
-	if entry.Risk == "" {
-		entry.Risk = "low"
+	if !audit.Valid(entry.Event) {
+		// A programming error rather than a runtime one, and one that would
+		// otherwise be swallowed as a rejected write.
+		slog.Error("refusing to record an undeclared audit event", "event", entry.Event)
+		return
 	}
 
-	col, err := s.app.FindCollectionByNameOrId("audit_logs")
+	if entry.Module == "" {
+		entry.Module = defaultAuditModule
+	}
+	if entry.Severity == "" {
+		entry.Severity = audit.SeverityInfo
+	}
+
+	col, err := s.app.FindCollectionByNameOrId("security_audit_logs")
 	if err != nil {
-		slog.Error("the audit log collection is missing; a security event was not recorded",
-			"action", entry.Action, "error", err)
+		slog.Error("the security audit log collection is missing; a security event was not recorded",
+			"event", entry.Event, "error", err)
 		return
 	}
 
 	rec := core.NewRecord(col)
-
-	actor := s.actor(c)
-	if actor != nil && !actor.IsSuperuser {
-		rec.Set("user", actor.UserID)
-		rec.Set("actorEmail", actor.Email)
-	} else if actor != nil {
-		// A break-glass superuser has no `users` row, so only the address is known.
-		rec.Set("actorEmail", actor.Email)
-	}
-
-	if entry.SubjectID != "" {
-		rec.Set("identifier", entry.SubjectEmail)
-	}
-
-	rec.Set("context", sessionContextAdmin)
+	rec.Set("event", string(entry.Event))
+	rec.Set("severity", string(entry.Severity))
 	rec.Set("module", entry.Module)
-	rec.Set("action", entry.Action)
-	rec.Set("resource", entry.Resource)
-	rec.Set("resourceId", entry.ResourceID)
-	rec.Set("result", entry.Result)
-	rec.Set("riskLevel", entry.Risk)
+	rec.Set("targetType", entry.TargetType)
+	rec.Set("targetId", entry.TargetID)
 	rec.Set("summary", truncate(entry.Summary, 500))
+
+	actorType, actorID, actorEmail := s.auditActor(c)
+	rec.Set("actorType", string(actorType))
+	if actorID != "" {
+		rec.Set("actor", actorID)
+	}
+	rec.Set("actorEmail", actorEmail)
+
 	rec.Set("ip", c.ClientIP())
 	rec.Set("userAgent", truncate(c.Request.UserAgent(), sessionUserAgentMaxLen))
+	rec.Set("requestId", requestIDFrom(c))
 
+	// Structured detail can carry anything a caller passes, so it goes through
+	// the redactor before it is stored: a secret that reaches a log has leaked.
 	if len(entry.Detail) > 0 {
-		rec.Set("detail", entry.Detail)
+		rec.Set("detail", audit.Redact(entry.Detail))
 	}
 
-	if err := s.app.Save(rec); err != nil {
+	if err := app_save(s, rec); err != nil {
 		slog.Error("could not write an audit entry; a security event was not recorded",
-			"action", entry.Action, "error", err)
+			"event", entry.Event, "error", err)
+	}
+}
+
+// app_save is a seam so the write path has one place to change.
+func app_save(s *Server, rec *core.Record) error { return s.app.Save(rec) }
+
+// auditActor describes who is acting.
+//
+// A break-glass superuser has no `users` row, so it is recorded as a system actor
+// with its address rather than losing the entry or attributing it to nobody.
+func (s *Server) auditActor(c *gin.Context) (audit.ActorType, string, string) {
+	actor := s.actor(c)
+	switch {
+	case actor == nil:
+		return audit.ActorSystem, "", ""
+	case actor.IsSuperuser:
+		return audit.ActorSystem, "", actor.Email
+	default:
+		return audit.ActorUser, actor.UserID, actor.Email
 	}
 }
 

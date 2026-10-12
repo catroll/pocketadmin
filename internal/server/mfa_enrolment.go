@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/audit"
 	"pocketadmin/internal/identity"
 	"pocketadmin/internal/rbac"
 )
@@ -100,10 +101,10 @@ func (s *Server) handleMFAEnable(c *gin.Context) {
 	}
 
 	s.audit(c, auditEntry{
-		Action:     auditMFAEnrolled,
-		Resource:   "account",
-		ResourceID: rec.Id,
-		Risk:       "medium",
+		Event:      audit.EventMFAEnrolled,
+		TargetType: "account",
+		TargetID:   rec.Id,
+		Severity:   audit.SeverityWarning,
 		Summary:    "Two-factor authentication enabled with an authenticator app.",
 		SubjectID:  rec.Id, SubjectEmail: rec.Email(),
 	})
@@ -161,10 +162,10 @@ func (s *Server) handleMFADisable(c *gin.Context) {
 	}
 
 	s.audit(c, auditEntry{
-		Action:     auditMFADisabled,
-		Resource:   "account",
-		ResourceID: rec.Id,
-		Risk:       "high",
+		Event:      audit.EventMFADisabled,
+		TargetType: "account",
+		TargetID:   rec.Id,
+		Severity:   audit.SeverityCritical,
 		Summary:    "Two-factor authentication disabled.",
 		SubjectID:  rec.Id, SubjectEmail: rec.Email(),
 	})
@@ -223,10 +224,10 @@ func (s *Server) handleMFARegenerate(c *gin.Context) {
 	}
 
 	s.audit(c, auditEntry{
-		Action:     auditRecoveryRegenerate,
-		Resource:   "account",
-		ResourceID: rec.Id,
-		Risk:       "medium",
+		Event:      audit.EventRecoveryRegenerated,
+		TargetType: "account",
+		TargetID:   rec.Id,
+		Severity:   audit.SeverityWarning,
 		Summary:    "Recovery codes regenerated; the previous set no longer works.",
 		SubjectID:  rec.Id, SubjectEmail: rec.Email(),
 	})

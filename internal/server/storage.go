@@ -233,9 +233,9 @@ func (s *Server) handleUpload(c *gin.Context) {
 		}
 
 		s.audit(c, auditEntry{
-			Action:     "storage.file_upload",
-			Resource:   "file",
-			ResourceID: rec.Id,
+			Event:      "storage.file_upload",
+			TargetType: "file",
+			TargetID:   rec.Id,
 			Summary:    "Uploaded " + rec.GetString("name") + " (" + inspected.MimeType + ")",
 			Detail: map[string]any{
 				"size": inspected.Size, "checksum": inspected.Checksum, "deduplicated": exists,

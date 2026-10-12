@@ -94,6 +94,20 @@ func seededMenus() []menuSeed {
 			Path: "/storage/folders", Icon: "far fa-circle",
 			Permission: permission.StorageFolderList, Sort: 20},
 
+		{Name: "audit", Title: "Audit", Type: "directory", Icon: "fas fa-clipboard-list", Sort: 60},
+		{Name: "audit.operations", Title: "Operations", Parent: "audit", Type: "menu",
+			Path: "/audit/operations", Icon: "far fa-circle",
+			Permission: permission.AuditOperationList, Sort: 10},
+		{Name: "audit.security", Title: "Security events", Parent: "audit", Type: "menu",
+			Path: "/audit/security", Icon: "far fa-circle",
+			Permission: permission.AuditSecurityList, Sort: 20},
+		{Name: "audit.logins", Title: "Sign-ins", Parent: "audit", Type: "menu",
+			Path: "/audit/logins", Icon: "far fa-circle",
+			Permission: permission.AuditLoginList, Sort: 30},
+		{Name: "audit.exceptions", Title: "Exceptions", Parent: "audit", Type: "menu",
+			Path: "/audit/exceptions", Icon: "far fa-circle",
+			Permission: permission.AuditExceptionList, Sort: 40},
+
 		// The raw data browser is not delegated to roles, so it is flagged rather
 		// than permission-gated. Without a code an unflagged node would be visible
 		// to everyone.

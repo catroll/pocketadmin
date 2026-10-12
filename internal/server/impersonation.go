@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/audit"
 	"pocketadmin/internal/permission"
 	"pocketadmin/internal/rbac"
 )
@@ -118,7 +119,7 @@ func (s *Server) handleImpersonateStart(c *gin.Context) {
 		return
 	}
 
-	s.logImpersonation(c, target, operator.Email, auditImpersonationStart, "Impersonation started")
+	s.logImpersonation(c, target, operator.Email, audit.EventImpersonationStarted, "Impersonation started")
 	s.setFlash(c, "warning", "You are viewing the panel as "+target.Email()+
 		". Writes are blocked; use the banner to stop.")
 
@@ -148,7 +149,7 @@ func (s *Server) handleImpersonateStop(c *gin.Context) {
 
 	target, err := s.app.FindRecordById(rbac.CollectionUsers, s.actor(c).UserID)
 	if err == nil && target != nil {
-		s.logImpersonation(c, target, operatorEmail, auditImpersonationStop, "Impersonation stopped")
+		s.logImpersonation(c, target, operatorEmail, audit.EventImpersonationStopped, "Impersonation stopped")
 	}
 
 	// Restore the operator's identity exactly as it was.
@@ -220,12 +221,12 @@ const impersonationTTL = 30 * time.Minute
 // Impersonation is recorded in the sign-in history rather than a separate log,
 // because that is where an investigator will look and because it already carries
 // the actor, the target, the address and the device.
-func (s *Server) logImpersonation(c *gin.Context, target *core.Record, operatorEmail, action, summary string) {
+func (s *Server) logImpersonation(c *gin.Context, target *core.Record, operatorEmail string, event audit.Event, summary string) {
 	s.audit(c, auditEntry{
-		Action:     action,
-		Resource:   "account",
-		ResourceID: target.Id,
-		Risk:       "high",
+		Event:      event,
+		TargetType: "account",
+		TargetID:   target.Id,
+		Severity:   audit.SeverityCritical,
 		Summary:    summary + " by " + operatorEmail + ".",
 		Detail:     map[string]any{"operator": operatorEmail, "target": target.Email()},
 		SubjectID:  target.Id, SubjectEmail: target.Email(),

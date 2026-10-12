@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/audit"
 	"pocketadmin/internal/identity"
 	"pocketadmin/internal/rbac"
 )
@@ -199,10 +200,10 @@ func (s *Server) verifySecondFactor(c *gin.Context, rec *core.Record, code strin
 	}
 
 	s.audit(c, auditEntry{
-		Action:     auditRecoveryCodeUsed,
-		Resource:   "account",
-		ResourceID: rec.Id,
-		Risk:       "high",
+		Event:      audit.EventRecoveryCodeUsed,
+		TargetType: "account",
+		TargetID:   rec.Id,
+		Severity:   audit.SeverityCritical,
 		Summary:    "A recovery code was used to complete a sign-in.",
 		SubjectID:  rec.Id, SubjectEmail: rec.Email(),
 	})

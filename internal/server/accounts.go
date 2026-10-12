@@ -10,6 +10,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/types"
 
+	"pocketadmin/internal/audit"
 	"pocketadmin/internal/permission"
 	"pocketadmin/internal/rbac"
 )
@@ -123,7 +124,7 @@ func (s *Server) handleAccountDetail(c *gin.Context) {
 		CanAssignRoles:    actor.Can(permission.RBACRoleManage),
 		CanViewSessions:   actor.Can(permission.IdentitySessionList),
 		CanRevokeSessions: actor.Can(permission.IdentitySessionRevoke),
-		CanViewLogins:     actor.Can(permission.IdentityLoginLogList),
+		CanViewLogins:     actor.Can(permission.AuditLoginList),
 	}
 
 	if lock.Locked {
@@ -183,9 +184,9 @@ func (s *Server) handleEmployeeProfileSave(c *gin.Context) {
 	s.resolver.Invalidate(user.Id)
 
 	s.audit(c, auditEntry{
-		Action:     auditProfileAttach,
-		Resource:   "employee_profile",
-		ResourceID: rec.Id,
+		Event:      audit.EventProfileAttached,
+		TargetType: "employee_profile",
+		TargetID:   rec.Id,
 		Summary:    "Employee profile saved.",
 		SubjectID:  user.Id, SubjectEmail: user.Email(),
 	})
@@ -217,10 +218,10 @@ func (s *Server) handleEmployeeProfileDetach(c *gin.Context) {
 		s.setFlash(c, "danger", "Could not detach the employee profile: "+err.Error())
 	} else {
 		s.audit(c, auditEntry{
-			Action:     auditProfileDetach,
-			Resource:   "employee_profile",
-			ResourceID: rec.Id,
-			Risk:       "medium",
+			Event:      audit.EventProfileDetached,
+			TargetType: "employee_profile",
+			TargetID:   rec.Id,
+			Severity:   audit.SeverityWarning,
 			Summary:    "Employee profile detached.",
 			SubjectID:  user.Id, SubjectEmail: user.Email(),
 		})
@@ -341,10 +342,10 @@ func (s *Server) handleAccountRolesSave(c *gin.Context) {
 
 	s.resolver.Invalidate(user.Id)
 	s.audit(c, auditEntry{
-		Action:     auditRoleAssign,
-		Resource:   "admin_profile",
-		ResourceID: rec.Id,
-		Risk:       "high",
+		Event:      audit.EventRoleChanged,
+		TargetType: "admin_profile",
+		TargetID:   rec.Id,
+		Severity:   audit.SeverityCritical,
 		Summary:    fmt.Sprintf("Roles updated to %d role(s).", len(roles)),
 		Detail:     map[string]any{"roles": roles},
 		SubjectID:  user.Id, SubjectEmail: user.Email(),
@@ -372,10 +373,10 @@ func (s *Server) handleSessionRevoke(c *gin.Context) {
 	} else {
 		if userID := rec.GetString("user"); userID != "" {
 			s.audit(c, auditEntry{
-				Action:     auditSessionRevoke,
-				Resource:   "session",
-				ResourceID: rec.Id,
-				Risk:       "medium",
+				Event:      audit.EventSessionRevoked,
+				TargetType: "session",
+				TargetID:   rec.Id,
+				Severity:   audit.SeverityWarning,
 				Summary:    "Session revoked (" + reason + ").",
 				SubjectID:  userID,
 			})

@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/audit"
 	"pocketadmin/internal/rbac"
 )
 
@@ -91,8 +92,8 @@ func (s *Server) handlePasswordChange(c *gin.Context) {
 
 	if !rec.ValidatePassword(current) {
 		s.audit(c, auditEntry{
-			Action: auditPasswordChange, Resource: "account", ResourceID: rec.Id,
-			Result: "failure", Risk: "medium",
+			Event: audit.EventPasswordChanged, TargetType: "account", TargetID: rec.Id,
+			Severity:  audit.SeverityWarning,
 			Summary:   "Password change refused: the current password was wrong.",
 			SubjectID: rec.Id, SubjectEmail: rec.Email(),
 		})
@@ -132,8 +133,8 @@ func (s *Server) handlePasswordChange(c *gin.Context) {
 	}
 
 	s.audit(c, auditEntry{
-		Action: auditPasswordChange, Resource: "account", ResourceID: rec.Id,
-		Risk:      "medium",
+		Event: audit.EventPasswordChanged, TargetType: "account", TargetID: rec.Id,
+		Severity:  audit.SeverityWarning,
 		Summary:   "Password changed by the account holder; other sessions revoked.",
 		SubjectID: rec.Id, SubjectEmail: rec.Email(),
 	})
