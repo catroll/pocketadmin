@@ -20,6 +20,7 @@ Unknown keys are rejected at startup so a typo fails loudly.
 
 ```yaml
 addr: 127.0.0.1:8090      # HTTP listen address
+appName: PocketAdmin      # brand shown in the panel
 dataDir: ./pb_data        # PocketBase data directory
 perPage: 30               # default records per page
 secureCookie: false       # mark the session cookie HTTPS-only
@@ -33,12 +34,22 @@ log:
 | --- | --- | --- | --- |
 | `-config` | `POCKETADMIN_CONFIG` | — | `pocketadmin.yaml` |
 | `-addr` | `POCKETADMIN_ADDR` | `addr` | `127.0.0.1:8090` |
+| `-app-name` | `POCKETADMIN_APP_NAME` | `appName` | `PocketAdmin` |
 | `-dir` | `POCKETADMIN_DATA_DIR` | `dataDir` | `./pb_data` |
 | `-per-page` | `POCKETADMIN_PER_PAGE` | `perPage` | `30` |
 | `-secure-cookie` | `POCKETADMIN_SECURE_COOKIE` | `secureCookie` | `false` |
 | `-dev` | `POCKETADMIN_DEV` | `dev` | `false` |
 | `-log-level` | `POCKETADMIN_LOG_LEVEL` | `log.level` | `info` |
 | `-log-format` | `POCKETADMIN_LOG_FORMAT` | `log.format` | `json` |
+
+### Brand name
+
+`appName` is resolved from this configuration and is **not** read from
+PocketBase's own `Meta.AppName` setting. That setting lives in the git-ignored
+data directory, so a fresh deployment would show PocketBase's factory default
+(`"Acme"`) and the brand could not be version-controlled or differ per
+environment. Renaming the application in the PocketBase dashboard affects the
+PocketBase dashboard only.
 
 The session signing key is **never** a hard-coded default: set
 `POCKETADMIN_SESSION_KEY` (at least 32 characters), or let the app generate one

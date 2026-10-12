@@ -33,6 +33,12 @@ const (
 	defaultDataDir = "./pb_data"
 	defaultPerPage = 30
 
+	// DefaultAppName brands the panel. It is deliberately owned by this
+	// configuration rather than read from PocketBase's Meta.AppName setting:
+	// that setting is persisted in the (git-ignored) data directory, so a fresh
+	// deployment would otherwise show PocketBase's factory default, "Acme".
+	DefaultAppName = "PocketAdmin"
+
 	// DefaultLogLevel and DefaultLogFormat keep stdout machine readable unless
 	// the operator asks otherwise.
 	DefaultLogLevel  = "info"
@@ -40,6 +46,7 @@ const (
 
 	configEnv       = "POCKETADMIN_CONFIG"
 	addrEnv         = "POCKETADMIN_ADDR"
+	appNameEnv      = "POCKETADMIN_APP_NAME"
 	dataDirEnv      = "POCKETADMIN_DATA_DIR"
 	sessionKeyEnv   = "POCKETADMIN_SESSION_KEY"
 	secureCookieEnv = "POCKETADMIN_SECURE_COOKIE"
@@ -70,6 +77,10 @@ type LogConfig struct {
 type Config struct {
 	// Addr is the TCP address the HTTP server listens on.
 	Addr string
+
+	// AppName is the brand shown in the sidebar, page titles, the login page
+	// and the footer.
+	AppName string
 
 	// DataDir is the PocketBase data directory (SQLite database, uploaded
 	// files and the generated session key).
@@ -108,6 +119,7 @@ type Config struct {
 // keys it actually sets.
 type fileConfig struct {
 	Addr         *string `yaml:"addr"`
+	AppName      *string `yaml:"appName"`
 	DataDir      *string `yaml:"dataDir"`
 	PerPage      *int    `yaml:"perPage"`
 	SecureCookie *bool   `yaml:"secureCookie"`
@@ -128,6 +140,7 @@ func Load(args []string) (*Config, error) {
 	var (
 		configPath   = envOr(configEnv, DefaultConfigPath)
 		addr         string
+		appName      string
 		dataDir      string
 		perPage      int
 		secureCookie bool
@@ -138,6 +151,7 @@ func Load(args []string) (*Config, error) {
 
 	fs.StringVar(&configPath, "config", configPath, "path to the YAML configuration file")
 	fs.StringVar(&addr, "addr", "", "HTTP listen address")
+	fs.StringVar(&appName, "app-name", "", "brand name shown in the panel")
 	fs.StringVar(&dataDir, "dir", "", "PocketBase data directory")
 	fs.IntVar(&perPage, "per-page", 0, "default number of records per page")
 	fs.BoolVar(&secureCookie, "secure-cookie", false, "mark the session cookie as HTTPS-only")
@@ -154,6 +168,7 @@ func Load(args []string) (*Config, error) {
 
 	cfg := &Config{
 		Addr:    defaultAddr,
+		AppName: DefaultAppName,
 		DataDir: defaultDataDir,
 		PerPage: defaultPerPage,
 		Log:     LogConfig{Level: DefaultLogLevel, Format: DefaultLogFormat},
@@ -167,6 +182,9 @@ func Load(args []string) (*Config, error) {
 
 	if explicit["addr"] {
 		cfg.Addr = addr
+	}
+	if explicit["app-name"] {
+		cfg.AppName = appName
 	}
 	if explicit["dir"] {
 		cfg.DataDir = dataDir
@@ -232,6 +250,9 @@ func applyFile(cfg *Config, path string, required bool) error {
 	if fc.Addr != nil {
 		cfg.Addr = *fc.Addr
 	}
+	if fc.AppName != nil {
+		cfg.AppName = *fc.AppName
+	}
 	if fc.DataDir != nil {
 		cfg.DataDir = *fc.DataDir
 	}
@@ -265,6 +286,7 @@ func applyFile(cfg *Config, path string, required bool) error {
 // from starting with its file or default value.
 func applyEnv(cfg *Config) {
 	cfg.Addr = envOr(addrEnv, cfg.Addr)
+	cfg.AppName = envOr(appNameEnv, cfg.AppName)
 	cfg.DataDir = envOr(dataDirEnv, cfg.DataDir)
 
 	if v := os.Getenv(perPageEnv); v != "" {

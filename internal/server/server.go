@@ -191,19 +191,12 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 		Active:    active,
 		CSRF:      csrfToken,
 		UserEmail: email,
-		AppName:   s.appName(),
+		AppName:   s.cfg.AppName,
 		PBVersion: pocketbase.Version,
 		PanelVer:  panelVersion,
 		Nav:       s.navCollections(),
 		Flash:     s.flashFrom(c),
 	}
-}
-
-func (s *Server) appName() string {
-	if settings := s.app.Settings(); settings != nil && settings.Meta.AppName != "" {
-		return settings.Meta.AppName
-	}
-	return "PocketAdmin"
 }
 
 // navCollections lists the collections shown in the sidebar.

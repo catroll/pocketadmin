@@ -13,6 +13,14 @@
 # TCP address the HTTP server listens on.
 addr: 127.0.0.1:8090
 
+# Brand name shown in the sidebar, page titles, the login page and the footer.
+#
+# This is owned by this configuration on purpose. It does NOT read PocketBase's
+# own Meta.AppName setting, because that value is stored in the (git-ignored)
+# data directory: a fresh deployment would then display PocketBase's factory
+# default, "Acme", and the brand could not be version-controlled.
+appName: PocketAdmin
+
 # PocketBase data directory. The SQLite database, uploaded files and the
 # generated session signing key all live here.
 dataDir: ./pb_data
