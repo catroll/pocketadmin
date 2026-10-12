@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	"github.com/pocketbase/pocketbase/core"
+
+	"pocketadmin/internal/permission"
 )
 
 // CollectionMenus is the navigation tree's collection name.
@@ -24,17 +26,18 @@ type MenuNode struct {
 
 // menuRow is the cached projection input, read once from the collection.
 type menuRow struct {
-	id         string
-	name       string
-	title      string
-	menuType   string
-	path       string
-	icon       string
-	permission string
-	parent     string
-	sort       int
-	platform   string
-	status     string
+	id            string
+	name          string
+	title         string
+	menuType      string
+	path          string
+	icon          string
+	permission    string
+	parent        string
+	sort          int
+	platform      string
+	status        string
+	superuserOnly bool
 }
 
 // Projector turns the menu collection into the navigation an actor may see.
@@ -74,11 +77,23 @@ func (p *Projector) Invalidate() {
 // whose parent is not visible is dropped even if the node itself is granted, so
 // a granted child never appears orphaned.
 func (p *Projector) Visible(actor *Actor) []MenuNode {
+	// A page rendered before authentication (the login form) has no actor, and a
+	// nil actor holds nothing. Substituting an empty one here keeps every caller
+	// free to pass whatever it has; such a page renders no sidebar anyway.
+	if actor == nil {
+		actor = &Actor{Permissions: permission.NewSet()}
+	}
+
 	rows := p.load()
 
 	visible := make(map[string]bool, len(rows))
 	for _, r := range rows {
 		if r.platform != "admin" || r.status != "active" || r.menuType == "button" {
+			continue
+		}
+		// Some capabilities are deliberately not delegated to roles, so they
+		// cannot be expressed as a permission code.
+		if r.superuserOnly && !actor.IsSuperuser {
 			continue
 		}
 		if r.permission != "" && !actor.Can(r.permission) {
@@ -171,17 +186,18 @@ func (p *Projector) load() []menuRow {
 	rows := make([]menuRow, 0, len(records))
 	for _, rec := range records {
 		rows = append(rows, menuRow{
-			id:         rec.Id,
-			name:       rec.GetString("name"),
-			title:      rec.GetString("title"),
-			menuType:   rec.GetString("type"),
-			path:       rec.GetString("path"),
-			icon:       rec.GetString("icon"),
-			permission: rec.GetString("permissionCode"),
-			parent:     rec.GetString("parent"),
-			sort:       rec.GetInt("sortOrder"),
-			platform:   rec.GetString("platform"),
-			status:     rec.GetString("status"),
+			id:            rec.Id,
+			name:          rec.GetString("name"),
+			title:         rec.GetString("title"),
+			menuType:      rec.GetString("type"),
+			path:          rec.GetString("path"),
+			icon:          rec.GetString("icon"),
+			permission:    rec.GetString("permissionCode"),
+			parent:        rec.GetString("parent"),
+			sort:          rec.GetInt("sortOrder"),
+			platform:      rec.GetString("platform"),
+			status:        rec.GetString("status"),
+			superuserOnly: rec.GetBool("superuserOnly"),
 		})
 	}
 

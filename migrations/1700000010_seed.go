@@ -48,6 +48,9 @@ type menuSeed struct {
 	Icon       string
 	Permission string
 	Sort       int
+
+	// SuperuserOnly marks a node only a break-glass superuser may see.
+	SuperuserOnly bool
 }
 
 // seededMenus is the panel's navigation, mirroring the sidebar an operator sees.
@@ -83,8 +86,11 @@ func seededMenus() []menuSeed {
 		{Name: "rbac.dictionaries", Title: "Dictionaries", Parent: "rbac", Type: "menu",
 			Path: "/rbac/dictionaries", Icon: "far fa-circle", Permission: permission.RBACDictionaryList, Sort: 40},
 
+		// The raw data browser is not delegated to roles, so it is flagged rather
+		// than permission-gated. Without a code an unflagged node would be visible
+		// to everyone.
 		{Name: "collections", Title: "Collections", Type: "menu", Path: "/collections",
-			Icon: "fas fa-database", Sort: 90},
+			Icon: "fas fa-database", Sort: 90, SuperuserOnly: true},
 	}
 }
 
@@ -114,6 +120,7 @@ func seedMenus(app core.App) error {
 		rec.Set("sortOrder", m.Sort)
 		rec.Set("visible", true)
 		rec.Set("status", "active")
+		rec.Set("superuserOnly", m.SuperuserOnly)
 		if m.Parent != "" {
 			rec.Set("parent", ids[m.Parent])
 		}
