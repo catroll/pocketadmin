@@ -587,6 +587,61 @@ being maintainable, which is also when the drift test starts paying for itself.
 **Given up.** No machine-readable specification, so no generated client and no
 Swagger UI. An integrator reads a page instead.
 
+### D-030 — Credentials are refused rather than stored in clear
+
+**Decision.** Integration credentials are encrypted with `POCKETBASE_ENCRYPTION_KEY`
+before they are stored. If no key is configured the platform **refuses to store
+them** and says so.
+
+**Why.** The alternative -- store them in clear when the key is missing -- is a
+silent downgrade. The provider would work, nothing would look wrong, and a payment
+provider's secret key would be readable by anyone who obtained the database. A
+refusal is visible, actionable and reversible; a silent downgrade is none of those.
+
+The edit form never receives a stored value. It is told which credentials exist and
+shows a fixed mask, and a submission carrying the mask or an empty field leaves the
+stored value alone. That rule is what makes the form usable at all: without it, the
+form would either have to send the real secret back to the browser for resubmission
+or overwrite every credential with the literal mask the first time somebody changed
+an unrelated field.
+
+The mask is fixed rather than partially revealed. Showing the first and last
+characters is a common habit and a poor one: it leaks length and shape, it is enough
+to confirm a guess, and it gives the operator a false impression that they can
+recognise the value.
+
+**Given up.** An installation without an encryption key cannot configure any
+credential-bearing provider. That is the intended outcome and is stated on the
+form.
+
+### D-031 — The redactor reports whether it decoded, because handing the input back recursed
+
+**Decision.** `parseJSON` returns `(value, ok)`. On failure the callers stop rather
+than passing the input on.
+
+**Why.** This is the most serious defect found across all waves, and it was found by
+driving the platform rather than by a test. `looksLikeJSON` accepts anything that
+starts with a brace and ends with one. `parseJSON` used to return an unparsable
+input unchanged, and the caller had only reached it *because* the value looked like
+JSON, so it recognised the same string again and recursed. The result is
+`fatal error: stack overflow` -- the process dies, it is not a caught panic and
+there is no degradation to recover from.
+
+It was reachable from any request body, because the operation log redacts the body
+it is sent. A signed-in user could stop the server by submitting a form field
+containing `{not valid json}`.
+
+The module had thirteen passing tests, written when it shipped, and none of them
+fed it a malformed JSON-ish string. The lesson is not that the tests were careless
+but that a redactor's input domain is *whatever a caller sends*, and a test suite
+that only covers the shapes its author thought of does not cover that domain.
+
+Three regression tests now: that malformed JSON-ish strings terminate, that
+well-formed JSON is still walked, and that unparsable bytes are not handed back as
+though they had been examined.
+
+**Given up.** Nothing.
+
 ---
 
 ## Pending

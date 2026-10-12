@@ -1,0 +1,127 @@
+{{define "content"}}
+<form method="post" action="/integrations/save">
+  <input type="hidden" name="_csrf" value="{{.CSRF}}">
+  {{if not .IsNew}}<input type="hidden" name="id" value="{{.Record.Id}}">{{end}}
+
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card card-primary card-outline">
+        <div class="card-header"><h3 class="card-title">Provider</h3></div>
+        <div class="card-body">
+          <div class="row g-2 mb-2">
+            <div class="col-sm-7">
+              <label class="form-label" for="name">Name</label>
+              <input type="text" class="form-control" id="name" name="name" value="{{.Name}}" required>
+            </div>
+            <div class="col-sm-5">
+              <label class="form-label" for="code">Code</label>
+              <input type="text" class="form-control font-monospace" id="code" name="code"
+                     value="{{.Code}}" required>
+              <div class="form-text">Referenced by settings and files. Stable once used.</div>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-sm-6">
+              <label class="form-label" for="type">Type</label>
+              <select class="form-select" id="type" name="type">
+                {{$t := .Type}}{{range .Types}}
+                <option value="{{.}}" {{if eq . $t}}selected{{end}}>{{index $.TypeLabels .}}</option>{{end}}
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="driver">Driver</label>
+              <select class="form-select" id="driver" name="driver">
+                {{$d := .DriverCode}}
+                {{range $type, $drivers := .Drivers}}
+                <optgroup label="{{$type}}">
+                  {{range $drivers}}
+                  <option value="{{.Code}}" {{if eq .Code $d}}selected{{end}}>{{.Name}}</option>
+                  {{end}}
+                </optgroup>
+                {{end}}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="description">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="2">{{.Description}}</textarea>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-sm-6">
+              <label class="form-label" for="priority">Priority</label>
+              <input type="number" class="form-control" id="priority" name="priority" value="{{.Priority}}">
+              <div class="form-text">Lower wins when there is no default.</div>
+            </div>
+            <div class="col-sm-6 d-flex align-items-end">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="sandbox" name="sandbox" {{if .Sandbox}}checked{{end}}>
+                <label class="form-check-label" for="sandbox">Sandbox / test mode</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-sliders me-1"></i>Settings and credentials</h3>
+        </div>
+        <div class="card-body">
+          {{if not .Fields}}
+          <p class="text-body-secondary small mb-0">Choose a driver and save to see its settings.</p>
+          {{end}}
+
+          {{range .Fields}}
+          {{if eq .Kind "bool"}}
+          <div class="form-check form-switch mb-2">
+            <input type="checkbox" class="form-check-input" id="f-{{.Name}}" name="{{.Name}}"
+                   {{if .Checked}}checked{{end}}>
+            <label class="form-check-label" for="f-{{.Name}}">{{.Label}}</label>
+          </div>
+          {{else if eq .Kind "select"}}
+          <div class="mb-2">
+            <label class="form-label small" for="f-{{.Name}}">{{.Label}}</label>
+            <select class="form-select form-select-sm" id="f-{{.Name}}" name="{{.Name}}">
+              {{$v := .Value}}{{range .Options}}
+              <option value="{{.}}" {{if eq . $v}}selected{{end}}>{{.}}</option>{{end}}
+            </select>
+          </div>
+          {{else}}
+          <div class="mb-2">
+            <label class="form-label small" for="f-{{.Name}}">
+              {{.Label}}{{if .Secret}} <i class="fas fa-lock text-body-secondary" title="Encrypted at rest"></i>{{end}}
+            </label>
+            <input type="{{if eq .Kind "password"}}password{{else}}text{{end}}"
+                   class="form-control form-control-sm font-monospace"
+                   id="f-{{.Name}}" name="{{.Name}}" value="{{.Value}}"
+                   {{if .Required}}required{{end}} autocomplete="off">
+            {{if .Help}}<div class="form-text">{{.Help}}</div>{{end}}
+            {{if and .Secret .Value}}
+            <div class="form-text text-success">
+              A credential is stored. Leave this alone to keep it; an empty field keeps it too.
+            </div>
+            {{end}}
+          </div>
+          {{end}}
+          {{end}}
+        </div>
+        <div class="card-footer d-grid">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+        </div>
+      </div>
+
+      <div class="alert alert-secondary small">
+        <i class="fas fa-lock me-1"></i>
+        Credentials are encrypted with the application's encryption key before they are stored, and
+        are never sent to this page. If no encryption key is configured the platform refuses to
+        store them rather than keeping them in clear.
+      </div>
+    </div>
+  </div>
+</form>
+{{end}}

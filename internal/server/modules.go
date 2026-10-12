@@ -15,6 +15,7 @@ func (s *Server) registerModuleRoutes(panel *gin.RouterGroup) {
 	s.registerAnnouncementRoutes(panel)
 	s.registerWorkbenchRoutes(panel)
 	s.registerDeveloperRoutes(panel)
+	s.registerIntegrationRoutes(panel)
 	s.registerOrganizationRoutes(panel)
 	s.registerRBACRoutes(panel)
 }

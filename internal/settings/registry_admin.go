@@ -79,6 +79,8 @@ func adminKeys() []Key {
 		// gap rather than a decision: features.md gives the file library an upload
 		// policy, and a policy has to be configured somewhere. Recorded in
 		// docs/decisions.md D-019.
+		{Category: "storage", Key: "provider", Type: TypeString, Default: "local",
+			Description: "Which integration provider holds new uploads. Existing files keep the provider they were stored with."},
 		{Category: "storage", Key: "uploadMaxSize", Type: TypeNumber, Default: float64(33554432),
 			Description: "Largest accepted upload, in bytes. The file library refuses anything larger before writing it.",
 			Min:         ptr(1024), Max: ptr(1073741824)},

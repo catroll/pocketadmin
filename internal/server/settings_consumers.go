@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -93,4 +94,22 @@ func stringSlice(value any) []string {
 	default:
 		return nil
 	}
+}
+
+// storageProviderCode returns the provider that should hold new uploads.
+//
+// It reads the back-office setting first and falls back to the seeded local disk
+// provider, so an installation that has never opened the integrations screen still
+// records where its files are rather than leaving the column empty.
+func (s *Server) storageProviderCode() string {
+	reg := settings.Admin()
+	if code := s.settings.StringGet(reg, "storage", "provider"); code != "" {
+		return code
+	}
+	return "local"
+}
+
+// contextWithTimeout bounds an outbound request made during a page render.
+func contextWithTimeout(d time.Duration) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), d)
 }

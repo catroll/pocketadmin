@@ -126,18 +126,33 @@ func Redact(value any) any {
 		return out
 
 	case json.RawMessage:
-		return Redact(parseJSON(v))
+		if decoded, ok := parseJSON(v); ok {
+			return Redact(decoded)
+		}
+		return RedactedValue
 
 	case []byte:
 		// A body arrives as bytes; try to read it as JSON so nested secrets are
-		// found, and fall back to a redacted placeholder when it is not.
-		return Redact(parseJSON(v))
+		// found, and record that it could not be rather than handing the raw bytes
+		// back, which would present an unexamined payload as a redacted one.
+		if decoded, ok := parseJSON(v); ok {
+			return Redact(decoded)
+		}
+		return RedactedValue
 
 	case string:
 		// A JSON string that was already serialised is still worth walking, since
 		// that is how a body reaches a log when it is passed through as text.
+		//
+		// The decoded flag matters more than it looks. Without it, a string that
+		// looks like JSON but does not parse is handed back unchanged by parseJSON,
+		// this branch recognises it again, and the two recurse until the stack is
+		// gone. That is a process-killing denial of service reachable from any
+		// request body, because the operation log redacts the body it is sent.
 		if looksLikeJSON(v) {
-			return Redact(parseJSON([]byte(v)))
+			if decoded, ok := parseJSON([]byte(v)); ok {
+				return Redact(decoded)
+			}
 		}
 		return v
 
@@ -146,22 +161,23 @@ func Redact(value any) any {
 	}
 }
 
-// parseJSON returns the decoded value, or the original bytes when they are not
-// JSON.
-func parseJSON(raw []byte) any {
+// parseJSON returns the decoded value and whether it decoded.
+//
+// The boolean is what makes the caller's recursion terminate. Returning the input
+// on failure looks harmless and is not: the caller only reached here because the
+// value looked like JSON, so handing it back sends the caller down the same branch
+// with the same input for ever.
+func parseJSON(raw []byte) (any, bool) {
 	trimmed := strings.TrimSpace(string(raw))
 	if trimmed == "" {
-		return ""
+		return "", true
 	}
 
 	var decoded any
 	if err := json.Unmarshal([]byte(trimmed), &decoded); err != nil {
-		// Not JSON. Returning it as a string means a non-JSON body is recorded as
-		// text, which is better than dropping it -- but it has not been walked, so
-		// it must not be presented as redacted.
-		return trimmed
+		return trimmed, false
 	}
-	return decoded
+	return decoded, true
 }
 
 // looksLikeJSON is a cheap test for whether a string is worth parsing.

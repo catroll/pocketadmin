@@ -16,6 +16,10 @@ import (
 	"github.com/pocketbase/pocketbase/ui"
 )
 
+// DefaultEncryptionEnv is the environment variable holding the key that encrypts
+// integration credentials and PocketBase's own settings.
+const DefaultEncryptionEnv = "POCKETBASE_ENCRYPTION_KEY"
+
 // contentSecurityPolicy mirrors the one PocketBase applies to its dashboard.
 const contentSecurityPolicy = "default-src 'self'; style-src 'self' 'unsafe-inline'; " +
 	"img-src 'self' data: blob:; connect-src 'self'; script-src 'self'; frame-ancestors 'none'"
@@ -29,6 +33,15 @@ func New(dataDir string, dev bool) *pocketbase.PocketBase {
 		HideStartBanner: true,
 		DefaultDataDir:  dataDir,
 		DefaultDev:      dev,
+
+		// The variable holding the encryption key.
+		//
+		// It has to be named explicitly. app.EncryptionEnv() returns whatever was
+		// configured here, so leaving it unset makes it the empty string and every
+		// reader of the key silently concludes there is none -- which is how the
+		// integration secrets came to be refused with "no encryption key is
+		// configured" while the variable was set in the environment the whole time.
+		DefaultEncryptionEnv: DefaultEncryptionEnv,
 	})
 }
 

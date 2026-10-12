@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/audit"
 	"pocketadmin/internal/config"
 	"pocketadmin/internal/permission"
 	"pocketadmin/internal/storage"
@@ -229,6 +230,13 @@ func (s *Server) handleUpload(c *gin.Context) {
 		rec.Set("extension", inspected.Extension)
 		rec.Set("checksum", inspected.Checksum)
 		rec.Set("storage", "local")
+
+		// Which provider holds the bytes, named by its code. It is recorded per
+		// file rather than read from a setting at download time: an operator moving
+		// to object storage must not be told that last year's uploads are somewhere
+		// they are not.
+		rec.Set("provider", s.storageProviderCode())
+
 		rec.Set("scope", "private")
 		rec.Set("status", "active")
 		rec.Set("tags", []string{inspected.Kind})
@@ -243,7 +251,7 @@ func (s *Server) handleUpload(c *gin.Context) {
 		}
 
 		s.audit(c, auditEntry{
-			Event:      "storage.file_upload",
+			Event:      audit.EventFileUploaded,
 			TargetType: "file",
 			TargetID:   rec.Id,
 			Summary:    "Uploaded " + rec.GetString("name") + " (" + inspected.MimeType + ")",

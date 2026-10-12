@@ -23,6 +23,8 @@ const (
 	ModuleAnnouncement = "announcement"
 	ModuleWorkbench    = "workbench"
 	ModuleDeveloper    = "developer"
+	ModuleIntegrations = "integrations"
+	ModuleMonitoring   = "monitoring"
 )
 
 // Point is a single permission point.
@@ -177,6 +179,17 @@ const (
 	DeveloperKeyRevoke = "developer:key:revoke"
 	DeveloperAPIView   = "developer:api:view"
 
+	// Integrations. Seeing a provider is separate from changing one, because a
+	// change here redirects where the platform sends mail, files and money.
+	// Testing is separate again: it makes an outbound request with the stored
+	// credentials, which is a different act from editing them.
+	IntegrationProviderList   = "integrations:provider:list"
+	IntegrationProviderCreate = "integrations:provider:create"
+	IntegrationProviderUpdate = "integrations:provider:update"
+	IntegrationProviderDelete = "integrations:provider:delete"
+	IntegrationProviderTest   = "integrations:provider:test"
+	IntegrationLogList        = "integrations:log:list"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -276,6 +289,13 @@ func All() []Point {
 		{DeveloperKeyCreate, "Issue an API key", ModuleDeveloper, "key", "create", "button"},
 		{DeveloperKeyRevoke, "Revoke an API key", ModuleDeveloper, "key", "revoke", "button"},
 		{DeveloperAPIView, "Open the API reference", ModuleDeveloper, "api", "view", "menu"},
+
+		{IntegrationProviderList, "List integration providers", ModuleIntegrations, "provider", "list", "menu"},
+		{IntegrationProviderCreate, "Add an integration provider", ModuleIntegrations, "provider", "create", "button"},
+		{IntegrationProviderUpdate, "Change an integration provider", ModuleIntegrations, "provider", "update", "button"},
+		{IntegrationProviderDelete, "Remove an integration provider", ModuleIntegrations, "provider", "delete", "button"},
+		{IntegrationProviderTest, "Test an integration provider", ModuleIntegrations, "provider", "test", "button"},
+		{IntegrationLogList, "Read the integration log", ModuleIntegrations, "log", "list", "api"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

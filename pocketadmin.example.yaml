@@ -62,3 +62,13 @@ log:
 
   # json | text
   format: json
+
+# Integration credentials are encrypted with this key before they are stored, and
+# are never returned to the browser. It must be a valid AES length: 16, 24 or 32
+# bytes. PocketBase refuses to start with any other length, which is deliberate.
+#
+# Without it the platform refuses to store credentials at all rather than keeping
+# them in clear: a silent downgrade is how a payment provider's key ends up
+# readable by anyone with the database.
+#
+# POCKETBASE_ENCRYPTION_KEY: change-me-to-32-bytes-exactly!!

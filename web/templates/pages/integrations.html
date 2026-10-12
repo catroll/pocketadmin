@@ -1,0 +1,109 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <p class="text-body-secondary mb-0">
+      Where the platform sends mail, messages, files and money. Credentials are encrypted at rest
+      and are never sent to this browser.
+    </p>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    <a href="/integrations/logs" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-list me-1"></i>Log
+    </a>
+    {{if .CanCreate}}
+    <a href="/integrations/new" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus me-1"></i>Add provider
+    </a>
+    {{end}}
+  </div>
+</div>
+
+{{range .Groups}}
+<div class="card card-outline card-primary">
+  <div class="card-header">
+    <h3 class="card-title">{{.Label}}</h3>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Name</th><th>Driver</th><th>State</th><th>Last test</th><th>Credentials</th><th></th></tr></thead>
+      <tbody>
+        {{$g := .}}
+        {{range .Rows}}
+        <tr>
+          <td>
+            <div>
+              {{if .IsDefault}}<i class="fas fa-star text-warning me-1" title="Default for this type"></i>{{end}}
+              {{.Name}}
+            </div>
+            <code class="small text-body-secondary">{{.Code}}</code>
+          </td>
+          <td>
+            {{.Driver}}
+            {{if .Sandbox}}<span class="badge text-bg-info ms-1">sandbox</span>{{end}}
+            {{if not .Testable}}<span class="badge text-bg-light ms-1" title="No connectivity test is implemented">untestable</span>{{end}}
+          </td>
+          <td>
+            {{if eq .Status "enabled"}}<span class="badge text-bg-success">enabled</span>
+            {{else if eq .Status "error"}}<span class="badge text-bg-danger">error</span>
+            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+          </td>
+          <td class="small">
+            {{if eq .LastTest "success"}}<span class="badge text-bg-success">success</span>
+            {{else if eq .LastTest "failure"}}<span class="badge text-bg-danger">failure</span>
+            {{else}}<span class="text-body-secondary">never tested</span>{{end}}
+            {{if .LastTestAt}}<div class="text-body-secondary">{{.LastTestWhen}}: {{truncate .LastTestAt 80}}</div>{{end}}
+          </td>
+          <td class="small">
+            {{range .SecretKeys}}<span class="badge text-bg-light">{{.}}</span>{{end}}
+          </td>
+          <td class="text-end text-nowrap">
+            {{if and $g.Rows $.CanTest}}
+            {{end}}
+            {{if $.CanTest}}
+            {{if .Testable}}
+            <form method="post" class="d-inline" action="/integrations/{{.Record.Id}}/test">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button class="btn btn-sm btn-outline-primary" title="Test the connection">
+                <i class="fas fa-plug"></i>
+              </button>
+            </form>
+            {{end}}
+            {{end}}
+            {{if $.CanUpdate}}
+            {{if not .IsDefault}}
+            <form method="post" class="d-inline" action="/integrations/{{.Record.Id}}/default">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button class="btn btn-sm btn-outline-warning" title="Make it the default for this type">
+                <i class="far fa-star"></i>
+              </button>
+            </form>
+            {{end}}
+            <form method="post" class="d-inline" action="/integrations/{{.Record.Id}}/status">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              {{if eq .Status "enabled"}}
+              <button name="status" value="disabled" class="btn btn-sm btn-outline-secondary" title="Disable">
+                <i class="fas fa-power-off"></i>
+              </button>
+              {{else}}
+              <button name="status" value="enabled" class="btn btn-sm btn-outline-success" title="Enable">
+                <i class="fas fa-play"></i>
+              </button>
+              {{end}}
+            </form>
+            <a href="/integrations/{{.Record.Id}}/edit" class="btn btn-sm btn-secondary" title="Edit">
+              <i class="fas fa-pen"></i>
+            </a>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="6" class="text-center text-body-secondary py-3">
+          No {{.Label}} provider is configured. Anything that needs one will report that it has none.
+        </td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+{{end}}
