@@ -23,6 +23,23 @@ and ships as a single binary.
                               SQLite + storage/ in pb_data/
 ```
 
+## Documentation
+
+The platform roadmap lives in a specification set. Start with the capability
+map: module boundaries, dependency direction and build order are the most
+expensive things to change later.
+
+| Document | Contents |
+| --- | --- |
+| [CAPABILITY-MAP.md](CAPABILITY-MAP.md) | 12 modules, dependency direction, build order, scope boundaries |
+| [docs/requirements.md](docs/requirements.md) | Numbered functional requirements, traceability to the feature request, open questions |
+| [docs/database-design.md](docs/database-design.md) | 38 PocketBase collections with fields, indexes and relationships |
+| [docs/design.md](docs/design.md) | Architecture, authentication, authorisation, audit, jobs, integrations, security, phasing, risks |
+| [docs/README.md](docs/README.md) | Index and module-to-document map |
+
+These are drafts pending review; no implementation work starts until the
+capability map is approved.
+
 ## Features
 
 - **Superuser sign-in** against PocketBase's `_superusers` collection, with
