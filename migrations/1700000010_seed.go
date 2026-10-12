@@ -116,6 +116,9 @@ func seededMenus() []menuSeed {
 			Path: "/settings/product", Icon: "far fa-circle",
 			Permission: permission.SettingsProductView, Sort: 20},
 
+		{Name: "workbench", Title: "Workbench", Type: "menu", Path: "/workbench",
+			Icon: "fas fa-columns", Sort: 20, Permission: permission.WorkbenchTodoList},
+
 		{Name: "announcement", Title: "Announcements", Type: "menu", Path: "/announcements",
 			Icon: "fas fa-bullhorn", Sort: 75, Permission: permission.AnnouncementList},
 

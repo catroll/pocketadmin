@@ -162,7 +162,7 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 	// operationLog runs first so it sees the raw request body. The CSRF
 	// middleware parses the form, which consumes the body, and a log that
 	// records no parameters is a log that cannot say what a request asked for.
-	panel.Use(s.operationLog(), limitBody(maxUploadBody), s.csrf(), s.requireAuth(), s.blockWritesWhileImpersonating())
+	panel.Use(s.operationLog(), limitBody(maxUploadBody), s.csrf(), s.requireAuth(), s.blockWritesWhileImpersonating(), s.recordVisitsMiddleware())
 	{
 		s.safe(panel, http.MethodGet, "/", func(c *gin.Context) {
 			c.Redirect(http.StatusSeeOther, "/dashboard")
@@ -268,7 +268,17 @@ func (s *Server) render(c *gin.Context, status int, name string, data any) {
 }
 
 // newBase assembles the data shared by every page.
+// Context keys the visit recorder reads after the handler has chosen a title.
+const (
+	ctxPageTitle = "pageTitle"
+	ctxPageIcon  = "pageIcon"
+)
+
 func (s *Server) newBase(c *gin.Context, title, active string) base {
+	// Stashed rather than recorded here: at this point the response has not been
+	// written, so a page that turns out to be a 403 or a 404 would be remembered
+	// as visited. The recorder runs after the handler and checks the status.
+	c.Set(ctxPageTitle, title)
 	actor := s.actor(c)
 	if actor == nil {
 		// Pages rendered before the auth middleware runs (the login form) have no

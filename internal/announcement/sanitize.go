@@ -2,6 +2,7 @@ package announcement
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/microcosm-cc/bluemonday"
 )
@@ -117,4 +118,22 @@ func stripTags(html string) string {
 		}
 	}
 	return out.String()
+}
+
+// TextFromHTML renders a sanitised body as plain text, bounded to a preview length.
+//
+// It is exported because the workbench shows message previews and a notification
+// body is text, not markup: rendering stored HTML into a list is how a preview
+// becomes a place markup executes.
+func TextFromHTML(html string, limit int) string {
+	text := SanitizePlain(html)
+	if limit > 0 && len(text) > limit {
+		// Cut on a rune boundary so a multi-byte character is not split.
+		cut := limit
+		for cut > 0 && !utf8.RuneStart(text[cut]) {
+			cut--
+		}
+		return strings.TrimSpace(text[:cut]) + "\u2026"
+	}
+	return text
 }

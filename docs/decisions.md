@@ -464,6 +464,55 @@ layer already answers.
 they see everything. A future "preview as" would restore that, and is not needed
 yet.
 
+### D-025 — A personal record is scoped by ownership, not by a permission
+
+**Decision.** A todo and a message delivery belong to one account. The workbench
+routes carry ordinary permission guards for whether the screen is reachable, and
+the handlers separately resolve every row through the signed-in account. There is
+no permission that grants access to another account's rows.
+
+**Why.** The two questions look like one and are not. "May this person use the
+todo screen" is a grant an administrator can hand out. "Whose todo is this" is a
+fact about the row and cannot be delegated to anybody. Expressing both as
+permissions would create a grant that lets one administrator read another's
+private list, which is a thing that should not be expressible.
+
+The distinction is enforced in the handlers rather than in the guard, and the
+routes say so. A guard that only answered the first question would leave the route
+looking protected while a fabricated id reached somebody else's row -- which is
+exactly the class of mistake that looks correct in review.
+
+Verified by driving it: a todo created by one account is absent from another's
+workbench; a second account posting to the first account's todo id gets 403 and the
+row is untouched; a forged owner field in a create is ignored and the todo lands on
+the sender; and a second account cannot mark read or delete a delivery belonging to
+the first, with the first account's copy unchanged after both attempts.
+
+**Given up.** Nothing. Bulk actions and delete are per-recipient by construction,
+which is more code than a broadcast query and is the only version that can record a
+read receipt.
+
+### D-026 — A broadcast is materialised into deliveries at send time
+
+**Decision.** `messages` holds what was written; `message_recipients` holds one row
+per person it reached, created when it is sent.
+
+**Why.** A broadcast that stays a query cannot answer any of the questions the
+inbox is for. It cannot record that somebody read it. It cannot be deleted by one
+recipient without affecting the others. And it silently changes meaning when the
+audience changes: a new member of a department would retroactively receive last
+year's notices, and a departed one would lose the record that they were told.
+
+The same reasoning as the announcements module, reached independently, which is
+mild evidence that it is the right shape for "who was told what".
+
+An empty recipient list for a direct message delivers to **nobody**, not to
+everybody. A fallback to the widest audience is the failure mode worth designing
+against, and it is tested.
+
+**Given up.** A delivery row per recipient, which is more rows than a query would
+need. At this scale that is not a cost worth optimising.
+
 ---
 
 ## Pending

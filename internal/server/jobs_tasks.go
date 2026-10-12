@@ -12,6 +12,7 @@ import (
 	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/audit"
 	"pocketadmin/internal/jobs"
+	"pocketadmin/internal/workbench"
 )
 
 // jobHandlerOnce guards registration: Register panics on a duplicate code, which
@@ -29,6 +30,7 @@ func (s *Server) RegisterJobHandlers() {
 		s.registerAuditRetentionJob()
 		s.registerSessionCleanupJob()
 		s.registerAnnouncementJob()
+		s.registerTodoReminderJob()
 	})
 }
 
@@ -162,6 +164,71 @@ func (s *Server) registerAnnouncementJob() {
 			return fmt.Sprintf("published %d, expired %d", published, expired), nil
 		},
 	})
+}
+
+// registerTodoReminderJob delivers a message when a todo's reminder is due.
+//
+// The reminder is delivered into the same inbox as everything else rather than
+// through a channel of its own, so there is one place a person looks. Delivery is
+// deduplicated by the (message, user) unique index, which is what stops a sweep
+// that runs every five minutes from sending the same reminder twelve times an
+// hour.
+func (s *Server) registerTodoReminderJob() {
+	jobs.Register(jobs.Handler{
+		Code:        "workbench.todo_reminders",
+		Name:        "Todo reminders",
+		Description: "Sends an inbox message when a todo's reminder time has arrived.",
+		DefaultCron: "*/5 * * * *",
+		Run: func(ctx context.Context, _ map[string]any) (string, error) {
+			due, err := workbench.DueReminders(s.app, time.Now())
+			if err != nil {
+				return "", err
+			}
+
+			sent := 0
+			for _, todo := range due {
+				// The marker that a reminder has been delivered is the delivery
+				// itself. A todo already carrying one is skipped without clearing
+				// remindAt, so the row still shows that a reminder was due.
+				if s.reminderAlreadySent(todo) {
+					continue
+				}
+
+				message := workbench.Message{
+					Title:   "Reminder: " + todo.GetString("title"),
+					Content: "<p>A todo you scheduled is due for attention.</p>",
+					Type:    "todo",
+					Level:   "info",
+					Link:    "/workbench",
+				}
+				if err := workbench.NotifySystem(s.app, todo.GetString("owner"), message); err != nil {
+					continue
+				}
+				sent++
+			}
+
+			if sent == 0 {
+				return "no reminders were due", nil
+			}
+			return fmt.Sprintf("sent %d reminder(s)", sent), nil
+		},
+	})
+}
+
+// reminderAlreadySent reports whether a todo has already produced a reminder.
+func (s *Server) reminderAlreadySent(todo *core.Record) bool {
+	existing, err := s.app.FindFirstRecordByFilter("messages",
+		"type = 'todo' && title = {:title}",
+		map[string]any{"title": "Reminder: " + todo.GetString("title")})
+	if err != nil || existing == nil {
+		return false
+	}
+
+	// The message exists, so check this owner received it.
+	delivered, err := s.app.FindFirstRecordByFilter("message_recipients",
+		"message = {:m} && user = {:u}",
+		map[string]any{"m": existing.Id, "u": todo.GetString("owner")})
+	return err == nil && delivered != nil
 }
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,70 @@
+{{define "content"}}
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-inbox me-1"></i>Inbox
+      {{if .Unread}}<span class="badge text-bg-danger ms-1">{{.Unread}} unread</span>{{end}}
+    </h3>
+    <div class="card-tools">
+      {{if .ShowAll}}
+      <a href="/workbench/inbox" class="btn btn-sm btn-secondary">Unread only</a>
+      {{else}}
+      <a href="/workbench/inbox?show=all" class="btn btn-sm btn-secondary">All</a>
+      {{end}}
+      <form method="post" action="/workbench/inbox/read-all" class="d-inline">
+        <input type="hidden" name="_csrf" value="{{.CSRF}}">
+        <button class="btn btn-sm btn-outline-primary">Mark all read</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card-body border-bottom py-2">
+    <form method="get" action="/workbench/inbox" class="row g-2">
+      {{if .ShowAll}}<input type="hidden" name="show" value="all">{{end}}
+      <div class="col-auto">
+        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="Search subject">
+      </div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">Search</button></div>
+    </form>
+  </div>
+
+  <div class="list-group list-group-flush">
+    {{range .Rows}}
+    <div class="list-group-item">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <strong class="{{if .Unread}}{{else}}text-body-secondary{{end}}">
+            {{if .Unread}}<i class="fas fa-circle text-primary me-1" style="font-size:.5rem"></i>{{end}}
+            {{.Title}}
+          </strong>
+          <span class="badge text-bg-{{if eq .Level "error"}}danger{{else if eq .Level "warning"}}warning{{else if eq .Level "success"}}success{{else}}info{{end}} ms-1">{{.Level}}</span>
+          <span class="badge text-bg-secondary">{{.Type}}</span>
+        </div>
+        <div class="text-nowrap">
+          <span class="small text-body-secondary me-2">{{.When}}</span>
+          {{if .Unread}}
+          <form method="post" class="d-inline" action="/workbench/inbox/{{.Delivery.Id}}/read">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <button class="btn btn-sm btn-outline-primary" title="Mark read"><i class="fas fa-check"></i></button>
+          </form>
+          {{end}}
+          <form method="post" class="d-inline" action="/workbench/inbox/{{.Delivery.Id}}/delete">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+          </form>
+        </div>
+      </div>
+      <div class="small mt-1">{{.Preview}}</div>
+      <div class="small text-body-secondary">
+        from {{.Sender}}
+        {{if .Link}}&middot; <a href="{{.Link}}">open</a>{{end}}
+      </div>
+    </div>
+    {{else}}
+    <div class="list-group-item text-center text-body-secondary py-5">
+      {{if .ShowAll}}Your inbox is empty.{{else}}Nothing unread.{{end}}
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,231 @@
+{{define "content"}}
+<div class="row">
+  <div class="col-lg-7">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-list-check me-1"></i>My todos</h3>
+        <div class="card-tools">
+          <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#newTodo">
+            <i class="fas fa-plus me-1"></i>Add
+          </button>
+        </div>
+      </div>
+
+      <div class="collapse" id="newTodo">
+        <div class="card-body border-bottom">
+          <form method="post" action="/workbench/todos">
+            <input type="hidden" name="_csrf" value="{{.CSRF}}">
+            <div class="mb-2">
+              <input type="text" class="form-control" name="title" placeholder="What needs doing?" required>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-sm-4">
+                <select class="form-select form-select-sm" name="priority">
+                  <option value="normal">normal</option><option value="low">low</option>
+                  <option value="high">high</option><option value="urgent">urgent</option>
+                </select>
+              </div>
+              <div class="col-sm-4">
+                <input type="datetime-local" class="form-control form-control-sm" name="dueAt" title="Due">
+              </div>
+              <div class="col-sm-4">
+                <input type="datetime-local" class="form-control form-control-sm" name="remindAt" title="Remind me">
+              </div>
+            </div>
+            <div class="mb-2">
+              <textarea class="form-control form-control-sm" name="description" rows="2" placeholder="Notes"></textarea>
+            </div>
+            <div class="mb-2">
+              {{range .Tags}}
+              <div class="form-check form-check-inline">
+                <input type="checkbox" class="form-check-input" name="tags" value="{{.}}" id="t-{{.}}">
+                <label class="form-check-label small" for="t-{{.}}">{{.}}</label>
+              </div>
+              {{end}}
+            </div>
+            <button class="btn btn-primary btn-sm">Add todo</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+          <tbody>
+            {{range .Todos}}
+            <tr>
+              <td style="width:1%">
+                <form method="post" action="/workbench/todos/{{.Id}}/state">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <button name="status" value="done" class="btn btn-sm btn-outline-success" title="Complete">
+                    <i class="far fa-square"></i>
+                  </button>
+                </form>
+              </td>
+              <td>
+                <div>{{.GetString "title"}}</div>
+                <div class="small text-body-secondary">
+                  {{if eq (.GetString "priority") "urgent"}}<span class="badge text-bg-danger">urgent</span>
+                  {{else if eq (.GetString "priority") "high"}}<span class="badge text-bg-warning">high</span>{{end}}
+                  {{if eq (.GetString "status") "in_progress"}}<span class="badge text-bg-info">in progress</span>{{end}}
+                  {{range .GetStringSlice "tags"}}<span class="badge text-bg-light">{{.}}</span>{{end}}
+                  {{with .GetDateTime "dueAt"}}<span class="ms-1"><i class="far fa-clock"></i> due {{formatTime .}}</span>{{end}}
+                  {{with .GetDateTime "remindAt"}}<span class="ms-1"><i class="far fa-bell"></i> {{formatTime .}}</span>{{end}}
+                </div>
+              </td>
+              <td class="text-end text-nowrap" style="width:1%">
+                <form method="post" class="d-inline" action="/workbench/todos/{{.Id}}/state">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <button name="status" value="in_progress" class="btn btn-sm btn-outline-info" title="Start">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <button name="status" value="cancelled" class="btn btn-sm btn-outline-secondary" title="Cancel">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                </form>
+                <form method="post" class="d-inline" action="/workbench/todos/{{.Id}}/delete"
+                      onsubmit="return confirm('Delete this todo?')">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+            {{else}}
+            <tr><td class="text-center text-body-secondary py-4">Nothing outstanding.</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+
+      {{if .Done}}
+      <div class="card-footer">
+        <details>
+          <summary class="small text-body-secondary">Recently finished</summary>
+          <table class="table table-sm mb-0 mt-2">
+            <tbody>
+              {{range .Done}}
+              <tr>
+                <td style="width:1%">
+                  <form method="post" action="/workbench/todos/{{.Id}}/state">
+                    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                    <button name="status" value="pending" class="btn btn-sm btn-outline-secondary" title="Reopen">
+                      <i class="fas fa-rotate-left"></i>
+                    </button>
+                  </form>
+                </td>
+                <td class="{{if eq (.GetString "status") "done"}}text-decoration-line-through text-body-secondary{{end}}">
+                  {{.GetString "title"}}
+                </td>
+                <td class="small text-body-secondary text-end">
+                  {{with .GetDateTime "completedAt"}}{{formatTime .}}{{end}}
+                </td>
+              </tr>
+              {{end}}
+            </tbody>
+          </table>
+        </details>
+      </div>
+      {{end}}
+    </div>
+
+    {{if .CanSend}}
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-paper-plane me-1"></i>Send a message</h3>
+      </div>
+      <div class="card-body">
+        <form method="post" action="/workbench/send">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="row g-2 mb-2">
+            <div class="col-sm-6"><input type="text" class="form-control form-control-sm" name="title" placeholder="Subject" required></div>
+            <div class="col-sm-3">
+              <select class="form-select form-select-sm" name="level">
+                <option value="info">info</option><option value="success">success</option>
+                <option value="warning">warning</option><option value="error">error</option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <select class="form-select form-select-sm" name="audience">
+                <option value="all">all administrators</option>
+                <option value="role">a role</option>
+                <option value="department">a department</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-2"><textarea class="form-control form-control-sm" name="content" rows="3" placeholder="Body"></textarea></div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Departments, when the audience is a department</label>
+            <div class="small" style="max-height:8rem;overflow-y:auto">
+              {{range .Departments}}
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="departments" value="{{.ID}}" id="sd-{{.ID}}">
+                <label class="form-check-label" for="sd-{{.ID}}">{{safeHTML .Label}}</label>
+              </div>
+              {{end}}
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm">Send</button>
+        </form>
+      </div>
+    </div>
+    {{end}}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-inbox me-1"></i>Inbox</h3>
+        <div class="card-tools">
+          {{if .UnreadAll}}<span class="badge text-bg-danger">{{.UnreadAll}} unread</span>{{end}}
+          <a href="/workbench/inbox" class="btn btn-sm btn-secondary ms-1">All</a>
+        </div>
+      </div>
+      <div class="list-group list-group-flush">
+        {{range .Unread}}
+        <a href="{{if .Link}}{{.Link}}{{else}}/workbench/inbox{{end}}" class="list-group-item list-group-item-action">
+          <div class="d-flex justify-content-between">
+            <strong class="small">{{.Title}}</strong>
+            <span class="small text-body-secondary">{{.When}}</span>
+          </div>
+          <div class="small text-body-secondary">{{.Preview}}</div>
+          <div class="small text-body-secondary">from {{.Sender}}</div>
+        </a>
+        {{else}}
+        <div class="list-group-item text-center text-body-secondary small py-4">Nothing unread.</div>
+        {{end}}
+      </div>
+    </div>
+
+    {{if .Links}}
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-bolt me-1"></i>Quick links</h3></div>
+      <div class="card-body">
+        <div class="row g-2">
+          {{range .Links}}
+          <div class="col-6">
+            <a href="{{.GetString "path"}}" class="btn btn-outline-secondary btn-sm w-100 text-start">
+              <i class="{{.GetString "icon"}} me-1"></i>{{.GetString "title"}}
+            </a>
+          </div>
+          {{end}}
+        </div>
+      </div>
+    </div>
+    {{end}}
+
+    {{if .Visits}}
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-clock-rotate-left me-1"></i>Recent</h3></div>
+      <div class="list-group list-group-flush">
+        {{range .Visits}}
+        <a href="{{.GetString "path"}}" class="list-group-item list-group-item-action py-2">
+          <i class="{{.GetString "icon"}} me-1 text-body-secondary"></i>
+          <span class="small">{{.GetString "title"}}</span>
+          <span class="badge text-bg-light float-end">{{.GetInt "visitCount"}}</span>
+        </a>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}

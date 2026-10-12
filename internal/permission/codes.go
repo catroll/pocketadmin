@@ -21,6 +21,7 @@ const (
 	ModuleSettings     = "settings"
 	ModuleJobs         = "jobs"
 	ModuleAnnouncement = "announcement"
+	ModuleWorkbench    = "workbench"
 )
 
 // Point is a single permission point.
@@ -157,6 +158,15 @@ const (
 	AnnouncementPublish = "announcement:announcement:publish"
 	AnnouncementReads   = "announcement:read:list"
 
+	// Workbench. A todo is personal, so these govern the screen rather than who
+	// may see whose todos: ownership is enforced separately and is not a
+	// permission anybody can be granted.
+	WorkbenchTodoList     = "workbench:todo:list"
+	WorkbenchMessageList  = "workbench:message:list"
+	WorkbenchMessageSend  = "workbench:message:send"
+	WorkbenchQuickLinkOwn = "workbench:quicklink:own"
+	WorkbenchQuickLinkAll = "workbench:quicklink:all"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -245,6 +255,12 @@ func All() []Point {
 		{AnnouncementDelete, "Delete an announcement", ModuleAnnouncement, "announcement", "delete", "button"},
 		{AnnouncementPublish, "Publish or withdraw an announcement", ModuleAnnouncement, "announcement", "publish", "button"},
 		{AnnouncementReads, "See who has read an announcement", ModuleAnnouncement, "read", "list", "button"},
+
+		{WorkbenchTodoList, "Use the personal todo list", ModuleWorkbench, "todo", "list", "menu"},
+		{WorkbenchMessageList, "Read the workbench inbox", ModuleWorkbench, "message", "list", "menu"},
+		{WorkbenchMessageSend, "Send a message to administrators", ModuleWorkbench, "message", "send", "button"},
+		{WorkbenchQuickLinkOwn, "Edit your own quick links", ModuleWorkbench, "quicklink", "own", "button"},
+		{WorkbenchQuickLinkAll, "Edit the default quick links", ModuleWorkbench, "quicklink", "all", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }
