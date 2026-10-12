@@ -61,7 +61,25 @@ func (s *Server) handleLogin(c *gin.Context) {
 // loginPlatformAccount authenticates a `users` record and checks that it may use
 // the back office.
 func (s *Server) loginPlatformAccount(c *gin.Context, rec *core.Record, email, password, next string) {
+	// A soft-deleted account keeps its row for history but must not sign in.
+	if !rec.GetDateTime("deletedAt").IsZero() {
+		s.logLogin(c, rec.Id, email, "failure", "account deleted", "medium")
+		s.renderLoginFailure(c, email, next, "Invalid email or password.")
+		return
+	}
+
+	// A lock is checked before the password so that a locked account cannot be
+	// used to keep guessing while it is locked.
+	if lock := checkLock(rec); lock.Locked {
+		s.logLogin(c, rec.Id, email, "locked",
+			"locked until "+lock.Until.Format(time.RFC3339), "medium")
+		s.renderLoginFailure(c, email, next,
+			"Too many failed attempts. Try again after "+lock.Until.Local().Format("15:04")+".")
+		return
+	}
+
 	if !rec.ValidatePassword(password) {
+		s.lockAccount(rec)
 		s.logLogin(c, rec.Id, email, "failure", "invalid password", "low")
 		s.renderLoginFailure(c, email, next, "Invalid email or password.")
 		return
@@ -97,7 +115,7 @@ func (s *Server) loginPlatformAccount(c *gin.Context, rec *core.Record, email, p
 	now := time.Now().UTC()
 	rec.Set("lastLoginAt", now)
 	rec.Set("lastLoginIp", c.ClientIP())
-	rec.Set("failedAttempts", 0)
+	s.clearFailedAttempts(rec)
 	if err := s.app.Save(rec); err != nil {
 		slog.Warn("could not record the last sign-in", "user", rec.Id, "error", err)
 	}

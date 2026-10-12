@@ -20,7 +20,9 @@ func identityResources() []resource {
 			ListPerm:   permission.IdentityAccountList,
 			CreatePerm: permission.IdentityAccountCreate,
 			UpdatePerm: permission.IdentityAccountUpdate,
-			DeletePerm: permission.IdentityAccountDelete,
+			// No generic delete: an account is soft-deleted through its own action,
+			// because audit history, orders and HR records reference the row.
+			DeletePerm: "",
 			Order:      "-created",
 			Filter:     "deletedAt = ''",
 			LabelField: "email",

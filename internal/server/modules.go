@@ -18,6 +18,7 @@ func (s *Server) registerIdentityRoutes(panel *gin.RouterGroup) {
 		s.resourceRoutes(panel, r)
 	}
 	s.registerAccountRoutes(panel)
+	s.registerAccountActionRoutes(panel)
 	s.registerPreferenceRoutes(panel)
 }
 

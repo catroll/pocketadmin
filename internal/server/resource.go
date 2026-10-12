@@ -124,6 +124,15 @@ func (r resource) listPath(c *gin.Context) string {
 	return r.BasePath
 }
 
+// offers reports whether an operation is both registered and permitted.
+//
+// An empty permission means the operation is not offered at all, and Can("") is
+// true by design, so the two must be checked together: a read-only resource would
+// otherwise render a delete control whose route does not exist.
+func offers(perm string, actor *rbac.Actor) bool {
+	return perm != "" && actor.Can(perm)
+}
+
 // derivedSet returns the resource's derived fields as a lookup set.
 func (r resource) derivedSet() map[string]bool {
 	if len(r.DerivedFields) == 0 {
@@ -204,9 +213,9 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 			RowActionPath: r.RowActionPath,
 			RowActionIcon: r.RowActionIcon,
 			RowActionText: r.RowActionLabel,
-			CanCreate:     actor.Can(r.CreatePerm),
-			CanDelete:     actor.Can(r.DeletePerm),
-			CanUpdate:     actor.Can(r.UpdatePerm),
+			CanCreate:     offers(r.CreatePerm, actor),
+			CanDelete:     offers(r.DeletePerm, actor),
+			CanUpdate:     offers(r.UpdatePerm, actor),
 			PerPageItems:  perPageOptions(perPage),
 			ScopeNote:     scope.Description(),
 		})
@@ -283,9 +292,9 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 		RowActionPath: r.RowActionPath,
 		RowActionIcon: r.RowActionIcon,
 		RowActionText: r.RowActionLabel,
-		CanCreate:     actor.Can(r.CreatePerm),
-		CanDelete:     actor.Can(r.DeletePerm),
-		CanUpdate:     actor.Can(r.UpdatePerm),
+		CanCreate:     offers(r.CreatePerm, actor),
+		CanDelete:     offers(r.DeletePerm, actor),
+		CanUpdate:     offers(r.UpdatePerm, actor),
 		Pagination:    buildPagination(page, perPage, total),
 		PerPageItems:  perPageOptions(perPage),
 		ScopeNote:     scope.Description(),
@@ -456,7 +465,7 @@ func (s *Server) renderResourceForm(c *gin.Context, r resource, col *core.Collec
 		Fields:     buildFormFields(s.app, col, rec, isNew, r.derivedSet()),
 		Errors:     errs,
 		RecordID:   recID(rec),
-		CanDelete:  !isNew && s.actor(c).Can(r.DeletePerm),
+		CanDelete:  !isNew && offers(r.DeletePerm, s.actor(c)),
 		DeletePath: r.BasePath + "/" + recID(rec) + "/delete",
 	})
 }

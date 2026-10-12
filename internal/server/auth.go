@@ -111,8 +111,22 @@ func (s *Server) requireAuth() gin.HandlerFunc {
 			return
 
 		case sessionKindUser:
+			// The session record is the authority, not the cookie. Revoking a row
+			// has to end the session on the next request, or revoke-one, revoke-all,
+			// a ban and a password reset would all be cosmetic until the holder
+			// happened to sign out.
+			token, _ := sess.Get(sessionTokenKey).(string)
+			sessionRec, err := s.validateSessionRecord(token)
+			if err != nil {
+				s.clearSession(c)
+				s.redirectToLogin(c)
+				return
+			}
+			s.touchSessionRecord(sessionRec)
+
 			rec, err := s.app.FindRecordById(rbac.CollectionUsers, uid)
-			if err != nil || rec == nil || rec.GetString("status") == "banned" {
+			if err != nil || rec == nil || rec.GetString("status") == "banned" ||
+				!rec.GetDateTime("deletedAt").IsZero() {
 				s.clearSession(c)
 				s.redirectToLogin(c)
 				return
@@ -219,7 +233,8 @@ func (s *Server) currentUserFromSession(c *gin.Context) *core.Record {
 		return rec
 	case sessionKindUser:
 		rec, err := s.app.FindRecordById(rbac.CollectionUsers, uid)
-		if err != nil || rec == nil || rec.GetString("status") == "banned" {
+		if err != nil || rec == nil || rec.GetString("status") == "banned" ||
+			!rec.GetDateTime("deletedAt").IsZero() {
 			return nil
 		}
 		return rec

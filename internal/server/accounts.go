@@ -41,6 +41,13 @@ type accountDetailPage struct {
 	Sessions     []*core.Record
 	RecentLogins []*core.Record
 
+	// Locked reports an active sign-in lockout, with the time it expires.
+	Locked      bool
+	LockedUntil string
+
+	// Deleted reports a soft-deleted account, which can be restored.
+	Deleted bool
+
 	// Capability flags, so the page hides what the actor cannot do.
 	CanEditProfile    bool
 	CanAssignRoles    bool
@@ -97,6 +104,7 @@ func (s *Server) handleAccountDetail(c *gin.Context) {
 	}
 
 	actor := s.actor(c)
+	lock := checkLock(user)
 	employee := s.profileFor("employees", user.Id)
 	admin := s.profileFor("admins", user.Id)
 
@@ -109,11 +117,17 @@ func (s *Server) handleAccountDetail(c *gin.Context) {
 		Departments:       s.relationOptionsFor("departments", "name"),
 		Positions:         s.relationOptionsFor("positions", "name"),
 		Managers:          s.relationOptionsFor("employees", "employeeNo"),
+		Locked:            lock.Locked,
+		Deleted:           !user.GetDateTime("deletedAt").IsZero(),
 		CanEditProfile:    actor.Can(permission.IdentityProfileAttach),
 		CanAssignRoles:    actor.Can(permission.RBACRoleManage),
 		CanViewSessions:   actor.Can(permission.IdentitySessionList),
 		CanRevokeSessions: actor.Can(permission.IdentitySessionRevoke),
 		CanViewLogins:     actor.Can(permission.IdentityLoginLogList),
+	}
+
+	if lock.Locked {
+		vm.LockedUntil = lock.Until.Local().Format("15:04")
 	}
 
 	if vm.CanViewSessions {
