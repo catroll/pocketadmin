@@ -41,9 +41,12 @@
     </div>
   </main>
 
+  {{/* The panel is branded as PocketAdmin only. PocketBase's attribution lives
+       in NOTICE, which is where MIT actually requires it; it does not need to
+       appear in the UI. PocketBase's version stays on the dashboard's storage
+       panel, where it is diagnostic rather than a credit. */}}
   <footer class="app-footer">
-    <div class="float-end d-none d-sm-inline">Panel {{.PanelVer}}</div>
-    <strong>{{.AppName}}</strong> &middot; powered by PocketBase {{.PBVersion}}
+    <strong>{{.AppName}}</strong> &middot; v{{.PanelVer}}
   </footer>
 </div>
 
