@@ -35,6 +35,7 @@ var pageDefs = []pageDef{
 	{name: "account_detail.html", pageFile: "pages/account_detail.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "preferences.html", pageFile: "pages/preferences.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "mfa.html", pageFile: "pages/mfa.html", layoutFile: "layout_auth.html", layoutName: "layout_auth"},
+	{name: "org_chart.html", pageFile: "pages/org_chart.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "dashboard.html", pageFile: "pages/dashboard.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "error.html", pageFile: "pages/error.html", layoutFile: "layout.html", layoutName: "layout"},
 }

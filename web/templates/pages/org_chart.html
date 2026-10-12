@@ -1,0 +1,73 @@
+{{define "orgBranch"}}
+{{range .nodes}}
+<li class="org-node">
+  <div class="org-card">
+    <div class="org-name">
+      <i class="fas fa-sitemap me-1 text-body-secondary"></i>{{if .Name}}{{.Name}}{{else}}(unnamed){{end}}
+      {{if .Code}}<code class="small ms-1">{{.Code}}</code>{{end}}
+    </div>
+    <div class="org-meta">
+      <span class="badge text-bg-primary" title="This department and everything beneath it">
+        {{.Members}} member(s)
+      </span>
+    </div>
+    <div class="mt-1">
+      <a href="/organization/departments/{{.ID}}/edit" class="small">Edit</a>
+      <a href="/organization/staff" class="small ms-2">Staff</a>
+    </div>
+  </div>
+  {{if .Children}}
+  <ul class="org-children">{{template "orgBranch" dict "nodes" .Children}}</ul>
+  {{end}}
+</li>
+{{end}}
+{{end}}
+
+{{define "content"}}
+{{/* Read-only view of the department hierarchy with head counts. The tree list is
+     where the structure is edited; this answers how big each part is. */}}
+
+<div class="row mb-3">
+  <div class="col-md-4">
+    <div class="small-box text-bg-primary">
+      <div class="inner"><h3>{{.TotalStaff}}</h3><p>Staff in total</p></div>
+      <i class="small-box-icon fas fa-users"></i>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="small-box text-bg-secondary">
+      <div class="inner"><h3>{{.Unassigned}}</h3><p>Without a department</p></div>
+      <i class="small-box-icon fas fa-user-slash"></i>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="small-box text-bg-info">
+      <div class="inner"><h3>{{len .Roots}}</h3><p>Top-level departments</p></div>
+      <i class="small-box-icon fas fa-sitemap"></i>
+    </div>
+  </div>
+</div>
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-sitemap me-1"></i>Organisation chart</h3>
+    <div class="card-tools">
+      <a href="/organization/departments" class="btn btn-secondary btn-sm">
+        <i class="fas fa-list me-1"></i>Back to the tree list
+      </a>
+    </div>
+  </div>
+  <div class="card-body">
+    {{if .Roots}}
+    <ul class="org-tree">{{template "orgBranch" dict "nodes" .Roots}}</ul>
+    {{else}}
+    <p class="text-body-secondary mb-0">
+      No departments yet. <a href="/organization/departments/new">Create the first one.</a>
+    </p>
+    {{end}}
+  </div>
+  <div class="card-footer text-body-secondary small">
+    A member count includes everyone in that department and in everything beneath it.
+  </div>
+</div>
+{{end}}

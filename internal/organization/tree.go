@@ -21,8 +21,11 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// CollectionDepartments is the tree's collection name.
-const CollectionDepartments = "departments"
+// Collection names owned by the organisation model.
+const (
+	CollectionDepartments = "departments"
+	CollectionEmployees   = "employees"
+)
 
 // Register binds the department tree's invariants to the application.
 //
@@ -49,7 +52,50 @@ func Register(app core.App) {
 		}
 		return reindex(e.App, e.Record)
 	})
+
+	app.OnRecordCreate(CollectionEmployees).BindFunc(guardManagerCycle)
+	app.OnRecordUpdate(CollectionEmployees).BindFunc(guardManagerCycle)
 }
+
+// guardManagerCycle refuses a line-manager assignment that would create a loop.
+//
+// A cycle in the reporting line is not merely untidy: every traversal of it --
+// an organisation chart, a approval chain, a "who reports to whom" query -- would
+// either loop forever or silently stop at the depth cap. The check walks up from
+// the proposed manager and refuses if it reaches the employee being saved.
+func guardManagerCycle(e *core.RecordEvent) error {
+	managerID := e.Record.GetString("manager")
+	if managerID == "" || e.Record.Id == "" {
+		return e.Next()
+	}
+
+	if managerID == e.Record.Id {
+		return fmt.Errorf("an employee cannot be their own line manager")
+	}
+
+	current := managerID
+	for depth := 0; depth < maxReportingDepth; depth++ {
+		if current == e.Record.Id {
+			return fmt.Errorf("that manager already reports to this employee, directly or through someone else")
+		}
+
+		manager, err := e.App.FindRecordById(CollectionEmployees, current)
+		if err != nil || manager == nil {
+			// The chain ends at someone outside the set, or at a record that no
+			// longer exists; either way there is nothing further to loop through.
+			break
+		}
+		current = manager.GetString("manager")
+		if current == "" {
+			break
+		}
+	}
+
+	return e.Next()
+}
+
+// maxReportingDepth bounds the walk so a pre-existing loop cannot hang a save.
+const maxReportingDepth = 32
 
 // validateParent checks the chosen parent and derives the department's depth.
 //

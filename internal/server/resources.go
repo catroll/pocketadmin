@@ -78,6 +78,12 @@ func organizationResources() []resource {
 			DerivedFields: []string{"path", "level"},
 			TreeView:      true,
 			TreePathField: "path",
+			CountOf: &countSpec{
+				Collection: "employees",
+				Field:      "department",
+				Label:      "Members",
+				Filter:     "deletedAt = ''",
+			},
 			BeforeDelete: func(s *Server, rec *core.Record) error {
 				return refuseIfReferenced(s, "departments", "parent", rec.Id,
 					"This department still has sub-departments. Move or delete them first.")

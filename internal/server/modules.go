@@ -29,6 +29,7 @@ func (s *Server) registerOrganizationRoutes(panel *gin.RouterGroup) {
 	for _, r := range organizationResources() {
 		s.resourceRoutes(panel, r)
 	}
+	s.registerOrgChartRoutes(panel)
 }
 
 // registerRBACRoutes mounts the role, permission, menu and dictionary screens.

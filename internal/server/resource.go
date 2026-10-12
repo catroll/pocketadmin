@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -71,6 +72,10 @@ type resource struct {
 	// form. They are excluded from the editor and skipped when applying a
 	// submission, so a crafted post cannot rewrite a materialised path.
 	DerivedFields []string
+
+	// CountOf adds a read-only column counting records in another collection that
+	// point at this one, such as the staff in a department.
+	CountOf *countSpec
 
 	// HasDetail marks a resource with its own detail screen at BasePath/:id, so
 	// the list offers a view action next to edit and delete.
@@ -259,6 +264,9 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 	}
 
 	cols := listColumns(col)
+	if r.CountOf != nil {
+		cols = append(cols, countColumn(r.CountOf))
+	}
 	if r.TreeView {
 		// The indent marks the first column, so a tree has to lead with the name
 		// rather than with the id, or the hierarchy is drawn down the wrong column.
@@ -268,6 +276,20 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 	rows := make([]row, 0, len(records))
 	for _, rec := range records {
 		built := buildRow(col, rec, cols)
+
+		if r.CountOf != nil {
+			n, err := s.countRelated(r.CountOf, rec.Id)
+			if err != nil {
+				slog.Warn("could not count related records", "collection", r.CountOf.Collection, "error", err)
+			}
+			if len(built.Cells) > 0 {
+				built.Cells[len(built.Cells)-1] = cell{
+					Kind: "text",
+					Text: fmt.Sprint(n),
+				}
+			}
+		}
+
 		if r.TreeView {
 			built.Indent = treeDepth(s.app, col, rec, r.ParentField)
 		}
@@ -495,6 +517,55 @@ func (s *Server) resourceRoutes(panel *gin.RouterGroup, r resource) {
 	if r.DeletePerm != "" {
 		s.guarded(panel, http.MethodPost, r.BasePath+"/:id/delete", r.DeletePerm,
 			func(c *gin.Context) { s.resourceDelete(c, r) })
+	}
+}
+
+// countSpec describes a related-record count shown as a list column.
+type countSpec struct {
+	// Collection holds the records to count.
+	Collection string
+
+	// Field is the relation on that collection pointing at the listed row.
+	Field string
+
+	// Label heads the column.
+	Label string
+
+	// Filter narrows what counts, for example to active staff only.
+	Filter string
+}
+
+// countRelated counts the records that point at one row.
+//
+// This is a query per row rather than one grouped query. A list is capped at a
+// few hundred rows and the relation column is indexed, so the round trips are
+// cheap; a grouped query would mean hand-written SQL in the generic list path,
+// which is a worse trade for a read-only badge.
+func (s *Server) countRelated(spec *countSpec, id string) (int64, error) {
+	if spec == nil || id == "" {
+		return 0, nil
+	}
+
+	filter := spec.Field + " = {:id}"
+	params := map[string]any{"id": id}
+	if spec.Filter != "" {
+		filter = "(" + spec.Filter + ") && " + filter
+	}
+
+	col, err := s.app.FindCollectionByNameOrId(spec.Collection)
+	if err != nil || col == nil {
+		return 0, nil
+	}
+	return s.countRecords(col, filter, params)
+}
+
+// countColumn builds the extra column for a resource that declares a count.
+func countColumn(spec *countSpec) column {
+	return column{
+		Name:  "relatedCount",
+		Label: spec.Label,
+		Type:  core.FieldTypeNumber,
+		Sort:  "",
 	}
 }
 
