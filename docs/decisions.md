@@ -411,6 +411,59 @@ would invalidate rows already stored under it.
 **Given up.** A startup step that writes to the schema. It is a no-op once the two
 agree, and it logs what it added when they do not.
 
+### D-023 — Rich text is sanitised by a dependency, not by hand
+
+**Decision.** `github.com/microcosm-cc/bluemonday` v1.0.27 sanitises announcement
+bodies, with an allow-list policy. It is the first dependency this project has
+added, and it brings two transitive packages.
+
+**Why.** PocketBase's editor field stores HTML **verbatim**. That was verified
+rather than assumed: every common payload was written through the field and read
+back, and `<script>`, `onerror=`, `javascript:` URLs, `<iframe>`, `<svg/onload>`
+and `<style>` all survived unchanged. An announcement's audience can be every user
+of the product, so unsanitised storage means whoever can write one can attack
+everyone who reads it.
+
+This is the case where "prefer fewer dependencies" does not apply. HTML
+sanitisation is not a bounded problem: a deny-list has to anticipate every way a
+browser can be made to execute something, and the browser knows more tricks than
+the list does. A hand-written sanitiser is a well-known way to ship a
+vulnerability while believing you have prevented one.
+
+The dependency was checked rather than recalled: v1.0.27, released 2024-07-04. Two
+years is old for a security library, and the alternatives are less established. It
+is on the stable v1 line, its policy model is configured rather than inherited, its
+job is bounded, and the reasoning is recorded here so the choice can be revisited
+if a better-maintained option appears.
+
+The sanitising runs in a **model hook**, so every write passes through it -- a
+screen, a seed, an import and the API. A sanitiser installed in a handler protects
+that handler and nothing else. It is tested against 26 payloads and against
+ordinary markup that must survive.
+
+**Given up.** Three dependencies where there were none, and an allow-list that will
+occasionally reject markup someone wanted.
+
+### D-024 — An announcement's visibility is decided by whether you can author, not by whether you are an administrator
+
+**Decision.** An account that holds the announcement update permission sees every
+published announcement. Everyone else sees the ones their audience matches.
+
+**Why.** Two earlier attempts were wrong in the same way, and the second is the
+instructive one. The first decided "administrator" by collection name, which is
+true for every account because there is one account collection. The second decided
+it by the presence of an `admins` record -- but signing into this panel **requires**
+an `admins` record, so that is also true for every account that can reach the page.
+Both versions showed everyone everything and made the audience field do nothing.
+
+The question that actually separates the two groups is whether the reader is
+responsible for the announcements. That is the update permission, which the RBAC
+layer already answers.
+
+**Given up.** An author cannot preview what a targeted reader would see, because
+they see everything. A future "preview as" would restore that, and is not needed
+yet.
+
 ---
 
 ## Pending

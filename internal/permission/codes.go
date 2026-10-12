@@ -20,6 +20,7 @@ const (
 	ModuleAudit        = "audit"
 	ModuleSettings     = "settings"
 	ModuleJobs         = "jobs"
+	ModuleAnnouncement = "announcement"
 )
 
 // Point is a single permission point.
@@ -145,6 +146,17 @@ const (
 	JobsJobExecute = "jobs:job:execute"
 	JobsRunList    = "jobs:run:list"
 
+	// Announcements. Publishing is separate from editing because writing an
+	// announcement and deciding that everyone should see it are different
+	// authorities -- a drafter should be able to prepare one without being able to
+	// send it.
+	AnnouncementList    = "announcement:announcement:list"
+	AnnouncementCreate  = "announcement:announcement:create"
+	AnnouncementUpdate  = "announcement:announcement:update"
+	AnnouncementDelete  = "announcement:announcement:delete"
+	AnnouncementPublish = "announcement:announcement:publish"
+	AnnouncementReads   = "announcement:read:list"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -226,6 +238,13 @@ func All() []Point {
 		{JobsJobUpdate, "Change a task's schedule or state", ModuleJobs, "job", "update", "button"},
 		{JobsJobExecute, "Run a task now", ModuleJobs, "job", "execute", "button"},
 		{JobsRunList, "View task run history", ModuleJobs, "run", "list", "api"},
+
+		{AnnouncementList, "List announcements", ModuleAnnouncement, "announcement", "list", "menu"},
+		{AnnouncementCreate, "Write an announcement", ModuleAnnouncement, "announcement", "create", "button"},
+		{AnnouncementUpdate, "Edit an announcement", ModuleAnnouncement, "announcement", "update", "button"},
+		{AnnouncementDelete, "Delete an announcement", ModuleAnnouncement, "announcement", "delete", "button"},
+		{AnnouncementPublish, "Publish or withdraw an announcement", ModuleAnnouncement, "announcement", "publish", "button"},
+		{AnnouncementReads, "See who has read an announcement", ModuleAnnouncement, "read", "list", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

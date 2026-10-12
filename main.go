@@ -14,6 +14,7 @@ import (
 
 	pbcmd "github.com/pocketbase/pocketbase/cmd"
 
+	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/config"
 	"pocketadmin/internal/logging"
 	"pocketadmin/internal/organization"
@@ -86,6 +87,7 @@ func run() error {
 	// means every write path -- this panel, PocketBase's REST API, a future
 	// importer -- maintains the derived data the same way.
 	organization.Register(app)
+	announcement.Register(app)
 
 	// The folder tree is the same hierarchy with different nouns, so it uses the
 	// same implementation rather than a second copy that could forget the cycle

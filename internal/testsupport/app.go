@@ -12,6 +12,7 @@ import (
 
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/organization"
 	"pocketadmin/internal/tree"
 
@@ -41,6 +42,7 @@ func NewApp(t *testing.T) core.App {
 	// These are the hooks main registers after migrating. A test app without them
 	// would silently differ from production.
 	organization.Register(app)
+	announcement.Register(app)
 	tree.Register(app, tree.Options{Collection: "file_folders", Label: "folder"})
 
 	return app

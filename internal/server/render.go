@@ -37,6 +37,9 @@ var pageDefs = []pageDef{
 	{name: "mfa.html", pageFile: "pages/mfa.html", layoutFile: "layout_auth.html", layoutName: "layout_auth"},
 	{name: "org_chart.html", pageFile: "pages/org_chart.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "storage_upload.html", pageFile: "pages/storage_upload.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "announcements.html", pageFile: "pages/announcements.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "announcement_detail.html", pageFile: "pages/announcement_detail.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "announcement_form.html", pageFile: "pages/announcement_form.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "jobs.html", pageFile: "pages/jobs.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "job_runs.html", pageFile: "pages/job_runs.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "settings.html", pageFile: "pages/settings.html", layoutFile: "layout.html", layoutName: "layout"},
@@ -107,6 +110,14 @@ func templateFuncs() template.FuncMap {
 		"formatTime": formatTime,
 		"jsonPretty": jsonPretty,
 		"truncate":   truncate,
+
+		// safeHTML renders a stored body as markup rather than as text.
+		//
+		// It is only safe because the value has been through the sanitiser at the
+		// storage boundary, which is a model hook and therefore cannot be bypassed
+		// by a screen or an API call. Every other kind of user-supplied text in
+		// this panel goes through the default escaping, and that is deliberate.
+		"safeHTML":   func(value string) template.HTML { return template.HTML(value) },
 		"treeIndent": treeIndent,
 		"fileURL":    fileURL,
 		"isImage":    isImage,

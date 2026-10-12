@@ -17,6 +17,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"golang.org/x/crypto/bcrypt"
 
+	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/config"
 	"pocketadmin/internal/jobs"
 	"pocketadmin/internal/logging"
@@ -70,6 +71,9 @@ type Server struct {
 	// scheduler runs due tasks, or nil when it has not been started.
 	scheduler *jobs.Scheduler
 
+	// announcements answers audience questions for the announcement module.
+	announcements *announcement.Engine
+
 	// guards records the permission each route requires, keyed
 	// "METHOD /path". selfCheckRoutes compares it against the router.
 	guards map[string]string
@@ -102,6 +106,7 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 		menus:             rbac.NewProjector(app),
 		files:             openStorageDriver(cfg),
 		settings:          settings.NewEngine(app),
+		announcements:     announcement.NewEngine(app),
 		guards:            make(map[string]string),
 	}
 

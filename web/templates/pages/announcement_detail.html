@@ -1,0 +1,60 @@
+{{define "content"}}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card card-outline {{if eq (.Record.GetString "level") "urgent"}}card-danger{{else if eq (.Record.GetString "level") "important"}}card-warning{{else}}card-primary{{end}}">
+      <div class="card-header">
+        <h3 class="card-title">{{.Record.GetString "title"}}</h3>
+        <div class="card-tools">
+          <a href="/announcements" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left"></i></a>
+        </div>
+      </div>
+      {{/* The body is rendered as markup, which is only safe because it went
+           through the sanitiser at the storage boundary. */}}
+      <div class="card-body announcement-body">{{safeHTML .Content}}</div>
+      <div class="card-footer text-body-secondary small">
+        {{.Record.GetString "type"}} &middot; {{.Record.GetString "level"}} &middot;
+        audience: {{.Record.GetString "audience"}} &middot;
+        {{.Reads}} read
+        {{with .Record.GetDateTime "publishAt"}}&middot; published {{formatTime .}}{{end}}
+        {{with .Record.GetDateTime "expireAt"}}&middot; expires {{formatTime .}}{{end}}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Actions</h3></div>
+      <div class="card-body d-grid gap-2">
+        <a href="/announcements/{{.Record.Id}}/edit" class="btn btn-outline-primary btn-sm">
+          <i class="fas fa-pen me-1"></i>Edit
+        </a>
+      </div>
+    </div>
+
+    {{if .CanSeeReaders}}
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-users me-1"></i>Readers
+          <span class="badge text-bg-secondary">{{.ReadByTargets}}/{{.TargetCount}}</span>
+        </h3>
+      </div>
+      <div class="card-body">
+        {{if eq .TargetCount 0}}
+        <p class="text-body-secondary small mb-0">
+          This announcement has no resolvable audience, so there is nobody to check against.
+        </p>
+        {{else if eq .UnreadCount 0}}
+        <p class="text-success small mb-0">Everyone targeted has read this.</p>
+        {{else}}
+        <p class="small mb-2">{{.UnreadCount}} of {{.TargetCount}} have not read it:</p>
+        <ul class="list-unstyled small mb-0">
+          {{range .Unread}}<li><i class="far fa-circle me-1"></i>{{.}}</li>{{end}}
+        </ul>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}

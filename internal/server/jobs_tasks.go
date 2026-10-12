@@ -9,6 +9,7 @@ import (
 
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/audit"
 	"pocketadmin/internal/jobs"
 )
@@ -27,6 +28,7 @@ func (s *Server) RegisterJobHandlers() {
 	jobHandlerOnce.Do(func() {
 		s.registerAuditRetentionJob()
 		s.registerSessionCleanupJob()
+		s.registerAnnouncementJob()
 	})
 }
 
@@ -119,6 +121,45 @@ func (s *Server) registerSessionCleanupJob() {
 			}
 
 			return fmt.Sprintf("deleted %d session record(s)", deleted), nil
+		},
+	})
+}
+
+// registerAnnouncementJob moves announcements in and out of the published state.
+//
+// The transition has to happen on a schedule rather than by comparing publishAt
+// while rendering, because "published" is a state an operator looks at and a
+// reader may be notified about: a purely computed state cannot be the trigger for
+// anything.
+func (s *Server) registerAnnouncementJob() {
+	jobs.Register(jobs.Handler{
+		Code:        "announcement.lifecycle",
+		Name:        "Announcement publishing",
+		Description: "Publishes announcements whose publish time has arrived and expires those whose window has closed.",
+		// Every five minutes: an announcement scheduled for 09:00 appearing at
+		// 09:04 is acceptable, and running this every minute would be noise.
+		DefaultCron: "*/5 * * * *",
+		Run: func(ctx context.Context, _ map[string]any) (string, error) {
+			published, expired, err := announcement.Reconcile(s.app, time.Now())
+			if err != nil {
+				return "", err
+			}
+
+			if published == 0 && expired == 0 {
+				return "nothing to change", nil
+			}
+
+			// Publication is announced to its audience, so the transition is worth
+			// recording even though it is automatic.
+			s.auditSystem(auditEntry{
+				Event:    audit.EventSettingsChanged,
+				Module:   "announcement",
+				Summary:  fmt.Sprintf("Announcement lifecycle: %d published, %d expired", published, expired),
+				Detail:   map[string]any{"published": published, "expired": expired},
+				Severity: audit.SeverityInfo,
+			})
+
+			return fmt.Sprintf("published %d, expired %d", published, expired), nil
 		},
 	})
 }

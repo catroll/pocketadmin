@@ -1,0 +1,86 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <form method="get" action="/announcements" class="row g-2">
+      <div class="col-auto">
+        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}"
+               placeholder="Search title or body">
+      </div>
+      <div class="col-auto">
+        <select class="form-select form-select-sm" name="status">
+          <option value="">Any state</option>
+          {{$s := .Status}}
+          {{range .Statuses}}
+          <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+      </div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">Filter</button></div>
+    </form>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    {{if .CanCreate}}
+    <a href="/announcements/new" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus me-1"></i>New announcement
+    </a>
+    {{end}}
+  </div>
+</div>
+
+<div class="row">
+  {{range .Rows}}
+  <div class="col-12">
+    <div class="card card-outline {{if eq .Level "urgent"}}card-danger{{else if eq .Level "important"}}card-warning{{else}}card-primary{{end}}">
+      <div class="card-header">
+        <h3 class="card-title">
+          {{if .Pinned}}<i class="fas fa-thumbtack text-warning me-1" title="Pinned"></i>{{end}}
+          <a href="/announcements/{{.Record.Id}}" class="text-decoration-none">{{.Title}}</a>
+        </h3>
+        <div class="card-tools">
+          {{if not .IsRead}}<span class="badge text-bg-info me-1">unread</span>{{end}}
+          <span class="badge text-bg-secondary">{{.Type}}</span>
+          {{if eq .Level "urgent"}}<span class="badge text-bg-danger">urgent</span>
+          {{else if eq .Level "important"}}<span class="badge text-bg-warning">important</span>{{end}}
+          {{if eq .Status "published"}}<span class="badge text-bg-success">published</span>
+          {{else if eq .Status "scheduled"}}<span class="badge text-bg-info">scheduled</span>
+          {{else if eq .Status "expired"}}<span class="badge text-bg-dark">expired</span>
+          {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+        </div>
+      </div>
+      <div class="card-body py-2">
+        <p class="mb-2 text-body-secondary">{{truncate .Preview 200}}</p>
+        <div class="small text-body-secondary">
+          <i class="far fa-eye me-1"></i>{{.Reads}} read
+          {{with .Record.GetDateTime "publishAt"}}&middot; published {{formatTime .}}{{end}}
+          {{with .Record.GetDateTime "expireAt"}}&middot; expires {{formatTime .}}{{end}}
+        </div>
+      </div>
+      {{if or $.CanPublish $.CanDelete}}
+      <div class="card-footer py-2 text-end">
+        <a href="/announcements/{{.Record.Id}}" class="btn btn-sm btn-outline-secondary">Read</a>
+        {{if $.CanPublish}}
+        {{if eq .Status "published"}}
+        <form method="post" class="d-inline" action="/announcements/{{.Record.Id}}/archive">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button class="btn btn-sm btn-outline-warning">Archive</button>
+        </form>
+        {{else}}
+        <form method="post" class="d-inline" action="/announcements/{{.Record.Id}}/publish">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button class="btn btn-sm btn-outline-success">Publish now</button>
+        </form>
+        {{end}}
+        {{end}}
+      </div>
+      {{end}}
+    </div>
+  </div>
+  {{else}}
+  <div class="col-12">
+    <div class="card"><div class="card-body text-center text-body-secondary py-5">
+      Nothing to read. Announcements you are not the audience for are not shown here.
+    </div></div>
+  </div>
+  {{end}}
+</div>
+{{end}}
