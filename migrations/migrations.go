@@ -10,6 +10,7 @@
 package migrations
 
 import (
+	"fmt"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -98,6 +99,15 @@ func selectOf(name string, required bool, values ...string) *core.SelectField {
 
 // multiSelectOf is a shorthand for a multi-value select field.
 func multiSelectOf(name string, maxSelect int, values ...string) *core.SelectField {
+	// PocketBase refuses a maxSelect above the number of declared values, and the
+	// refusal arrives when the migration runs rather than when it is written -- so a
+	// mistake here costs a failed startup and a stack trace to read. Failing at
+	// construction puts the message where the mistake is.
+	if maxSelect > len(values) {
+		panic(fmt.Sprintf(
+			"migrations: %s declares maxSelect %d with only %d values; PocketBase caps it at the number of values",
+			name, maxSelect, len(values)))
+	}
 	return &core.SelectField{Name: name, Values: values, MaxSelect: maxSelect}
 }
 

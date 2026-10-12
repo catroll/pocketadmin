@@ -698,6 +698,86 @@ same way as D-029.
 **Given up.** No "check for updates" button by default. An operator updates the way
 they deployed.
 
+### D-035 — Money is integer minor units with an explicit currency, and never a float
+
+**Decision.** Every price, cost, discount and refund is an integer count of minor
+units alongside an ISO-4217 code. `internal/money` parses a decimal *string* digit
+by digit, and the number of decimal places comes from the currency.
+
+**Why.** "19.99" through a float64 is 19.989999999999998. Multiplying by a hundred
+and truncating gives 1998: a price one cent low, on every product, with nothing to
+show it happened. A shop that is a cent out per line is a shop whose books do not
+balance, and the error is invisible until somebody reconciles them.
+
+The currency's exponent matters as much as the units. A bare "divide by a hundred"
+shows a Japanese price a hundred times too small and loses a thousandth of every
+Kuwaiti dinar, because a yen has no minor unit and a dinar has three. The exponent
+is therefore a property of the currency, not a constant.
+
+Parsing refuses more decimal places than the currency has rather than rounding
+silently. A form that accepts 19.999 dollars has to decide what it meant, and
+deciding without saying so is how a price ends up different from what was typed.
+
+**Given up.** Every screen and every form has to convert at the edge. That is the
+cost, and it is paid once per surface rather than once per bug.
+
+### D-036 — Stock is a cache of an append-only ledger, not a number
+
+**Decision.** `stock_ledger` is the source of truth. `product_variants.stock` is a
+materialised balance, written only by `ApplyStock`, which writes the ledger entry
+first and the balance second. `ReconcileStock` recomputes it from the entries.
+
+**Why.** A stock number that can be edited directly has no history, and "why is this
+3 and not 5" is the question that matters when a count is wrong. The write order is
+deliberate: a crash between the two leaves the ledger correct and the cache stale,
+which reconciliation repairs. The other order leaves a number with no entry
+explaining it, which nothing can repair.
+
+A movement that would take stock below zero is refused rather than recorded. Stock
+below zero is not a number to be kept; it is a sign that something else is wrong --
+an order placed against stock never received -- and accepting it moves the
+discovery to a customer's inbox rather than this screen.
+
+**Given up.** Two writes per movement instead of one, and a cache that can drift and
+must be reconcilable.
+
+### D-037 — Rich-text sanitising belongs to the field type, not to the module that first needed it
+
+**Decision.** The sanitiser moved from `internal/announcement` to `internal/richtext`
+and is registered for **every** collection with an editor field. A test enumerates
+the live schema and fails when one is missing.
+
+**Why.** It was written for announcements and applied only to announcements. When the
+catalogue was built, five of the six editor fields in the platform were storing
+whatever HTML was submitted: a product description, a category description, a todo, a
+message and a release note. Every one was stored cross-site scripting, and the reason
+was not carelessness at any single site -- it was that the protection had been
+attached to a module instead of to the hazard.
+
+The hazard belongs to the field type. So does the coverage, and so does the guard:
+the drift test is what stops the next editor field from being added without it.
+
+**Given up.** A sanitiser applied to fields that may not need it, which costs a
+string scan on write and nothing on read.
+
+### D-038 — A named byte slice is not a byte slice
+
+**Decision.** `internal/server/jsonfield.go` holds one decoder for json columns, and
+it names `types.JSONRaw` explicitly.
+
+**Why.** PocketBase returns a json field as `types.JSONRaw`, which is a **named**
+`[]byte`. A Go type switch matches exact types, so `case []byte` does not match it,
+the value falls to the default branch and is silently lost. A matrix generator
+received two attributes with values, did not recognise the list, and produced no
+variants -- with no error to show for it. The same shape was waiting in the
+integration provider configuration, where it happened to work because the default
+branch used `fmt.Sprint` and reparsed the result.
+
+One helper rather than a switch per call site, because the mistake is invisible
+where it is made.
+
+**Given up.** Nothing.
+
 ---
 
 ## Pending

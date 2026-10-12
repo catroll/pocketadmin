@@ -25,6 +25,7 @@ const (
 	ModuleDeveloper    = "developer"
 	ModuleIntegrations = "integrations"
 	ModuleMonitoring   = "monitoring"
+	ModuleCatalog      = "catalog"
 )
 
 // Point is a single permission point.
@@ -197,7 +198,21 @@ const (
 	MonitoringHealth      = "monitoring:health:view"
 	MonitoringSystemInfo  = "monitoring:system:info"
 	MonitoringSnapshotRun = "monitoring:snapshot:run"
-	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
+
+	// Catalog. Stock is separated from the product because adjusting a count is a
+	// different act from describing a product: the ledger is append-only and every
+	// movement names who made it, so the authority to move stock is worth granting
+	// on its own.
+	CatalogCategoryList   = "catalog:category:list"
+	CatalogCategoryManage = "catalog:category:manage"
+	CatalogProductList    = "catalog:product:list"
+	CatalogProductCreate  = "catalog:product:create"
+	CatalogProductUpdate  = "catalog:product:update"
+	CatalogProductDelete  = "catalog:product:delete"
+	CatalogProductBulk    = "catalog:product:bulk"
+	CatalogVariantManage  = "catalog:variant:manage"
+	CatalogStockView      = "catalog:stock:view"
+	CatalogStockAdjust    = "catalog:stock:adjust" // RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
 )
@@ -307,6 +322,16 @@ func All() []Point {
 		{MonitoringHealth, "See detailed component health", ModuleMonitoring, "health", "view", "button"},
 		{MonitoringSystemInfo, "See system information", ModuleMonitoring, "system", "info", "api"},
 		{MonitoringSnapshotRun, "Record a metric snapshot", ModuleMonitoring, "snapshot", "run", "button"},
+		{CatalogCategoryList, "List product categories", ModuleCatalog, "category", "list", "api"},
+		{CatalogCategoryManage, "Manage the category tree", ModuleCatalog, "category", "manage", "button"},
+		{CatalogProductList, "List products", ModuleCatalog, "product", "list", "menu"},
+		{CatalogProductCreate, "Create a product", ModuleCatalog, "product", "create", "button"},
+		{CatalogProductUpdate, "Edit a product", ModuleCatalog, "product", "update", "button"},
+		{CatalogProductDelete, "Delete a product", ModuleCatalog, "product", "delete", "button"},
+		{CatalogProductBulk, "Apply a bulk product change", ModuleCatalog, "product", "bulk", "button"},
+		{CatalogVariantManage, "Manage product variants", ModuleCatalog, "variant", "manage", "button"},
+		{CatalogStockView, "View the stock ledger", ModuleCatalog, "stock", "view", "button"},
+		{CatalogStockAdjust, "Adjust stock", ModuleCatalog, "stock", "adjust", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

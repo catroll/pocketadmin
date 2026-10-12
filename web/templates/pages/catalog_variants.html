@@ -1,0 +1,123 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <h4 class="mb-0">{{.Product.GetString "name"}}</h4>
+    <div class="small text-body-secondary">
+      <code>{{.Product.GetString "slug"}}</code> &middot;
+      stock mode: <code>{{.Product.GetString "stockMode"}}</code>
+    </div>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    <a href="/catalog/products" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Products</a>
+    {{if .CanManage}}
+    <form method="post" action="/catalog/products/{{.Product.Id}}/variants/generate" class="d-inline">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <button class="btn btn-primary btn-sm"><i class="fas fa-wand-magic-sparkles me-1"></i>Generate matrix</button>
+    </form>
+    {{end}}
+  </div>
+</div>
+
+{{if not .Attributes}}
+<div class="alert alert-secondary py-2 small">
+  This product has no attributes, so there is no matrix to generate. Add attributes
+  such as Colour or Size first.
+</div>
+{{end}}
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-layer-group me-1"></i>Variants</h3>
+    <div class="card-tools small text-body-secondary">
+      Available is stock minus what unpaid orders hold.
+    </div>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>SKU</th><th>Combination</th><th>Charged</th><th>Stock</th><th>Reserved</th><th>Available</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td>
+            <code>{{.SKU}}</code>
+            {{if .Barcode}}<div class="small text-body-secondary">{{.Barcode}}</div>{{end}}
+          </td>
+          <td class="small">{{.Label}}</td>
+          <td class="small text-nowrap">
+            {{if .OnSale}}<span class="text-danger fw-semibold">{{.Charged}}</span>
+            {{else}}{{.Charged}}{{end}}
+          </td>
+          <td class="small">{{.Stock}}</td>
+          <td class="small">{{.Locked}}</td>
+          <td class="small {{if le .Available 0}}text-danger fw-semibold{{end}}">{{.Available}}</td>
+          <td>
+            {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
+            {{else}}<span class="badge text-bg-secondary">disabled</span>{{end}}
+          </td>
+          <td class="text-end">
+            {{if $.CanAdjust}}
+            <form method="post" class="d-inline" action="/catalog/variants/{{.Record.Id}}/stock">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <div class="input-group input-group-sm" style="width:14rem">
+                <input type="number" class="form-control" name="delta" placeholder="+/-" required>
+                <select class="form-select" name="reason" style="max-width:7rem">
+                  <option value="purchase">purchase</option>
+                  <option value="adjustment" selected>adjustment</option>
+                  <option value="damage">damage</option>
+                  <option value="return">return</option>
+                  <option value="stocktake">stocktake</option>
+                  <option value="import">import</option>
+                </select>
+                <button class="btn btn-outline-primary" title="Record the movement">
+                  <i class="fas fa-plus-minus"></i>
+                </button>
+              </div>
+            </form>
+            <form method="post" class="d-inline" action="/catalog/variants/{{.Record.Id}}/reconcile">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button class="btn btn-sm btn-outline-secondary" title="Recompute from the ledger">
+                <i class="fas fa-calculator"></i>
+              </button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="8" class="text-center text-body-secondary py-4">
+          No variants yet. {{if .CanManage}}Generate the matrix, or add them individually.{{end}}
+        </td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer small text-body-secondary">
+    Stock is a cache of the ledger, and every movement writes an entry naming who made
+    it and why. The reconcile button recomputes it from those entries.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3 class="card-title"><i class="fas fa-clock-rotate-left me-1"></i>Recent stock movements</h3></div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-sm table-striped mb-0">
+      <thead><tr><th>When</th><th>Change</th><th>Balance</th><th>Reason</th><th>Reference</th><th>Note</th></tr></thead>
+      <tbody>
+        {{range .Ledger}}
+        <tr class="small">
+          <td>{{formatTime (.GetDateTime "created")}}</td>
+          <td class="{{if gt (.GetInt "delta") 0}}text-success{{else}}text-danger{{end}}">
+            {{if gt (.GetInt "delta") 0}}+{{end}}{{.GetInt "delta"}}
+          </td>
+          <td>{{.GetInt "balanceAfter"}}</td>
+          <td>{{.GetString "reason"}}</td>
+          <td>{{.GetString "refType"}} {{.GetString "refId"}}</td>
+          <td>{{truncate (.GetString "note") 40}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="6" class="text-center text-body-secondary py-3">No movements recorded.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

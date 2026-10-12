@@ -1,4 +1,16 @@
-package announcement
+// Package richtext sanitises the rich-text fields the platform stores.
+//
+// PocketBase's editor field stores HTML verbatim. That was verified rather than
+// assumed: every common payload was written through the field and read back, and
+// <script>, onerror=, javascript: URLs, <iframe>, <svg/onload> and <style> all
+// survived unchanged. An unsanitised body is therefore stored cross-site scripting.
+//
+// The sanitiser lives here rather than beside the module that first needed it,
+// because the hazard belongs to the field type and not to announcements. Every
+// collection with an editor field is registered below, and a test enumerates the
+// schema and fails when one is missing -- which is what stops the next editor field
+// from being added without protection.
+package richtext
 
 import (
 	"strings"

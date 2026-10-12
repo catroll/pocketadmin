@@ -128,6 +128,14 @@ func seededMenus() []menuSeed {
 		{Name: "announcement", Title: "Announcements", Type: "menu", Path: "/announcements",
 			Icon: "fas fa-bullhorn", Sort: 75, Permission: permission.AnnouncementList},
 
+		{Name: "catalog", Title: "Catalog", Type: "directory", Icon: "fas fa-boxes-stacked", Sort: 30},
+		{Name: "catalog.products", Title: "Products", Parent: "catalog", Type: "menu",
+			Path: "/catalog/products", Icon: "far fa-circle",
+			Permission: permission.CatalogProductList, Sort: 10},
+		{Name: "catalog.categories", Title: "Categories", Parent: "catalog", Type: "menu",
+			Path: "/catalog/categories", Icon: "far fa-circle",
+			Permission: permission.CatalogCategoryList, Sort: 20},
+
 		{Name: "monitoring", Title: "Monitoring", Type: "menu", Path: "/monitoring",
 			Icon: "fas fa-gauge-high", Sort: 88, Permission: permission.MonitoringDashboard},
 		{Name: "monitoring.system", Title: "System", Parent: "monitoring", Type: "menu",

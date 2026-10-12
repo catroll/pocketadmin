@@ -93,6 +93,7 @@ func run() error {
 	// same implementation rather than a second copy that could forget the cycle
 	// check.
 	tree.Register(app, tree.Options{Collection: "file_folders", Label: "folder"})
+	tree.Register(app, tree.Options{Collection: "product_categories", Label: "category"})
 
 	api, err := pbapp.APIHandler(app)
 	if err != nil {

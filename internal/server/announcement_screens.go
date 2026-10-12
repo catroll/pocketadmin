@@ -12,6 +12,7 @@ import (
 	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/audit"
 	"pocketadmin/internal/permission"
+	"pocketadmin/internal/richtext"
 )
 
 // registerAnnouncementRoutes mounts the announcement screens.
@@ -69,7 +70,7 @@ func (s *Server) handleAnnouncementList(c *gin.Context) {
 			Level:   rec.GetString("level"),
 			Status:  rec.GetString("status"),
 			Pinned:  rec.GetBool("pinned"),
-			Preview: announcement.SanitizePlain(rec.GetString("content")),
+			Preview: richtext.SanitizePlain(rec.GetString("content")),
 			Reads:   rec.GetInt("readCount"),
 			IsRead:  read[rec.Id],
 		})

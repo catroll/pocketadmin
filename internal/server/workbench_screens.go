@@ -9,9 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
 
-	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/audit"
 	"pocketadmin/internal/permission"
+	"pocketadmin/internal/richtext"
 	"pocketadmin/internal/workbench"
 )
 
@@ -503,7 +503,7 @@ type inboxRow struct {
 
 // messagePlain renders a message body as text for a preview.
 func messagePlain(html string) string {
-	return announcement.TextFromHTML(html, 160)
+	return richtext.TextFromHTML(html, 160)
 }
 
 var _ = time.Now

@@ -44,6 +44,7 @@ func NewApp(t *testing.T) core.App {
 	organization.Register(app)
 	announcement.Register(app)
 	tree.Register(app, tree.Options{Collection: "file_folders", Label: "folder"})
+	tree.Register(app, tree.Options{Collection: "product_categories", Label: "category"})
 
 	return app
 }

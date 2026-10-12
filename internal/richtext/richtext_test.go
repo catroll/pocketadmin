@@ -1,10 +1,10 @@
-package announcement_test
+package richtext_test
 
 import (
 	"strings"
 	"testing"
 
-	"pocketadmin/internal/announcement"
+	"pocketadmin/internal/richtext"
 )
 
 // TestEveryCommonPayloadIsNeutralised is the test that justifies the dependency.
@@ -44,7 +44,7 @@ script:alert(1)">x</a>`,
 	}
 
 	for name, payload := range payloads {
-		out := announcement.Sanitize(payload)
+		out := richtext.Sanitize(payload)
 
 		lower := strings.ToLower(out)
 		for _, forbidden := range []string{
@@ -70,7 +70,7 @@ func TestOrdinaryMarkupSurvives(t *testing.T) {
 		`<p><a href="https://status.example.com">Status page</a></p>` +
 		`<p><code>curl -s https://api.example.com/health</code></p>`
 
-	out := announcement.Sanitize(input)
+	out := richtext.Sanitize(input)
 
 	for _, want := range []string{
 		"<h2>Maintenance</h2>", "<strong>unavailable</strong>", "<em>02:00</em>",
@@ -88,7 +88,7 @@ func TestTablesSurvive(t *testing.T) {
 	input := `<table><thead><tr><th>Window</th></tr></thead>` +
 		`<tbody><tr><td>02:00-04:00</td></tr></tbody></table>`
 
-	out := announcement.Sanitize(input)
+	out := richtext.Sanitize(input)
 	for _, want := range []string{"<table>", "<th>Window</th>", "<td>02:00-04:00</td>"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("%q was removed from %q", want, out)
@@ -100,7 +100,7 @@ func TestTablesSurvive(t *testing.T) {
 // destination, and a fully qualified link should open in a new tab so a reader
 // does not lose their place in the panel.
 func TestLinksGetNoFollow(t *testing.T) {
-	out := announcement.Sanitize(`<a href="https://example.com">x</a>`)
+	out := richtext.Sanitize(`<a href="https://example.com">x</a>`)
 
 	if !strings.Contains(out, "nofollow") {
 		t.Errorf("no nofollow on a fully qualified link: %q", out)
@@ -113,7 +113,7 @@ func TestLinksGetNoFollow(t *testing.T) {
 // TestRelativeLinksSurvive: the editor produces relative paths for things inside
 // this application.
 func TestRelativeLinksSurvive(t *testing.T) {
-	out := announcement.Sanitize(`<a href="/orders/123">order</a>`)
+	out := richtext.Sanitize(`<a href="/orders/123">order</a>`)
 	if !strings.Contains(out, `href="/orders/123"`) {
 		t.Errorf("a relative link was removed: %q", out)
 	}
@@ -124,8 +124,8 @@ func TestRelativeLinksSurvive(t *testing.T) {
 func TestSanitizeIsIdempotent(t *testing.T) {
 	input := `<h2>Title</h2><p>Text with <strong>bold</strong> and <a href="https://x.example">a link</a>.</p>`
 
-	once := announcement.Sanitize(input)
-	twice := announcement.Sanitize(once)
+	once := richtext.Sanitize(input)
+	twice := richtext.Sanitize(once)
 
 	if once != twice {
 		t.Errorf("sanitising twice changed the result:\n once: %q\ntwice: %q", once, twice)
@@ -135,7 +135,7 @@ func TestSanitizeIsIdempotent(t *testing.T) {
 // TestSanitizePlainStripsEverything: a list preview and a notification body show
 // text, not markup.
 func TestSanitizePlainStripsEverything(t *testing.T) {
-	out := announcement.SanitizePlain(`<h2>Heads up</h2><p>The system is <strong>down</strong>.</p>`)
+	out := richtext.SanitizePlain(`<h2>Heads up</h2><p>The system is <strong>down</strong>.</p>`)
 
 	if strings.Contains(out, "<") {
 		t.Errorf("markup survived: %q", out)
@@ -153,10 +153,10 @@ func TestSanitizePlainStripsEverything(t *testing.T) {
 // produce a stray fragment.
 func TestEmptyInputIsEmpty(t *testing.T) {
 	for _, input := range []string{"", "   ", "\n\t"} {
-		if out := announcement.Sanitize(input); out != "" {
+		if out := richtext.Sanitize(input); out != "" {
 			t.Errorf("Sanitize(%q) = %q, want empty", input, out)
 		}
-		if out := announcement.SanitizePlain(input); out != "" {
+		if out := richtext.SanitizePlain(input); out != "" {
 			t.Errorf("SanitizePlain(%q) = %q, want empty", input, out)
 		}
 	}

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/pocketbase/pocketbase/core"
+
+	"pocketadmin/internal/richtext"
 )
 
 // Collection names.
@@ -33,34 +35,11 @@ const (
 	AudienceDepartments = "departments"
 )
 
-// Register installs the model hooks.
-//
-// The body is sanitised here rather than in the handler because a hook is the one
-// place every write passes through: a screen, a seed, a future import and the
-// public API all go through the same door, and a sanitiser installed in a handler
-// protects only that handler.
+// Register is kept for callers that expect the announcement module to install its
+// own hooks. It delegates to the shared rich-text registration, which covers every
+// collection with an editor field rather than this one alone.
 func Register(app core.App) {
-	app.OnRecordCreate(CollectionAnnouncements).BindFunc(func(e *core.RecordEvent) error {
-		sanitizeRecord(e.Record)
-		return e.Next()
-	})
-
-	app.OnRecordUpdate(CollectionAnnouncements).BindFunc(func(e *core.RecordEvent) error {
-		sanitizeRecord(e.Record)
-		return e.Next()
-	})
-}
-
-// sanitizeRecord rewrites the body in place.
-func sanitizeRecord(rec *core.Record) {
-	raw := rec.GetString("content")
-	clean := Sanitize(raw)
-
-	if clean != raw {
-		rec.Set("content", clean)
-		slog.Debug("sanitised an announcement body",
-			"removedBytes", len(raw)-len(clean))
-	}
+	richtext.Register(app)
 }
 
 // ---------------------------------------------------------------------------
