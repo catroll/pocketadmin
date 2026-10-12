@@ -20,6 +20,7 @@ var Fields = map[string][]string{
 	"system_updates":     {"releaseNotes"},
 	"product_categories": {"description"},
 	"member_tiers":       {"description"},
+	"campaigns":          {"description"},
 	"products":           {"description"},
 }
 

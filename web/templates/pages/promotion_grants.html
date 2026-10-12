@@ -1,0 +1,75 @@
+{{define "content"}}
+{{if .CanIssue}}
+<div class="card">
+  <div class="card-header"><h3 class="card-title">Issue a coupon</h3></div>
+  <div class="card-body">
+    <form method="post" action="/promotions/grants/issue" class="row g-2 align-items-end">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <div class="col-sm-4">
+        <label class="form-label small" for="coupon">Coupon</label>
+        <select class="form-select form-select-sm" id="coupon" name="coupon" required>
+          {{range .Coupons}}<option value="{{.ID}}">{{.Name}}{{if .Code}} ({{.Code}}){{end}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label small" for="email">Account email</label>
+        <input type="email" class="form-control form-control-sm" id="email" name="email"
+               placeholder="Empty for an unclaimed public code">
+      </div>
+      <div class="col-sm-4"><button class="btn btn-primary btn-sm">Issue</button></div>
+    </form>
+  </div>
+</div>
+{{end}}
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-list me-1"></i>Issued coupons</h3>
+  </div>
+  <div class="card-body border-bottom py-2">
+    <form method="get" action="/promotions/grants" class="row g-2">
+      <div class="col-auto"><input type="search" class="form-control form-control-sm" name="code" value="{{.Code}}" placeholder="Code"></div>
+      <div class="col-auto">
+        <select class="form-select form-select-sm" name="status">
+          <option value="">Any status</option>
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">Filter</button></div>
+    </form>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Code</th><th>Coupon</th><th>Held by</th><th>Expires</th><th>Status</th><th>Applied</th><th></th></tr></thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td><code>{{.Code}}</code></td>
+          <td class="small">{{.Coupon}}</td>
+          <td class="small">{{if .Holder}}{{.Holder}}{{else}}<span class="text-body-secondary">unclaimed</span>{{end}}</td>
+          <td class="small {{if .Expired}}text-danger{{end}}">{{.Expires}}</td>
+          <td>
+            {{if eq .Status "issued"}}<span class="badge text-bg-info">issued</span>
+            {{else if eq .Status "used"}}<span class="badge text-bg-success">used</span>
+            {{else if eq .Status "voided"}}<span class="badge text-bg-danger">voided</span>
+            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+          </td>
+          <td class="small">{{.Applied}}</td>
+          <td class="text-end">
+            {{if and $.CanVoid (eq .Status "issued")}}
+            <form method="post" action="/promotions/grants/{{.Record.Id}}/void" class="d-inline">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <input type="text" class="form-control form-control-sm d-inline-block" name="reason" placeholder="why" style="width:7rem">
+              <button class="btn btn-sm btn-outline-danger" title="Withdraw"><i class="fas fa-ban"></i></button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="7" class="text-center text-body-secondary py-4">No coupons have been issued.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

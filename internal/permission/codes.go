@@ -27,6 +27,7 @@ const (
 	ModuleMonitoring   = "monitoring"
 	ModuleCatalog      = "catalog"
 	ModuleMembership   = "membership"
+	ModulePromotions   = "promotions"
 )
 
 // Point is a single permission point.
@@ -226,6 +227,16 @@ const (
 	MembershipMemberGrant  = "membership:member:grant"
 	MembershipMemberRevoke = "membership:member:revoke"
 
+	// Promotions. Issuing a coupon is separate from writing its template, because
+	// handing somebody a discount is a decision about money and editing a template
+	// is a decision about a campaign.
+	PromotionCampaignList   = "promotions:campaign:list"
+	PromotionCampaignManage = "promotions:campaign:manage"
+	PromotionCouponList     = "promotions:coupon:list"
+	PromotionCouponManage   = "promotions:coupon:manage"
+	PromotionGrantList      = "promotions:grant:list"
+	PromotionGrantIssue     = "promotions:grant:issue"
+	PromotionGrantVoid      = "promotions:grant:void"
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves are
 	// separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -353,6 +364,13 @@ func All() []Point {
 		{MembershipMemberList, "List memberships", ModuleMembership, "member", "list", "menu"},
 		{MembershipMemberGrant, "Grant or extend a membership", ModuleMembership, "member", "grant", "button"},
 		{MembershipMemberRevoke, "Cancel or revoke a membership", ModuleMembership, "member", "revoke", "button"},
+		{PromotionCampaignList, "List campaigns", ModulePromotions, "campaign", "list", "api"},
+		{PromotionCampaignManage, "Manage campaigns", ModulePromotions, "campaign", "manage", "button"},
+		{PromotionCouponList, "List coupons", ModulePromotions, "coupon", "list", "menu"},
+		{PromotionCouponManage, "Manage coupons", ModulePromotions, "coupon", "manage", "button"},
+		{PromotionGrantList, "List issued coupons", ModulePromotions, "grant", "list", "api"},
+		{PromotionGrantIssue, "Issue a coupon", ModulePromotions, "grant", "issue", "button"},
+		{PromotionGrantVoid, "Void an issued coupon", ModulePromotions, "grant", "void", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

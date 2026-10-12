@@ -1,0 +1,141 @@
+{{define "content"}}
+<form method="post" action="/promotions/coupons/save">
+  <input type="hidden" name="_csrf" value="{{.CSRF}}">
+  {{if not .IsNew}}<input type="hidden" name="id" value="{{.Record.Id}}">{{end}}
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card card-primary card-outline">
+        <div class="card-header"><h3 class="card-title">Coupon</h3></div>
+        <div class="card-body">
+          <div class="row g-2 mb-2">
+            <div class="col-sm-7">
+              <label class="form-label small" for="name">Name</label>
+              <input type="text" class="form-control form-control-sm" id="name" name="name" value="{{.Name}}" required>
+            </div>
+            <div class="col-sm-5">
+              <label class="form-label small" for="code">Public code</label>
+              <input type="text" class="form-control form-control-sm font-monospace" id="code" name="code" value="{{.Code}}">
+              <div class="form-text">Empty means every code is generated.</div>
+            </div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-sm-4">
+              <label class="form-label small" for="type">Type</label>
+              <select class="form-select form-select-sm" id="type" name="type">
+                {{$t := .Type}}{{range .Types}}<option value="{{.}}" {{if eq . $t}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label small" for="value">Value</label>
+              <input type="text" class="form-control form-control-sm" id="value" name="value" value="{{.Value}}">
+              <div class="form-text">Percent for a percentage, an amount for a fixed discount.</div>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label small" for="currency">Currency</label>
+              <input type="text" class="form-control form-control-sm font-monospace" id="currency" name="currency" value="{{.Currency}}" maxlength="3">
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-sm-4">
+              <label class="form-label small" for="maxDiscount">Maximum discount</label>
+              <input type="text" class="form-control form-control-sm" id="maxDiscount" name="maxDiscount" value="{{.MaxDiscount}}">
+              <div class="form-text">Empty for no cap.</div>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label small" for="minSpend">Minimum spend</label>
+              <input type="text" class="form-control form-control-sm" id="minSpend" name="minSpend" value="{{.MinSpend}}">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label small" for="status">Status</label>
+              <select class="form-select form-select-sm" id="status" name="status">
+                {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Validity</h3></div>
+        <div class="card-body">
+          <div class="mb-2">
+            <label class="form-label small" for="validityMode">Mode</label>
+            <select class="form-select form-select-sm" id="validityMode" name="validityMode">
+              {{$v := .Validity}}{{range .Validities}}<option value="{{.}}" {{if eq . $v}}selected{{end}}>{{.}}</option>{{end}}
+            </select>
+            <div class="form-text">
+              <code>absolute</code> is a fixed window. <code>relative</code> counts from the moment each coupon is issued,
+              which is what "thirty days from now" means.
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-sm-3">
+              <label class="form-label small" for="validFrom">From</label>
+              <input type="date" class="form-control form-control-sm" id="validFrom" name="validFrom" value="{{.ValidFrom}}">
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label small" for="validTo">To</label>
+              <input type="date" class="form-control form-control-sm" id="validTo" name="validTo" value="{{.ValidTo}}">
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label small" for="validDays">Days after issue</label>
+              <input type="number" class="form-control form-control-sm" id="validDays" name="validDays" value="{{.ValidDays}}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Issuance</h3></div>
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small" for="totalQuantity">Total available</label>
+              <input type="number" class="form-control form-control-sm" id="totalQuantity" name="totalQuantity" value="{{.TotalQuantity}}">
+              <div class="form-text">0 for unlimited.</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="perUserLimit">Per account</label>
+              <input type="number" class="form-control form-control-sm" id="perUserLimit" name="perUserLimit" value="{{.PerUserLimit}}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Stacking</h3></div>
+        <div class="card-body">
+          <p class="small text-body-secondary">
+            The defaults are the cautious ones. A coupon that stacks with nothing and with no member
+            discount cannot be combined by accident into a larger discount than anybody intended.
+          </p>
+          <div class="form-check form-switch mb-2">
+            <input type="checkbox" class="form-check-input" id="stackable" name="stackable" {{if .Stackable}}checked{{end}}>
+            <label class="form-check-label small" for="stackable">Stacks with other coupons</label>
+          </div>
+          <div class="form-check form-switch mb-2">
+            <input type="checkbox" class="form-check-input" id="stacksWithMemberDiscount" name="stacksWithMemberDiscount" {{if .WithMember}}checked{{end}}>
+            <label class="form-check-label small" for="stacksWithMemberDiscount">Stacks with a membership discount</label>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="maxStacked">Maximum stacked</label>
+            <input type="number" class="form-control form-control-sm" id="maxStacked" name="maxStacked" value="{{.MaxStacked}}">
+          </div>
+          <div class="mb-0">
+            <label class="form-label small" for="campaign">Campaign</label>
+            <select class="form-select form-select-sm" id="campaign" name="campaign">
+              <option value="">None</option>
+              {{$c := .Campaign}}{{range .Campaigns}}<option value="{{.ID}}" {{if eq .ID $c}}selected{{end}}>{{.Name}}</option>{{end}}
+            </select>
+          </div>
+        </div>
+        <div class="card-footer d-grid">
+          <button class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{{end}}

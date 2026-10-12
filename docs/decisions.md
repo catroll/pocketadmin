@@ -820,6 +820,61 @@ benefit that ended yesterday.
 history -- and an operator reading one row may wonder why its benefits are not in
 force. The list shows the status, and the resolution is documented.
 
+### D-041 — A percentage discount is stored in basis points
+
+**Decision.** `coupons.value` holds minor units for a fixed amount and **basis points**
+for a percentage. The form takes a percentage; 12.5 is stored as 1250.
+
+**Why.** The same reason as the tier discount rate, from the other direction. A
+whole-number percent column cannot hold 12.5, and a float cannot be trusted with
+"12.5% of 1999". Basis points keep the value an integer and the arithmetic exact, and
+the conversion happens once, at the form.
+
+The column therefore holds three different units depending on the type -- minor
+units, basis points, and nothing at all for free shipping. That is a cost, and it is
+paid in two places: the form converts on the way in, and the list converts on the way
+out. It is recorded here because a reader looking at the raw value of 1250 has no way
+to know it is twelve and a half percent.
+
+**Given up.** One column, three meanings. A column per type would be a sparse table
+and a migration per new coupon type.
+
+### D-042 — A discount never exceeds what it is discounting, and an over-100% coupon is clamped
+
+**Decision.** The computed discount is capped at the cart subtotal. A percentage above
+100% is clamped to 100% rather than refused.
+
+**Why.** A fixed-amount coupon on a small basket would otherwise produce a negative
+total, which is a refund the shop never agreed to. The clamp is the other direction: a
+misconfigured "free" coupon should give the order away, not fail at the till. Refusing
+at checkout is the worse failure of the two, because it happens in front of a
+customer.
+
+The cap and the minimum spend are checked in the order a person would expect them
+explained: is the coupon usable at all, does the cart qualify, and only then how much
+comes off. Reporting "below the minimum spend" for a coupon that expired last week
+sends somebody to fill a basket for nothing.
+
+**Given up.** A wildly misconfigured coupon silently gives the order away instead of
+raising an error. The audit entry records the configured value, which is where the
+mistake is visible.
+
+### D-043 — A unique index on an optional text column allows exactly one empty value
+
+**Decision.** The coupon code index is partial: `UNIQUE (code) WHERE code != ''`.
+
+**Why.** Found while writing tests. The specification says a coupon's `code` is
+"unique; empty means auto-issued per grant" -- so empty is a legitimate value that
+several rows may hold. A plain unique index allows exactly one such row, and the
+second coupon an operator created without a public code would be refused with a
+message about a field they left empty on purpose.
+
+The general shape is worth remembering: a unique index expresses "no two rows share a
+value", and an optional column with a meaningful empty value needs the index to say
+which rows it governs.
+
+**Given up.** Nothing. A partial index is supported and costs the same.
+
 ---
 
 ## Pending
