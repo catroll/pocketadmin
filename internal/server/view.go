@@ -48,6 +48,11 @@ type base struct {
 	// Menus is the navigation tree projected from the actor's permissions.
 	Menus []rbac.MenuNode
 
+	// Theme and SidebarCollapsed come from the account's stored preferences, so
+	// the choice is applied rather than only recorded.
+	Theme            string
+	SidebarCollapsed bool
+
 	// CurrentCollection highlights the active collection in the sidebar.
 	CurrentCollection string
 }

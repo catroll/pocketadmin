@@ -215,19 +215,21 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 	csrfToken, _ := csrf.(string)
 
 	return base{
-		Title:     title,
-		Active:    active,
-		CSRF:      csrfToken,
-		UserEmail: email,
-		AppName:   s.cfg.AppName,
-		PBVersion: version.PocketBase(),
-		PanelVer:  version.Panel,
-		Nav:       s.navCollections(),
-		Flash:     s.flashFrom(c),
-		Actor:     actor,
-		Perms:     actorPermissions(actor),
-		Superuser: actor != nil && actor.IsSuperuser,
-		Menus:     s.navFromActor(c),
+		Title:            title,
+		Active:           active,
+		CSRF:             csrfToken,
+		UserEmail:        email,
+		AppName:          s.cfg.AppName,
+		PBVersion:        version.PocketBase(),
+		PanelVer:         version.Panel,
+		Nav:              s.navCollections(),
+		Flash:            s.flashFrom(c),
+		Actor:            actor,
+		Perms:            actorPermissions(actor),
+		Superuser:        actor != nil && actor.IsSuperuser,
+		Menus:            s.navFromActor(c),
+		Theme:            s.preferenceTheme(c),
+		SidebarCollapsed: s.preferenceSidebarCollapsed(c),
 	}
 }
 

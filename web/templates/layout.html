@@ -1,5 +1,5 @@
 {{define "layout"}}<!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en" data-bs-theme="{{.Theme}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/static/vendor/adminlte/css/adminlte.min.css">
   <link rel="stylesheet" href="/static/css/app.css">
 </head>
-<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary{{if .SidebarCollapsed}} sidebar-collapse{{end}}">
 <div class="app-wrapper">
 
   {{template "navbar" .}}

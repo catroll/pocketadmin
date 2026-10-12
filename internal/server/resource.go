@@ -111,7 +111,9 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 	if page < 1 {
 		page = 1
 	}
-	perPage := atoiDefault(c.Query("perPage"), s.cfg.PerPage)
+	// The account's stored preference is the default; an explicit perPage in the
+	// query still wins, so a one-off change does not rewrite the setting.
+	perPage := atoiDefault(c.Query("perPage"), s.currentPageSize(c))
 	if perPage < 1 || perPage > 500 {
 		perPage = s.cfg.PerPage
 	}

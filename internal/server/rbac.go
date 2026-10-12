@@ -14,9 +14,19 @@ import (
 // ctxActor is the request-context key holding the resolved actor.
 const ctxActor = "actor"
 
-// superuserOnly is the guard sentinel for a route that is deliberately not
-// permission-guarded because it is a break-glass capability.
-const superuserOnly = "\x00superuser"
+// Guard sentinels for routes that are deliberately not permission-guarded.
+//
+// Both are recorded in the registry rather than left blank, so the startup
+// self-check can tell a considered decision from an oversight.
+const (
+	// superuserOnly marks a break-glass capability that is not delegated to roles.
+	superuserOnly = "\x00superuser"
+
+	// authenticatedOnly marks a route that acts solely on the caller's own data,
+	// such as self-service preferences. Requiring a permission would wrongly
+	// suggest an administrator could manage someone else's settings.
+	authenticatedOnly = "\x00authenticated"
+)
 
 // actor returns the resolved actor for the request, or nil.
 func (s *Server) actor(c *gin.Context) *rbac.Actor {
@@ -138,6 +148,17 @@ func (s *Server) safe(g *gin.RouterGroup, method, path string, handlers ...gin.H
 func (s *Server) readGuarded(g *gin.RouterGroup, method, path, code string, handlers ...gin.HandlerFunc) {
 	s.registerGuard(method, joinPath(g.BasePath(), path), code)
 	g.Handle(method, path, append([]gin.HandlerFunc{s.requirePermission(code)}, handlers...)...)
+}
+
+// selfGuarded registers a state-changing route that requires only a signed-in
+// account.
+//
+// The panel group already applies requireAuth, so no extra middleware is added;
+// the registry entry exists so the startup self-check can distinguish this from a
+// route someone forgot to guard.
+func (s *Server) selfGuarded(g *gin.RouterGroup, method, path string, handlers ...gin.HandlerFunc) {
+	s.registerGuard(method, joinPath(g.BasePath(), path), authenticatedOnly)
+	g.Handle(method, path, handlers...)
 }
 
 // selfCheckRoutes walks the registered routes and fails when a state-changing
