@@ -1,0 +1,135 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <h4 class="mb-0">{{.Email}}</h4>
+    <div class="small text-body-secondary">
+      {{if .Plan}}{{.Plan.GetString "name"}} &middot; {{.Interval}} &middot; {{.Price}}{{end}}
+      &middot; <span class="badge {{if eq (.Record.GetString "status") "active"}}text-bg-success{{else if eq (.Record.GetString "status") "past_due"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{.Record.GetString "status"}}</span>
+      {{if .Record.GetBool "cancelAtPeriodEnd"}}<span class="badge text-bg-warning">ends at period end</span>{{end}}
+    </div>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    <a href="/subscriptions" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Subscriptions</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-7">
+    <div class="card card-primary card-outline">
+      <div class="card-header"><h3 class="card-title">Billing cycles</h3></div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-sm table-striped mb-0">
+          <thead><tr><th>#</th><th>Period</th><th>Amount</th><th>Status</th><th>Attempts</th><th>Note</th></tr></thead>
+          <tbody>
+            {{range .Cycles}}
+            <tr class="small">
+              <td>{{.GetInt "cycleNumber"}}</td>
+              <td>{{formatTime (.GetDateTime "periodStart")}} &rarr; {{formatTime (.GetDateTime "periodEnd")}}</td>
+              <td>{{.GetInt "amount"}} {{.GetString "currency"}}</td>
+              <td>
+                {{$s := .GetString "status"}}
+                {{if eq $s "paid"}}<span class="badge text-bg-success">paid</span>
+                {{else if eq $s "pending"}}<span class="badge text-bg-info">pending</span>
+                {{else if eq $s "failed"}}<span class="badge text-bg-danger">failed</span>
+                {{else}}<span class="badge text-bg-secondary">{{$s}}</span>{{end}}
+              </td>
+              <td>{{.GetInt "attempts"}}</td>
+              <td>{{truncate (.GetString "note") 40}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="6" class="text-center text-body-secondary py-3">No cycles recorded.</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer small text-body-secondary">
+        The first cycle is opened when the subscription starts, so there is always a billing history.
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">State</h3></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-6">Period</dt>
+          <dd class="col-6">{{formatTime (.Record.GetDateTime "currentPeriodStart")}} &rarr; {{formatTime (.Record.GetDateTime "currentPeriodEnd")}}</dd>
+          <dt class="col-6">Next charge</dt>
+          <dd class="col-6">{{with .Record.GetDateTime "nextBillingAt"}}{{formatTime .}}{{else}}<span class="text-body-secondary">none</span>{{end}}</dd>
+          <dt class="col-6">Trial ends</dt>
+          <dd class="col-6">{{with .Record.GetDateTime "trialEndAt"}}{{formatTime .}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</dd>
+          <dt class="col-6">Paused days</dt><dd class="col-6">{{.Record.GetInt "pausedDaysAccrued"}}</dd>
+          <dt class="col-6">Retries</dt><dd class="col-6">{{.Record.GetInt "retryCount"}}</dd>
+          {{if .Record.GetString "pendingPlan"}}
+          <dt class="col-6">Pending plan</dt>
+          <dd class="col-6"><span class="badge text-bg-info">changes at the next cycle</span></dd>
+          {{end}}
+          {{if .Record.GetString "cancelReason"}}
+          <dt class="col-6">Cancellation</dt><dd class="col-6">{{.Record.GetString "cancelReason"}}</dd>
+          {{end}}
+        </dl>
+      </div>
+    </div>
+
+    {{if .CanManage}}
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Actions</h3></div>
+      <div class="card-body d-grid gap-3">
+        <form method="post" action="/subscriptions/{{.Record.Id}}/change">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <label class="form-label small">Change plan</label>
+          <div class="input-group input-group-sm">
+            <select class="form-select" name="plan">
+              {{range .Plans}}<option value="{{.ID}}">{{.Name}} ({{.Interval}})</option>{{end}}
+            </select>
+            <button class="btn btn-outline-primary">Schedule</button>
+          </div>
+          <div class="form-text">
+            Takes effect at the next cycle, so a downgrade does not refund part of a period already
+            paid for. An upgrade is charged the difference then.
+          </div>
+        </form>
+
+        {{if eq (.Record.GetString "status") "paused"}}
+        <form method="post" action="/subscriptions/{{.Record.Id}}/resume">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <button class="btn btn-sm btn-outline-success w-100">Resume and extend the period</button>
+          <div class="form-text">The period is extended by the days that were paused.</div>
+        </form>
+        {{else}}
+        <form method="post" action="/subscriptions/{{.Record.Id}}/pause">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <button class="btn btn-sm btn-outline-secondary w-100">Pause billing</button>
+        </form>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+
+    {{if .CanCancel}}
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Cancel</h3></div>
+      <div class="card-body">
+        <form method="post" action="/subscriptions/{{.Record.Id}}/cancel">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="mb-2">
+            <label class="form-label small" for="reason">Reason</label>
+            <input type="text" class="form-control form-control-sm" id="reason" name="reason" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="when">When</label>
+            <select class="form-select form-select-sm" id="when" name="when">
+              <option value="period_end">At the end of the period</option>
+              <option value="immediately">Immediately</option>
+            </select>
+            <div class="form-text">At the period end, the account keeps what it has paid for.</div>
+          </div>
+          <button class="btn btn-sm btn-outline-danger w-100">Cancel the subscription</button>
+        </form>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}

@@ -14,6 +14,7 @@ import (
 	"pocketadmin/internal/developer"
 	"pocketadmin/internal/jobs"
 	"pocketadmin/internal/membership"
+	"pocketadmin/internal/subscription"
 	"pocketadmin/internal/workbench"
 )
 
@@ -35,6 +36,7 @@ func (s *Server) RegisterJobHandlers() {
 		s.registerTodoReminderJob()
 		s.registerAPIKeyExpiryJob()
 		s.registerMembershipJob()
+		s.registerSubscriptionJob()
 	})
 }
 
@@ -335,6 +337,82 @@ func (s *Server) membershipReminderSent(rec *core.Record) bool {
 		"user = {:u} && message.title ~ 'Membership reminder'",
 		map[string]any{"u": userID})
 	return err == nil && existing != nil
+}
+
+// registerSubscriptionJob renews subscriptions that are due.
+//
+// It opens the next cycle rather than charging: the charge is an order, and the
+// orders wave owns that. What this task owns is the calendar -- moving a
+// subscription into its next period at the right moment, and marking one late when
+// its period has ended without a payment.
+func (s *Server) registerSubscriptionJob() {
+	jobs.Register(jobs.Handler{
+		Code:        "subscriptions.renewal",
+		Name:        "Subscription renewal",
+		Description: "Moves subscriptions whose period has ended into the next cycle, and marks the ones whose charge is late.",
+		// Hourly. A subscription is billed on a day, not at a minute, so a few hours
+		// of lateness costs nothing and an unrelated failure at the wrong minute
+		// would otherwise delay a day's billing.
+		DefaultCron: "20 * * * *",
+		Run: func(ctx context.Context, _ map[string]any) (string, error) {
+			now := time.Now()
+
+			due, err := subscription.DueForRenewal(s.app, now)
+			if err != nil {
+				return "", err
+			}
+
+			renewed := 0
+			late := 0
+
+			for _, rec := range due {
+				nextBilling := rec.GetDateTime("nextBillingAt")
+				if nextBilling.IsZero() || nextBilling.Time().After(now) {
+					continue
+				}
+
+				plan, err := s.app.FindRecordById(subscription.CollectionPlans, rec.GetString("plan"))
+				if err != nil || plan == nil {
+					// A subscription whose plan has vanished cannot be billed. It is
+					// marked rather than deleted, because somebody is paying for it and
+					// the record of that is the thing to keep.
+					continue
+				}
+
+				// A subscription already in the retry state is not renewed; it is
+				// waiting for a payment. Renewing it would move the period on and lose
+				// the cycle that failed.
+				if rec.GetString("status") == subscription.StatusPastDue {
+					late++
+					continue
+				}
+
+				if err := subscription.Renew(s.app, rec, plan, now); err != nil {
+					slog.Error("could not renew a subscription", "subscription", rec.Id, "error", err)
+					continue
+				}
+
+				// A pending cancellation takes effect here, at the period end, which is
+				// the whole point of the option: the account keeps what it paid for.
+				if rec.GetBool("cancelAtPeriodEnd") {
+					rec.Set("status", subscription.StatusCancelled)
+					rec.Set("nextBillingAt", nil)
+					if err := s.app.Save(rec); err != nil {
+						slog.Error("could not end a cancelled subscription", "subscription", rec.Id, "error", err)
+						continue
+					}
+					continue
+				}
+
+				renewed++
+			}
+
+			if renewed == 0 && late == 0 {
+				return "nothing was due", nil
+			}
+			return fmt.Sprintf("renewed %d, %d awaiting payment", renewed, late), nil
+		},
+	})
 }
 
 // ---------------------------------------------------------------------------

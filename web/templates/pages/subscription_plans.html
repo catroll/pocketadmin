@@ -1,0 +1,93 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-9">
+    <p class="text-body-secondary mb-0">
+      A plan is billed through an ordinary catalogue product, which is what lets a renewal be an
+      order like any other and go through the same payment pipeline. "Every three months" is one
+      plan with an interval count, not a special case.
+    </p>
+  </div>
+  <div class="col-lg-3 text-lg-end">
+    <a href="/subscriptions" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Subscribers</a>
+  </div>
+</div>
+
+{{if .CanManage}}
+<div class="card">
+  <div class="card-header"><h3 class="card-title">New plan</h3></div>
+  <div class="card-body">
+    <form method="post" action="/subscriptions/plans" class="row g-2 align-items-end">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <div class="col-sm-3">
+        <label class="form-label small" for="name">Name</label>
+        <input type="text" class="form-control form-control-sm" id="name" name="name" required>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="code">Code</label>
+        <input type="text" class="form-control form-control-sm font-monospace" id="code" name="code" required>
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label small" for="product">Product</label>
+        <select class="form-select form-select-sm" id="product" name="product">
+          <option value="">Choose a subscription product</option>
+          {{range .Products}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-sm-1">
+        <label class="form-label small" for="interval">Every</label>
+        <input type="number" class="form-control form-control-sm" id="intervalCount" name="intervalCount" value="1" min="1">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="interval">&nbsp;</label>
+        <select class="form-select form-select-sm" id="interval" name="interval">
+          {{range .Intervals}}<option value="{{.}}" {{if eq . "month"}}selected{{end}}>{{.}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-sm-1"><button class="btn btn-primary btn-sm w-100">Add</button></div>
+    </form>
+  </div>
+</div>
+{{end}}
+
+<div class="card card-primary card-outline">
+  <div class="card-header"><h3 class="card-title"><i class="fas fa-repeat me-1"></i>Plans</h3></div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Plan</th><th>Product</th><th>Price</th><th>Billing</th><th>Trial</th><th>Subscribers</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td><div>{{.Name}}</div><code class="small text-body-secondary">{{.Code}}</code></td>
+          <td class="small">{{.Product}}</td>
+          <td class="small">{{.Price}}</td>
+          <td class="small">{{.Interval}}{{if .MaxCycles}}<div class="text-body-secondary">max {{.MaxCycles}} cycles</div>{{end}}</td>
+          <td class="small">{{if .Trial}}{{.Trial}} days{{else}}<span class="text-body-secondary">none</span>{{end}}</td>
+          <td class="small">{{if .Subscribers}}<a href="/subscriptions">{{.Subscribers}}</a>{{else}}<span class="text-body-secondary">0</span>{{end}}</td>
+          <td>
+            {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
+            {{else}}<span class="badge text-bg-secondary">disabled</span>{{end}}
+          </td>
+          <td class="text-end">
+            {{if $.CanManage}}
+            <form method="post" action="/subscriptions/plans/{{.Record.Id}}/delete" class="d-inline"
+                  onsubmit="return confirm('Delete this plan?')">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="8" class="text-center text-body-secondary py-4">
+          No plans. Create a subscription-kind product in the catalogue first.
+        </td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer small text-body-secondary">
+    A plan with subscribers cannot be deleted; disable it instead, so the accounts keep being billed
+    what they agreed to.
+  </div>
+</div>
+{{end}}

@@ -13,21 +13,22 @@ package permission
 // Module identifiers. These match the module ids in CAPABILITY-MAP.md and are
 // stored on each permission record.
 const (
-	ModuleIdentity     = "identity"
-	ModuleOrganization = "organization"
-	ModuleRBAC         = "rbac"
-	ModuleStorage      = "storage"
-	ModuleAudit        = "audit"
-	ModuleSettings     = "settings"
-	ModuleJobs         = "jobs"
-	ModuleAnnouncement = "announcement"
-	ModuleWorkbench    = "workbench"
-	ModuleDeveloper    = "developer"
-	ModuleIntegrations = "integrations"
-	ModuleMonitoring   = "monitoring"
-	ModuleCatalog      = "catalog"
-	ModuleMembership   = "membership"
-	ModulePromotions   = "promotions"
+	ModuleIdentity      = "identity"
+	ModuleOrganization  = "organization"
+	ModuleRBAC          = "rbac"
+	ModuleStorage       = "storage"
+	ModuleAudit         = "audit"
+	ModuleSettings      = "settings"
+	ModuleJobs          = "jobs"
+	ModuleAnnouncement  = "announcement"
+	ModuleWorkbench     = "workbench"
+	ModuleDeveloper     = "developer"
+	ModuleIntegrations  = "integrations"
+	ModuleMonitoring    = "monitoring"
+	ModuleCatalog       = "catalog"
+	ModuleMembership    = "membership"
+	ModulePromotions    = "promotions"
+	ModuleSubscriptions = "subscriptions"
 )
 
 // Point is a single permission point.
@@ -237,7 +238,15 @@ const (
 	PromotionGrantList      = "promotions:grant:list"
 	PromotionGrantIssue     = "promotions:grant:issue"
 	PromotionGrantVoid      = "promotions:grant:void"
-	// RBACSettingsManage guards the settings surfaces. The surfaces themselves are
+
+	// Subscriptions. Changing a plan is separate from cancelling one, because an
+	// upgrade takes money immediately and a cancellation does not.
+	SubscriptionPlanList   = "subscriptions:plan:list"
+	SubscriptionPlanManage = "subscriptions:plan:manage"
+	SubscriptionList       = "subscriptions:subscription:list"
+	SubscriptionManage     = "subscriptions:subscription:manage"
+	SubscriptionCancel     = "subscriptions:subscription:cancel"
+	SubscriptionCycleList  = "subscriptions:cycle:list" // RBACSettingsManage guards the settings surfaces. The surfaces themselves are
 	// separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
 )
@@ -371,6 +380,12 @@ func All() []Point {
 		{PromotionGrantList, "List issued coupons", ModulePromotions, "grant", "list", "api"},
 		{PromotionGrantIssue, "Issue a coupon", ModulePromotions, "grant", "issue", "button"},
 		{PromotionGrantVoid, "Void an issued coupon", ModulePromotions, "grant", "void", "button"},
+		{SubscriptionPlanList, "List subscription plans", ModuleSubscriptions, "plan", "list", "api"},
+		{SubscriptionPlanManage, "Manage subscription plans", ModuleSubscriptions, "plan", "manage", "button"},
+		{SubscriptionList, "List subscriptions", ModuleSubscriptions, "subscription", "list", "menu"},
+		{SubscriptionManage, "Change a subscription", ModuleSubscriptions, "subscription", "manage", "button"},
+		{SubscriptionCancel, "Cancel a subscription", ModuleSubscriptions, "subscription", "cancel", "button"},
+		{SubscriptionCycleList, "View billing cycles", ModuleSubscriptions, "cycle", "list", "api"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

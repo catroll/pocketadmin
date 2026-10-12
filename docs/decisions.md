@@ -875,6 +875,80 @@ which rows it governs.
 
 **Given up.** Nothing. A partial index is supported and costs the same.
 
+### D-044 — Adding a month clamps to the last day, because Go's AddDate does not
+
+**Decision.** `subscription.AddInterval` computes the target month on its first day,
+clamps the day to the length of that month, and rebuilds the date. Go's `AddDate` is
+not used for months or years.
+
+**Why.** `AddDate` normalises. The thirty-first of January plus one month is the third
+of March, because the thirty-first of February does not exist and the overflow rolls
+forward. A subscriber who signed up on the thirty-first would be billed three days
+late every February, and the drift compounds: the next renewal starts from the moved
+date. Every billing system clamps, and so does this one -- the same day of the month,
+or the last one that exists. The leap day is handled by the same rule, so an
+anniversary on the twenty-ninth of February lands on the twenty-eighth in a common
+year.
+
+`AddDate` is still used for days and weeks, where no normalisation can occur.
+
+**Given up.** Three functions instead of one, and a day-of-month that moves to the
+twenty-eighth for a February renewal and then stays there rather than returning to
+the thirty-first in March. That is the behaviour of every calendar a customer has
+ever used, and returning to the thirty-first would be the surprising one.
+
+### D-045 — Proration credits and charges whole amounts, and a downgrade is owed time
+
+**Decision.** A mid-period plan change computes a credit for the unused part of the
+current period and a charge for the same part of the new plan, both as whole amounts
+derived from the daily rate. The difference is what is due. A negative difference
+means the account is owed time, and the caller schedules the change for the end of the
+period rather than refunding.
+
+**Why.** A percentage of a period and a percentage of a price do not necessarily agree
+to the unit, and the difference has to go somewhere. Computing both figures from the
+same remaining-day count means the two numbers shown to an operator add up to the
+amount actually charged, which is the property that makes the screen trustworthy.
+
+Refunding a fraction of a period is a decision about money, and the specification puts
+a downgrade at the next cycle. Scheduling it is also the kinder behaviour: the
+customer has paid for the period and keeps it.
+
+A part-day rounds up, so a change made in the last hour of a period is not free. An
+account could otherwise extend its subscription indefinitely by changing plan
+repeatedly near the period end.
+
+**Given up.** An upgrade is charged immediately and a downgrade waits, which is
+asymmetric -- deliberately, and it is the asymmetry the specification describes.
+
+### D-046 — A pause credits whole days only, and extends the period on resume
+
+**Decision.** `pausedDaysAccrued` counts whole days between the pause and the resume.
+Resuming adds them to the current period end and to the next billing time.
+
+**Why.** Without the extension, a subscriber who paused for a fortnight would pay for
+a period they could not use, which is the thing pausing exists to avoid. And without
+the whole-days rule, crediting an hour would let a subscriber extend their
+subscription indefinitely by pausing and resuming repeatedly.
+
+**Given up.** A pause of twenty-three hours credits nothing. That is the correct
+direction to be wrong in, and it is stated on the screen.
+
+### D-047 — A failed charge lapses the subscription rather than cancelling it
+
+**Decision.** Dunning retries a failed cycle up to a bounded number of times with an
+exponential backoff capped at a week. When the budget is spent the subscription is
+marked **expired**, not cancelled.
+
+**Why.** A cancellation is an intent the customer expresses; an expired card is not.
+Marking it cancelled would tell the customer they had asked for something they did
+not, and would make "why was I cancelled" a question with no honest answer. An expired
+subscription can be revived by fixing the card; a cancelled one has to be started
+again.
+
+**Given up.** An expired subscription still occupies the account's history and a
+support agent has to know the difference. The status list shows it.
+
 ---
 
 ## Pending
