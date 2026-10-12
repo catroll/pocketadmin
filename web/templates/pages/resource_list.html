@@ -36,6 +36,13 @@
     </form>
   </div>
 
+  {{if .ScopeNote}}
+  <div class="card-body border-bottom py-2">
+    <span class="badge text-bg-info"><i class="fas fa-filter me-1"></i>Scoped</span>
+    <span class="text-body-secondary small ms-1">{{.ScopeNote}}</span>
+  </div>
+  {{end}}
+
   <div class="card-body table-responsive p-0">
     <table class="table table-hover table-striped text-nowrap mb-0">
       <thead>

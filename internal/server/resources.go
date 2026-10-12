@@ -2,8 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log/slog"
-	"strings"
 
 	"github.com/pocketbase/pocketbase/core"
 
@@ -68,14 +66,16 @@ func organizationResources() []resource {
 			Filter:      "deletedAt = ''",
 			ParentField: "parent",
 			LabelField:  "name",
-			// path and level are derived from the tree position, never entered.
+			// path and level are derived from the tree position, never entered. The
+			// tree invariants themselves live in internal/organization, bound as
+			// model hooks so every write path maintains them; this resource only
+			// declares the fields as read-only and refuses an orphan-producing
+			// delete.
 			DerivedFields: []string{"path", "level"},
-			BeforeSave:    validateDepartmentParent,
 			BeforeDelete: func(s *Server, rec *core.Record) error {
 				return refuseIfReferenced(s, "departments", "parent", rec.Id,
 					"This department still has sub-departments. Move or delete them first.")
 			},
-			AfterSave: reindexDepartmentPath,
 		},
 		{
 			Collection: "positions",
@@ -210,94 +210,4 @@ func refuseIfReferenced(s *Server, collection, field, id, message string) error 
 		return fmt.Errorf("%s", message)
 	}
 	return nil
-}
-
-// validateDepartmentParent checks a department's parent and derives its depth.
-//
-// The materialised path is not computed here: it embeds the record's own id,
-// which PocketBase assigns at save time. See reindexDepartmentPath.
-func validateDepartmentParent(s *Server, rec *core.Record, isNew bool) error {
-	parentID := rec.GetString("parent")
-
-	if parentID == "" {
-		rec.Set("level", 1)
-		return nil
-	}
-
-	if parentID == rec.Id && rec.Id != "" {
-		return fmt.Errorf("a department cannot be its own parent")
-	}
-
-	parent, err := s.app.FindRecordById("departments", parentID)
-	if err != nil || parent == nil {
-		return fmt.Errorf("the selected parent department no longer exists")
-	}
-
-	// Refuse to make a department a child of one of its own descendants, which
-	// would detach that subtree from the tree entirely.
-	if !isNew && rec.Id != "" && strings.Contains(parent.GetString("path"), "/"+rec.Id+"/") {
-		return fmt.Errorf("a department cannot be moved under one of its own sub-departments")
-	}
-
-	rec.Set("level", parent.GetInt("level")+1)
-	return nil
-}
-
-// reindexDepartmentPath writes the department's own materialised path and
-// rewrites every descendant's, inside one transaction.
-//
-// A re-parent changes the path of the whole subtree, and a half-applied move
-// would corrupt the scope predicate that row-level filtering depends on.
-func reindexDepartmentPath(s *Server, rec *core.Record, _ bool) {
-	if rec == nil || rec.Id == "" {
-		return
-	}
-
-	oldPath := rec.GetString("path")
-
-	desired := "/" + rec.Id + "/"
-	if parentID := rec.GetString("parent"); parentID != "" {
-		if parent, err := s.app.FindRecordById("departments", parentID); err == nil && parent != nil {
-			desired = parent.GetString("path") + rec.Id + "/"
-		}
-	}
-
-	if oldPath == desired {
-		return
-	}
-
-	err := s.app.RunInTransaction(func(txApp core.App) error {
-		affected := []*core.Record{rec}
-
-		if oldPath != "" {
-			descendants, err := txApp.FindRecordsByFilter("departments",
-				"path ~ {:old} && id != {:id}", "", 0, 0,
-				map[string]any{"old": oldPath, "id": rec.Id})
-			if err != nil {
-				return err
-			}
-			affected = append(affected, descendants...)
-		}
-
-		rec.Set("path", desired)
-		if err := txApp.Save(rec); err != nil {
-			return err
-		}
-
-		for _, d := range affected[1:] {
-			if oldPath == "" {
-				continue
-			}
-			d.Set("path", strings.Replace(d.GetString("path"), oldPath, desired, 1))
-			if err := txApp.Save(d); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		slog.Warn("could not reindex the department tree", "department", rec.Id, "error", err)
-	}
 }

@@ -245,6 +245,10 @@ type resourceListPage struct {
 	// HasDetail renders a view action linking to the resource's detail screen.
 	HasDetail bool
 
+	// ScopeNote explains a row restriction to the user, so a short list reads as
+	// a deliberate scope rather than as missing data.
+	ScopeNote string
+
 	// Capability flags hide controls the actor may not use, so a page never
 	// offers an action that would fail on submit.
 	CanCreate bool

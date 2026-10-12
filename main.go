@@ -16,6 +16,7 @@ import (
 
 	"pocketadmin/internal/config"
 	"pocketadmin/internal/logging"
+	"pocketadmin/internal/organization"
 	"pocketadmin/internal/pbapp"
 	"pocketadmin/internal/server"
 
@@ -79,6 +80,11 @@ func run() error {
 	if err := app.RunAllMigrations(); err != nil {
 		return err
 	}
+
+	// Model-level invariants. Registering them here rather than in a handler
+	// means every write path -- this panel, PocketBase's REST API, a future
+	// importer -- maintains the derived data the same way.
+	organization.Register(app)
 
 	api, err := pbapp.APIHandler(app)
 	if err != nil {

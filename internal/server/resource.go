@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
+
+	"pocketadmin/internal/rbac"
 )
 
 // resource describes a managed collection: where it lives, which permission
@@ -114,13 +116,41 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 		perPage = s.cfg.PerPage
 	}
 
+	actor := s.actor(c)
+
 	query := strings.TrimSpace(c.Query("q"))
 	filter, params := searchFilter(col, query)
 	if r.Filter != "" {
-		if filter != "" {
-			filter = "(" + r.Filter + ") && (" + filter + ")"
-		} else {
-			filter = r.Filter
+		filter = andFilter(filter, r.Filter)
+	}
+
+	// Row-level data scope narrows what the actor may see within the capability
+	// it was already granted.
+	scope := rbac.ScopeFor(actor, col)
+	if scope.DenyAll {
+		s.render(c, http.StatusOK, "resource_list.html", resourceListPage{
+			base:         s.newBase(c, r.Title, r.Active),
+			Resource:     r,
+			Collection:   col,
+			Columns:      listColumns(col),
+			Query:        query,
+			QueryPrefix:  buildQueryPrefix(query, perPage),
+			HasDetail:    r.HasDetail,
+			CanCreate:    actor.Can(r.CreatePerm),
+			CanDelete:    actor.Can(r.DeletePerm),
+			CanUpdate:    actor.Can(r.UpdatePerm),
+			PerPageItems: perPageOptions(perPage),
+			ScopeNote:    scope.Description(),
+		})
+		return
+	}
+	if scope.Filter != "" {
+		filter = andFilter(filter, scope.Filter)
+		if params == nil {
+			params = make(map[string]any, len(scope.Params))
+		}
+		for k, v := range scope.Params {
+			params[k] = v
 		}
 	}
 
@@ -150,8 +180,6 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 		rows = append(rows, buildRow(col, rec, cols))
 	}
 
-	actor := s.actor(c)
-
 	pageVM := resourceListPage{
 		base:         s.newBase(c, r.Title, r.Active),
 		Resource:     r,
@@ -168,6 +196,7 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 		CanUpdate:    actor.Can(r.UpdatePerm),
 		Pagination:   buildPagination(page, perPage, total),
 		PerPageItems: perPageOptions(perPage),
+		ScopeNote:    scope.Description(),
 	}
 
 	s.render(c, http.StatusOK, "resource_list.html", pageVM)
@@ -365,6 +394,19 @@ func recID(rec *core.Record) string {
 		return ""
 	}
 	return rec.Id
+}
+
+// andFilter combines two PocketBase filter fragments, tolerating either being
+// empty so callers can chain conditions without checking.
+func andFilter(a, b string) string {
+	switch {
+	case a == "":
+		return b
+	case b == "":
+		return a
+	default:
+		return "(" + a + ") && (" + b + ")"
+	}
 }
 
 // buildQueryPrefix carries the filters that must survive a sort or page change.

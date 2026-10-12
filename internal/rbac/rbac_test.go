@@ -1,10 +1,12 @@
 package rbac_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/organization"
 	"pocketadmin/internal/permission"
 	"pocketadmin/internal/rbac"
 
@@ -29,6 +31,10 @@ func newTestApp(t *testing.T) core.App {
 	if err := app.RunAllMigrations(); err != nil {
 		t.Fatalf("run migrations: %v", err)
 	}
+
+	// main registers the model-level invariants after migrating; the test app
+	// must match, or it would assert behaviour production does not have.
+	organization.Register(app)
 
 	// The data directory comes from t.TempDir, so there is nothing else to
 	// release once the test ends.
@@ -349,4 +355,118 @@ func flatten(nodes []rbac.MenuNode) map[string]bool {
 	}
 	walk(nodes)
 	return out
+}
+
+// TestResolverCarriesTheDepartmentPath covers a gap that silently weakened the
+// "department and below" scope: the resolver set the department id but not its
+// materialised path, so the prefix match degraded to an exact match and an actor
+// lost sight of everything beneath its own department.
+func TestResolverCarriesTheDepartmentPath(t *testing.T) {
+	app := newTestApp(t)
+
+	root := seedDepartment(t, app, "engineering", "")
+
+	account := seedAccount(t, app, "scoped@example.com")
+	roleID := seedRole(t, app, "dept_reader", "active", permission.OrganizationEmployeeList)
+
+	profile := seedAdminProfile(t, app, account.Id, []string{roleID})
+	profile.Set("department", root.Id)
+	if err := app.Save(profile); err != nil {
+		t.Fatalf("assign department: %v", err)
+	}
+
+	actor, err := rbac.NewResolver(app).Resolve(account)
+	if err != nil {
+		t.Fatalf("resolve actor: %v", err)
+	}
+
+	if actor.DepartmentID != root.Id {
+		t.Errorf("department id not carried: got %q want %q", actor.DepartmentID, root.Id)
+	}
+	if actor.DepartmentPath == "" {
+		t.Fatal("department path is empty, so the and-below scope cannot prefix-match")
+	}
+	if !strings.Contains(actor.DepartmentPath, root.Id) {
+		t.Errorf("department path %q does not contain the department id", actor.DepartmentPath)
+	}
+
+	// The path is what makes an unrelated department's rows fall outside the
+	// scope, so a sibling must not share the prefix.
+	sibling := seedDepartment(t, app, "sales", "")
+	if strings.Contains(sibling.GetString("path"), root.Id) {
+		t.Error("an unrelated department shares the scoped department's path prefix")
+	}
+}
+
+// TestResolverInvalidatesWhenTheDepartmentMoves: re-parenting changes the path
+// without touching the admin profile, so the profile's own timestamp is not
+// enough to notice.
+func TestResolverInvalidatesWhenTheDepartmentMoves(t *testing.T) {
+	app := newTestApp(t)
+
+	engineering := seedDepartment(t, app, "engineering", "")
+	sales := seedDepartment(t, app, "sales", "")
+
+	account := seedAccount(t, app, "mover@example.com")
+	roleID := seedRole(t, app, "dept_reader2", "active", permission.OrganizationEmployeeList)
+	profile := seedAdminProfile(t, app, account.Id, []string{roleID})
+	profile.Set("department", engineering.Id)
+	if err := app.Save(profile); err != nil {
+		t.Fatalf("assign department: %v", err)
+	}
+
+	resolver := rbac.NewResolver(app)
+	before, err := resolver.Resolve(account)
+	if err != nil {
+		t.Fatalf("resolve actor: %v", err)
+	}
+	originalPath := before.DepartmentPath
+
+	// Move the department the actor belongs to.
+	moved, err := app.FindRecordById("departments", engineering.Id)
+	if err != nil {
+		t.Fatalf("reload department: %v", err)
+	}
+	moved.Set("parent", sales.Id)
+	if err := app.Save(moved); err != nil {
+		t.Fatalf("move department: %v", err)
+	}
+
+	after, err := resolver.Resolve(account)
+	if err != nil {
+		t.Fatalf("re-resolve actor: %v", err)
+	}
+	if after.DepartmentPath == originalPath {
+		t.Errorf("the cached scope survived a department move: path is still %q", originalPath)
+	}
+	if !strings.Contains(after.DepartmentPath, sales.Id) {
+		t.Errorf("the new path %q does not reflect the new parent", after.DepartmentPath)
+	}
+}
+
+// seedDepartment creates a department and lets the model hooks derive its path,
+// which is the behaviour under test rather than something the fixture fakes.
+func seedDepartment(t *testing.T, app core.App, code, parentID string) *core.Record {
+	t.Helper()
+
+	col, err := app.FindCollectionByNameOrId("departments")
+	if err != nil {
+		t.Fatalf("departments collection missing: %v", err)
+	}
+
+	rec := core.NewRecord(col)
+	rec.Set("name", code)
+	rec.Set("code", code)
+	rec.Set("status", "active")
+	if parentID != "" {
+		rec.Set("parent", parentID)
+	}
+	if err := app.Save(rec); err != nil {
+		t.Fatalf("save department: %v", err)
+	}
+
+	if rec.GetString("path") == "" {
+		t.Fatalf("the department tree hook did not derive a path for %q", code)
+	}
+	return rec
 }

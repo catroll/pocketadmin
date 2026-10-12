@@ -58,6 +58,10 @@ type Actor struct {
 	DepartmentID   string
 	DepartmentPath string
 
+	// CustomDepartmentIDs are the departments named by the actor's roles, used by
+	// the "custom" data scope.
+	CustomDepartmentIDs []string
+
 	// versionKey changes whenever the underlying profile or its roles change, so
 	// the resolver can tell a stale cache entry from a fresh one.
 	versionKey string
@@ -158,11 +162,22 @@ func (r *Resolver) Resolve(user *core.Record) (*Actor, error) {
 
 	actor.AdminProfileID = profile.Id
 	actor.AdminStatus = profile.GetString("status")
-	actor.DepartmentID = profile.GetString("department")
 
 	// The profile's own timestamp is part of the cache key, so editing the
 	// profile (status, roles, department) invalidates the entry.
 	actor.versionKey = profile.Id + ":" + profile.GetString("updated")
+
+	// A department scope needs the department's materialised path, not just its
+	// id: "and below" is a prefix match on that path. The department's own
+	// timestamp joins the cache key, because moving or renaming it changes every
+	// descendant's path without touching this profile.
+	if deptID := profile.GetString("department"); deptID != "" {
+		actor.DepartmentID = deptID
+		if dept, err := r.app.FindRecordById("departments", deptID); err == nil && dept != nil {
+			actor.DepartmentPath = dept.GetString("path")
+			actor.versionKey += "|dept:" + dept.Id + ":" + dept.GetString("updated")
+		}
+	}
 
 	if cached := r.lookup(user.Id, actor.versionKey); cached != nil {
 		return cached, nil
@@ -261,6 +276,10 @@ func (r *Resolver) applyRoles(actor *Actor, profile *core.Record) error {
 			}
 			actor.Permissions[point.GetString("code")] = struct{}{}
 		}
+
+		// A "custom" scope is only as wide as the departments its roles name, so
+		// the ids accumulate across every role rather than replacing each other.
+		actor.CustomDepartmentIDs = append(actor.CustomDepartmentIDs, role.GetStringSlice("customDepartments")...)
 
 		actor.DataScope = widerScope(actor.DataScope, role.GetString("dataScope"))
 	}
