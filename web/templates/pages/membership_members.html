@@ -1,0 +1,127 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-9">
+    <form method="get" action="/membership/members" class="row g-2">
+      <div class="col-auto">
+        <select class="form-select form-select-sm" name="status">
+          <option value="">Any status</option>
+          {{$s := .Status}}{{range .Statuses}}
+          <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-auto">
+        <select class="form-select form-select-sm" name="tier">
+          <option value="">Any tier</option>
+          {{$t := .Tier}}{{range .Tiers}}
+          <option value="{{.ID}}" {{if eq .ID $t}}selected{{end}}>{{.Name}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-auto">
+        <select class="form-select form-select-sm" name="source">
+          <option value="">Any source</option>
+          {{$src := .Source}}{{range .Sources}}
+          <option value="{{.}}" {{if eq . $src}}selected{{end}}>{{.}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-auto">
+        <input type="number" class="form-control form-control-sm" name="expiresWithin"
+               value="{{.ExpiresWithin}}" placeholder="expires within days" min="1">
+      </div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">Filter</button></div>
+    </form>
+  </div>
+</div>
+
+{{if .CanGrant}}
+<div class="card">
+  <div class="card-header"><h3 class="card-title"><i class="fas fa-hand-holding-heart me-1"></i>Grant by hand</h3></div>
+  <div class="card-body">
+    <form method="post" action="/membership/members" class="row g-2 align-items-end">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <div class="col-sm-3">
+        <label class="form-label small" for="email">Account email</label>
+        <input type="email" class="form-control form-control-sm" id="email" name="email" required>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="tier">Tier</label>
+        <select class="form-select form-select-sm" id="tier" name="tier" required>
+          {{range .Tiers}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+        </select>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="durationDays">Days</label>
+        <input type="number" class="form-control form-control-sm" id="durationDays" name="durationDays" placeholder="0 = perpetual">
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label small" for="reason">Reason</label>
+        <input type="text" class="form-control form-control-sm" id="reason" name="reason" required
+               placeholder="Required: a grant without one is unanswerable later">
+      </div>
+      <div class="col-sm-2"><button class="btn btn-primary btn-sm w-100">Grant</button></div>
+    </form>
+  </div>
+</div>
+{{end}}
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-users me-1"></i>Memberships</h3>
+    <div class="card-tools small text-body-secondary">
+      A lapsed membership the scheduled task has not moved yet is still shown as lapsed.
+    </div>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Account</th><th>Tier</th><th>Source</th><th>Start</th><th>Expires</th><th>Status</th><th>Reason</th><th></th></tr></thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td class="small">{{.Email}}</td>
+          <td class="small">{{.Tier}}</td>
+          <td class="small">{{.Source}}</td>
+          <td class="small">{{.Start}}</td>
+          <td class="small {{if .Expired}}text-danger{{end}}">
+            {{.Expires}}{{if .Perpetual}} <span class="badge text-bg-light">perpetual</span>{{end}}
+          </td>
+          <td>
+            {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
+            {{else if eq .Status "expired"}}<span class="badge text-bg-dark">expired</span>
+            {{else if eq .Status "cancelled"}}<span class="badge text-bg-warning">cancelled</span>
+            {{else if eq .Status "refunded"}}<span class="badge text-bg-danger">refunded</span>
+            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+          </td>
+          <td class="small text-body-secondary">{{truncate .Reason 40}}</td>
+          <td class="text-end text-nowrap">
+            {{if $.CanGrant}}
+            <form method="post" class="d-inline" action="/membership/members/{{.Record.Id}}/extend">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <div class="input-group input-group-sm d-inline-flex" style="width:11rem">
+                <input type="number" class="form-control" name="days" placeholder="+days" required>
+                <input type="text" class="form-control" name="reason" placeholder="why" required>
+                <button class="btn btn-outline-primary" title="Extend"><i class="fas fa-plus"></i></button>
+              </div>
+            </form>
+            {{end}}
+            {{if $.CanRevoke}}
+            <form method="post" class="d-inline" action="/membership/members/{{.Record.Id}}/end">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <input type="text" class="form-control form-control-sm d-inline-block" name="reason"
+                     placeholder="why" style="width:7rem" required>
+              <button name="status" value="cancelled" class="btn btn-sm btn-outline-warning" title="Cancel">
+                <i class="fas fa-ban"></i>
+              </button>
+              <button name="status" value="refunded" class="btn btn-sm btn-outline-danger" title="Refund">
+                <i class="fas fa-rotate-left"></i>
+              </button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="8" class="text-center text-body-secondary py-4">No memberships match.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

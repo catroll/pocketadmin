@@ -778,6 +778,48 @@ where it is made.
 
 **Given up.** Nothing.
 
+### D-039 — A tier's benefits are typed rows, and the discount is a fraction
+
+**Decision.** `member_tier_benefits` stores a kind and a JSON payload whose shape the
+kind decides. A discount is `{"rate": 0.9}`, a fraction pricing multiplies by. The
+form takes a percentage and stores the fraction.
+
+**Why.** "10% off" and "10 percent off selected items" are the same string to a
+regular expression and different amounts of money to a customer. The specification
+puts it plainly -- pricing and checkout have to read a discount rate rather than
+parse prose -- and the reason is that a number which has been parsed from a sentence
+is a number nobody can be confident in.
+
+Three specific choices follow from that. A rate outside nought to one is **ignored
+and logged** rather than applied, because a value like 90 is far more likely to be a
+percentage typed into the wrong field than an intended 9000% discount, and applying
+it would charge a negative amount. When a tier declares two discount rates the
+**better one wins**, because the order of rows is not something an editor controls.
+And a malformed benefit is skipped rather than failing the whole resolution, because
+one bad row must not strip every benefit from a paying member.
+
+**Given up.** A benefit kind cannot carry arbitrary prose. A site that wants a
+sentence has `custom` and a label, and gets no interpretation.
+
+### D-040 — The highest tier wins, not the most recent
+
+**Decision.** When an account holds several active memberships, the one with the
+highest tier level applies; among equals, the one that lasts longest, and perpetual
+beats any expiry.
+
+**Why.** A person can legitimately hold a gifted tier and a purchased one. Any rule
+based on recency or on the order rows were created means a gift can downgrade a
+paying member, which is not what either party intended. Level is the field that
+exists to express "better", so it decides.
+
+A membership past its expiry grants nothing even before the scheduled task moves it.
+The task keeps the list honest; the resolution keeps a request from granting a
+benefit that ended yesterday.
+
+**Given up.** The losing membership is still recorded, which is correct -- it is the
+history -- and an operator reading one row may wonder why its benefits are not in
+force. The list shows the status, and the resolution is documented.
+
 ---
 
 ## Pending

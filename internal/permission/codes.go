@@ -26,6 +26,7 @@ const (
 	ModuleIntegrations = "integrations"
 	ModuleMonitoring   = "monitoring"
 	ModuleCatalog      = "catalog"
+	ModuleMembership   = "membership"
 )
 
 // Point is a single permission point.
@@ -212,8 +213,21 @@ const (
 	CatalogProductBulk    = "catalog:product:bulk"
 	CatalogVariantManage  = "catalog:variant:manage"
 	CatalogStockView      = "catalog:stock:view"
-	CatalogStockAdjust    = "catalog:stock:adjust" // RBACSettingsManage guards the settings surfaces. The surfaces themselves
-	// are separate modules; this point only covers who may change configuration.
+	CatalogStockAdjust    = "catalog:stock:adjust"
+
+	// Membership. Granting a membership is separate from editing the catalogue of
+	// tiers and plans, because handing somebody a tier is a decision about a person
+	// and editing a tier is a decision about the product.
+	MembershipTierList     = "membership:tier:list"
+	MembershipTierManage   = "membership:tier:manage"
+	MembershipPlanList     = "membership:plan:list"
+	MembershipPlanManage   = "membership:plan:manage"
+	MembershipMemberList   = "membership:member:list"
+	MembershipMemberGrant  = "membership:member:grant"
+	MembershipMemberRevoke = "membership:member:revoke"
+
+	// RBACSettingsManage guards the settings surfaces. The surfaces themselves are
+	// separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
 )
 
@@ -332,6 +346,13 @@ func All() []Point {
 		{CatalogVariantManage, "Manage product variants", ModuleCatalog, "variant", "manage", "button"},
 		{CatalogStockView, "View the stock ledger", ModuleCatalog, "stock", "view", "button"},
 		{CatalogStockAdjust, "Adjust stock", ModuleCatalog, "stock", "adjust", "button"},
+		{MembershipTierList, "List membership tiers", ModuleMembership, "tier", "list", "menu"},
+		{MembershipTierManage, "Manage membership tiers", ModuleMembership, "tier", "manage", "button"},
+		{MembershipPlanList, "List membership plans", ModuleMembership, "plan", "list", "api"},
+		{MembershipPlanManage, "Manage membership plans", ModuleMembership, "plan", "manage", "button"},
+		{MembershipMemberList, "List memberships", ModuleMembership, "member", "list", "menu"},
+		{MembershipMemberGrant, "Grant or extend a membership", ModuleMembership, "member", "grant", "button"},
+		{MembershipMemberRevoke, "Cancel or revoke a membership", ModuleMembership, "member", "revoke", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

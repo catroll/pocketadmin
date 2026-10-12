@@ -19,6 +19,7 @@ var Fields = map[string][]string{
 	"messages":           {"content"},
 	"system_updates":     {"releaseNotes"},
 	"product_categories": {"description"},
+	"member_tiers":       {"description"},
 	"products":           {"description"},
 }
 

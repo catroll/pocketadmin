@@ -13,6 +13,7 @@ import (
 	"pocketadmin/internal/audit"
 	"pocketadmin/internal/developer"
 	"pocketadmin/internal/jobs"
+	"pocketadmin/internal/membership"
 	"pocketadmin/internal/workbench"
 )
 
@@ -33,6 +34,7 @@ func (s *Server) RegisterJobHandlers() {
 		s.registerAnnouncementJob()
 		s.registerTodoReminderJob()
 		s.registerAPIKeyExpiryJob()
+		s.registerMembershipJob()
 	})
 }
 
@@ -255,6 +257,84 @@ func (s *Server) registerAPIKeyExpiryJob() {
 			return fmt.Sprintf("marked %d key(s) expired", expired), nil
 		},
 	})
+}
+
+// registerMembershipJob expires memberships and warns about the ones ending soon.
+//
+// The transition is performed rather than computed at read time because "expired" is
+// a state an operator queries by and a member may be notified about, and a purely
+// computed state cannot be the trigger for anything.
+func (s *Server) registerMembershipJob() {
+	jobs.Register(jobs.Handler{
+		Code:        "membership.lifecycle",
+		Name:        "Membership expiry",
+		Description: "Expires memberships whose time is up and reminds members whose membership ends within a week.",
+		DefaultCron: "15 * * * *",
+		Run: func(ctx context.Context, _ map[string]any) (string, error) {
+			now := time.Now()
+
+			expired, err := membership.ExpireDue(s.app, now)
+			if err != nil {
+				return "", err
+			}
+
+			// The reminder goes into the workbench inbox, which is where a person
+			// already looks. It is sent once per membership per window: the delivery
+			// is deduplicated by the message title and recipient, the same way the
+			// todo reminder is.
+			soon, err := membership.ExpiringSoon(s.app, 7*24*time.Hour, now)
+			if err != nil {
+				return "", err
+			}
+
+			reminded := 0
+			for _, rec := range soon {
+				userID := rec.GetString("user")
+				if userID == "" || s.membershipReminderSent(rec) {
+					continue
+				}
+
+				tierName := "your membership"
+				if tierRec, err := s.app.FindRecordById(membership.CollectionTiers, rec.GetString("tier")); err == nil && tierRec != nil {
+					tierName = tierRec.GetString("name")
+				}
+
+				message := workbench.Message{
+					Title:   "Membership reminder: " + tierName,
+					Content: "<p>Your " + tierName + " membership ends soon. Renew to keep your benefits.</p>",
+					Type:    "system",
+					Level:   "warning",
+					Link:    "/membership/members",
+				}
+				if err := workbench.NotifySystem(s.app, userID, message); err != nil {
+					continue
+				}
+				reminded++
+			}
+
+			if expired == 0 && reminded == 0 {
+				return "nothing to change", nil
+			}
+			return fmt.Sprintf("expired %d, reminded %d", expired, reminded), nil
+		},
+	})
+}
+
+// membershipReminderSent reports whether this membership has already produced a
+// reminder.
+//
+// Without it a task that runs hourly would send a week's worth of reminders a week,
+// which is worse than sending none.
+func (s *Server) membershipReminderSent(rec *core.Record) bool {
+	userID := rec.GetString("user")
+	if userID == "" {
+		return true
+	}
+
+	existing, err := s.app.FindFirstRecordByFilter("message_recipients",
+		"user = {:u} && message.title ~ 'Membership reminder'",
+		map[string]any{"u": userID})
+	return err == nil && existing != nil
 }
 
 // ---------------------------------------------------------------------------

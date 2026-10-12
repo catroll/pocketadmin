@@ -1,0 +1,109 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <h4 class="mb-0">{{.Record.GetString "name"}}</h4>
+    <div class="small text-body-secondary">
+      <code>{{.Record.GetString "code"}}</code> &middot; level {{.Record.GetInt "level"}} &middot;
+      {{.Record.GetString "status"}}
+      {{if .Record.GetBool "isDefault"}}&middot; <span class="badge text-bg-info">default</span>{{end}}
+    </div>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    <a href="/membership/tiers" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Tiers</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-7">
+    <div class="card card-primary card-outline">
+      <div class="card-header"><h3 class="card-title">Benefits</h3></div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Kind</th><th>Label</th><th>Payload</th></tr></thead>
+          <tbody>
+            {{range .Benefits}}
+            <tr class="small">
+              <td><code>{{.GetString "kind"}}</code></td>
+              <td>{{.GetString "label"}}</td>
+              <td><code class="small">{{json (.Get "value")}}</code></td>
+            </tr>
+            {{else}}
+            <tr><td colspan="3" class="text-center text-body-secondary py-3">No benefits.</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {{if .CanManage}}
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Add a benefit</h3></div>
+      <div class="card-body">
+        <form method="post" action="/membership/tiers/{{.Record.Id}}/benefits">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="row g-2 mb-2">
+            <div class="col-sm-4">
+              <label class="form-label small" for="kind">Kind</label>
+              <select class="form-select form-select-sm" id="kind" name="kind">
+                {{range .Kinds}}<option value="{{.}}">{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label small" for="percent">Percent (discount)</label>
+              <input type="text" class="form-control form-control-sm" id="percent" name="percent" placeholder="10">
+              <div class="form-text">Stored as a fraction: 10 becomes 0.9.</div>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label small" for="multiplier">Multiplier (points)</label>
+              <input type="text" class="form-control form-control-sm" id="multiplier" name="multiplier" placeholder="2">
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="access">Content keys (one per line or comma separated)</label>
+            <input type="text" class="form-control form-control-sm font-monospace" id="access" name="access" placeholder="vip, archive">
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-sm-8">
+              <label class="form-label small" for="label">Label</label>
+              <input type="text" class="form-control form-control-sm" id="label" name="label"
+                     placeholder="Leave empty to generate one">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label small" for="sortOrder">Order</label>
+              <input type="number" class="form-control form-control-sm" id="sortOrder" name="sortOrder">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm">Add</button>
+        </form>
+      </div>
+    </div>
+    {{end}}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Resolved</h3></div>
+      <div class="card-body">
+        <p class="small text-body-secondary">
+          What pricing and checkout read from this tier. This is the shape a benefit has to
+          arrive in; it is not derived from the labels.
+        </p>
+        <dl class="row mb-0 small">
+          <dt class="col-7">Discount rate</dt>
+          <dd class="col-5">
+            {{if .Resolved.HasDiscount}}{{.Resolved.DiscountRate}}{{else}}<span class="text-body-secondary">none</span>{{end}}
+          </dd>
+          <dt class="col-7">Free shipping</dt>
+          <dd class="col-5">{{if .Resolved.FreeShipping}}yes{{else}}<span class="text-body-secondary">no</span>{{end}}</dd>
+          <dt class="col-7">Points multiplier</dt>
+          <dd class="col-5">{{if .Resolved.PointsMultiplier}}{{.Resolved.PointsMultiplier}}{{else}}<span class="text-body-secondary">none</span>{{end}}</dd>
+          <dt class="col-7">Content access</dt>
+          <dd class="col-5">{{if .Resolved.ContentAccess}}{{range .Resolved.ContentAccess}}<span class="badge text-bg-light">{{.}}</span>{{end}}{{else}}<span class="text-body-secondary">none</span>{{end}}</dd>
+          <dt class="col-7">Priority support</dt>
+          <dd class="col-5">{{if .Resolved.PrioritySupport}}yes{{else}}<span class="text-body-secondary">no</span>{{end}}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
