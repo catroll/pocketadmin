@@ -176,6 +176,24 @@ func rbacResources() []resource {
 			AfterSave: func(s *Server, _ *core.Record, _ bool) { s.menus.Invalidate() },
 		},
 		{
+			// A dictionary's items are managed under the dictionary itself, so the
+			// parent is taken from the query string rather than chosen in a form.
+			// The dictionary permissions guard them: managing a dictionary's entries
+			// is managing the dictionary.
+			Collection: "dictionary_items",
+			BasePath:   "/rbac/dictionary-items",
+			Title:      "Dictionary items",
+			Singular:   "item",
+			Active:     "rbac.dictionaries",
+			ListPerm:   permission.RBACDictionaryList,
+			CreatePerm: permission.RBACDictionaryCreate,
+			UpdatePerm: permission.RBACDictionaryUpdate,
+			DeletePerm: permission.RBACDictionaryDelete,
+			Order:      "sortOrder,label",
+			ChildOf:    "dictionary",
+			LabelField: "label",
+		},
+		{
 			Collection: "dictionaries",
 			BasePath:   "/rbac/dictionaries",
 			Title:      "Dictionaries",
@@ -187,6 +205,12 @@ func rbacResources() []resource {
 			DeletePerm: permission.RBACDictionaryDelete,
 			Order:      "name",
 			LabelField: "name",
+
+			// A dictionary is only useful because of its entries, so the list links
+			// straight to them.
+			RowActionPath:  "/rbac/dictionary-items?parent=",
+			RowActionLabel: "Items",
+			RowActionIcon:  "fas fa-list",
 		},
 	}
 }

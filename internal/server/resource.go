@@ -49,6 +49,13 @@ type resource struct {
 	// path.
 	ParentField string
 
+	// ChildOf names a relation that scopes this resource to a parent record given
+	// in the query string, as `?parent=<id>`. It is how a sub-list such as a
+	// dictionary's items is expressed without a second resource layer: the parent
+	// narrows the list, seeds the create form and is carried through the form's
+	// action and cancel links.
+	ChildOf string
+
 	// DerivedFields are computed by the server and must never be read back from a
 	// form. They are excluded from the editor and skipped when applying a
 	// submission, so a crafted post cannot rewrite a materialised path.
@@ -57,6 +64,12 @@ type resource struct {
 	// HasDetail marks a resource with its own detail screen at BasePath/:id, so
 	// the list offers a view action next to edit and delete.
 	HasDetail bool
+
+	// RowActionPath, when set, adds a per-row link to BasePath+RowActionPath+<id>.
+	// It carries a sub-list such as a dictionary's entries.
+	RowActionPath  string
+	RowActionLabel string
+	RowActionIcon  string
 
 	// LabelField is the field used when this collection is shown as a relation
 	// option. Empty falls back to the collection's own presentable field.
@@ -73,6 +86,31 @@ type resource struct {
 	// BeforeDelete runs before a delete and may refuse it, for example when the
 	// row is still referenced. Returning an error aborts with a message.
 	BeforeDelete func(s *Server, rec *core.Record) error
+}
+
+// parentID returns the parent record id this request is scoped to, or "".
+func (r resource) parentID(c *gin.Context) string {
+	if r.ChildOf == "" {
+		return ""
+	}
+	return strings.TrimSpace(c.Query("parent"))
+}
+
+// parentFilter narrows a query to the parent record when one is given.
+func (r resource) parentFilter(c *gin.Context) (string, map[string]any) {
+	id := r.parentID(c)
+	if id == "" {
+		return "", nil
+	}
+	return r.ChildOf + " = {:childParent}", map[string]any{"childParent": id}
+}
+
+// listPath is the resource's list URL, carrying the parent when scoped.
+func (r resource) listPath(c *gin.Context) string {
+	if id := r.parentID(c); id != "" {
+		return r.BasePath + "?parent=" + url.QueryEscape(id)
+	}
+	return r.BasePath
 }
 
 // derivedSet returns the resource's derived fields as a lookup set.
@@ -126,23 +164,39 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 		filter = andFilter(filter, r.Filter)
 	}
 
+	if pf, pp := r.parentFilter(c); pf != "" {
+		filter = andFilter(filter, pf)
+		if params == nil {
+			params = make(map[string]any, len(pp))
+		}
+		for k, v := range pp {
+			params[k] = v
+		}
+	}
+
 	// Row-level data scope narrows what the actor may see within the capability
 	// it was already granted.
 	scope := rbac.ScopeFor(actor, col)
 	if scope.DenyAll {
 		s.render(c, http.StatusOK, "resource_list.html", resourceListPage{
-			base:         s.newBase(c, r.Title, r.Active),
-			Resource:     r,
-			Collection:   col,
-			Columns:      listColumns(col),
-			Query:        query,
-			QueryPrefix:  buildQueryPrefix(query, perPage),
-			HasDetail:    r.HasDetail,
-			CanCreate:    actor.Can(r.CreatePerm),
-			CanDelete:    actor.Can(r.DeletePerm),
-			CanUpdate:    actor.Can(r.UpdatePerm),
-			PerPageItems: perPageOptions(perPage),
-			ScopeNote:    scope.Description(),
+			base:          s.newBase(c, r.Title, r.Active),
+			Resource:      r,
+			Collection:    col,
+			Columns:       listColumns(col),
+			Query:         query,
+			QueryPrefix:   buildQueryPrefix(query, perPage),
+			ListPath:      r.listPath(c),
+			ParentID:      r.parentID(c),
+			ParentLabel:   s.parentLabel(c, r),
+			HasDetail:     r.HasDetail,
+			RowActionPath: r.RowActionPath,
+			RowActionIcon: r.RowActionIcon,
+			RowActionText: r.RowActionLabel,
+			CanCreate:     actor.Can(r.CreatePerm),
+			CanDelete:     actor.Can(r.DeletePerm),
+			CanUpdate:     actor.Can(r.UpdatePerm),
+			PerPageItems:  perPageOptions(perPage),
+			ScopeNote:     scope.Description(),
 		})
 		return
 	}
@@ -183,22 +237,28 @@ func (s *Server) resourceList(c *gin.Context, r resource) {
 	}
 
 	pageVM := resourceListPage{
-		base:         s.newBase(c, r.Title, r.Active),
-		Resource:     r,
-		Collection:   col,
-		Columns:      cols,
-		Rows:         rows,
-		Query:        query,
-		Sort:         c.Query("sort"),
-		Dir:          c.Query("dir"),
-		QueryPrefix:  buildQueryPrefix(query, perPage),
-		HasDetail:    r.HasDetail,
-		CanCreate:    actor.Can(r.CreatePerm),
-		CanDelete:    actor.Can(r.DeletePerm),
-		CanUpdate:    actor.Can(r.UpdatePerm),
-		Pagination:   buildPagination(page, perPage, total),
-		PerPageItems: perPageOptions(perPage),
-		ScopeNote:    scope.Description(),
+		base:          s.newBase(c, r.Title, r.Active),
+		Resource:      r,
+		Collection:    col,
+		Columns:       cols,
+		Rows:          rows,
+		Query:         query,
+		Sort:          c.Query("sort"),
+		Dir:           c.Query("dir"),
+		QueryPrefix:   buildQueryPrefix(query, perPage),
+		ListPath:      r.listPath(c),
+		ParentID:      r.parentID(c),
+		ParentLabel:   s.parentLabel(c, r),
+		HasDetail:     r.HasDetail,
+		RowActionPath: r.RowActionPath,
+		RowActionIcon: r.RowActionIcon,
+		RowActionText: r.RowActionLabel,
+		CanCreate:     actor.Can(r.CreatePerm),
+		CanDelete:     actor.Can(r.DeletePerm),
+		CanUpdate:     actor.Can(r.UpdatePerm),
+		Pagination:    buildPagination(page, perPage, total),
+		PerPageItems:  perPageOptions(perPage),
+		ScopeNote:     scope.Description(),
 	}
 
 	s.render(c, http.StatusOK, "resource_list.html", pageVM)
@@ -226,6 +286,12 @@ func (s *Server) resourceCreate(c *gin.Context, r resource) {
 		return
 	}
 
+	// A child resource takes its parent from the query string, so the relation is
+	// never a free choice the form could get wrong.
+	if id := r.parentID(c); id != "" {
+		rec.Set(r.ChildOf, id)
+	}
+
 	if r.BeforeSave != nil {
 		if err := r.BeforeSave(s, rec, true); err != nil {
 			s.renderResourceForm(c, r, col, rec, true, validationMessages(err))
@@ -243,7 +309,7 @@ func (s *Server) resourceCreate(c *gin.Context, r resource) {
 	}
 
 	s.setFlash(c, "success", r.Singular+" created.")
-	c.Redirect(http.StatusSeeOther, r.BasePath)
+	c.Redirect(http.StatusSeeOther, r.listPath(c))
 }
 
 // resourceEdit renders the update form.
@@ -294,7 +360,7 @@ func (s *Server) resourceUpdate(c *gin.Context, r resource) {
 	}
 
 	s.setFlash(c, "success", r.Singular+" updated.")
-	c.Redirect(http.StatusSeeOther, r.BasePath)
+	c.Redirect(http.StatusSeeOther, r.listPath(c))
 }
 
 // resourceDelete removes a record.
@@ -315,14 +381,14 @@ func (s *Server) resourceDelete(c *gin.Context, r resource) {
 	if r.BeforeDelete != nil {
 		if err := r.BeforeDelete(s, rec); err != nil {
 			s.setFlash(c, "danger", err.Error())
-			c.Redirect(http.StatusSeeOther, r.BasePath)
+			c.Redirect(http.StatusSeeOther, r.listPath(c))
 			return
 		}
 	}
 
 	if err := s.app.Delete(rec); err != nil {
 		s.setFlash(c, "danger", "Could not delete the "+r.Singular+": "+err.Error())
-		c.Redirect(http.StatusSeeOther, r.BasePath)
+		c.Redirect(http.StatusSeeOther, r.listPath(c))
 		return
 	}
 
@@ -331,7 +397,7 @@ func (s *Server) resourceDelete(c *gin.Context, r resource) {
 	}
 
 	s.setFlash(c, "success", r.Singular+" deleted.")
-	c.Redirect(http.StatusSeeOther, r.BasePath)
+	c.Redirect(http.StatusSeeOther, r.listPath(c))
 }
 
 // renderResourceForm renders the shared create/edit form.
@@ -341,6 +407,9 @@ func (s *Server) renderResourceForm(c *gin.Context, r resource, col *core.Collec
 	action := r.BasePath + "/new"
 	if !isNew {
 		action = r.BasePath + "/" + rec.Id
+	}
+	if id := r.parentID(c); id != "" {
+		action += "?parent=" + url.QueryEscape(id)
 	}
 
 	title := "New " + strings.ToLower(r.Singular)
@@ -353,7 +422,7 @@ func (s *Server) renderResourceForm(c *gin.Context, r resource, col *core.Collec
 		Resource:   r,
 		IsNew:      isNew,
 		Action:     action,
-		CancelURL:  r.BasePath,
+		CancelURL:  r.listPath(c),
 		Fields:     buildFormFields(s.app, col, rec, isNew, r.derivedSet()),
 		Errors:     errs,
 		RecordID:   recID(rec),
@@ -388,6 +457,45 @@ func (s *Server) resourceRoutes(panel *gin.RouterGroup, r resource) {
 		s.guarded(panel, http.MethodPost, r.BasePath+"/:id/delete", r.DeletePerm,
 			func(c *gin.Context) { s.resourceDelete(c, r) })
 	}
+}
+
+// parentLabel resolves a readable name for the record this sub-list belongs to,
+// so the screen can say what it is showing rather than only an id.
+func (s *Server) parentLabel(c *gin.Context, r resource) string {
+	id := r.parentID(c)
+	if id == "" {
+		return ""
+	}
+
+	col := s.childParentCollection(r)
+	if col == nil {
+		return ""
+	}
+
+	rec, err := s.app.FindRecordById(col, id)
+	if err != nil || rec == nil {
+		return ""
+	}
+	return recordLabel(col, rec)
+}
+
+// childParentCollection resolves the collection a ChildOf relation points at.
+func (s *Server) childParentCollection(r resource) *core.Collection {
+	col, err := s.app.FindCollectionByNameOrId(r.Collection)
+	if err != nil || col == nil {
+		return nil
+	}
+
+	fld, ok := col.Fields.GetByName(r.ChildOf).(*core.RelationField)
+	if !ok || fld.CollectionId == "" {
+		return nil
+	}
+
+	parent, err := s.app.FindCollectionByNameOrId(fld.CollectionId)
+	if err != nil {
+		return nil
+	}
+	return parent
 }
 
 // recID returns a record id, or "" for a nil record.

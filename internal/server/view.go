@@ -250,6 +250,17 @@ type resourceListPage struct {
 	// HasDetail renders a view action linking to the resource's detail screen.
 	HasDetail bool
 
+	// RowActionPath and friends render a per-row link to a sub-list.
+	RowActionPath string
+	RowActionIcon string
+	RowActionText string
+
+	// ListPath is the list URL, carrying the parent when the resource is scoped to
+	// one. ParentID and ParentLabel describe that parent.
+	ListPath    string
+	ParentID    string
+	ParentLabel string
+
 	// ScopeNote explains a row restriction to the user, so a short list reads as
 	// a deliberate scope rather than as missing data.
 	ScopeNote string
