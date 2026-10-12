@@ -1,33 +1,36 @@
 {{define "content"}}
+{{/* AdminLTE 4 renamed .small-box .icon to .small-box-icon and pairs the box
+     with Bootstrap's text-bg-* helpers, which set a contrasting text colour as
+     well as the background. */}}
 <div class="row">
   <div class="col-lg-3 col-6">
-    <div class="small-box bg-info">
+    <div class="small-box text-bg-info">
       <div class="inner"><h3>{{.Stats.Collections}}</h3><p>Collections</p></div>
-      <div class="icon"><i class="fas fa-database"></i></div>
+      <i class="small-box-icon fas fa-database" aria-hidden="true"></i>
       <a href="/collections" class="small-box-footer">Browse <i class="fas fa-arrow-circle-right"></i></a>
     </div>
   </div>
 
   <div class="col-lg-3 col-6">
-    <div class="small-box bg-success">
+    <div class="small-box text-bg-success">
       <div class="inner"><h3>{{.Stats.Records}}</h3><p>Records</p></div>
-      <div class="icon"><i class="fas fa-table"></i></div>
+      <i class="small-box-icon fas fa-table" aria-hidden="true"></i>
       <span class="small-box-footer">Across all collections</span>
     </div>
   </div>
 
   <div class="col-lg-3 col-6">
-    <div class="small-box bg-warning">
+    <div class="small-box text-bg-warning">
       <div class="inner"><h3>{{.Stats.Superusers}}</h3><p>Superusers</p></div>
-      <div class="icon"><i class="fas fa-user-shield"></i></div>
+      <i class="small-box-icon fas fa-user-shield" aria-hidden="true"></i>
       <a href="/collections/_superusers/records" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
     </div>
   </div>
 
   <div class="col-lg-3 col-6">
-    <div class="small-box bg-danger">
+    <div class="small-box text-bg-danger">
       <div class="inner"><h3>{{.Stats.Files}}</h3><p>Stored files</p></div>
-      <div class="icon"><i class="fas fa-file-upload"></i></div>
+      <i class="small-box-icon fas fa-file-upload" aria-hidden="true"></i>
       <span class="small-box-footer">{{bytes .Stats.UploadBytes}}</span>
     </div>
   </div>

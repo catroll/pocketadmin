@@ -44,6 +44,14 @@
   vertical-align: middle;
 }
 
+/* AdminLTE 4 dropped the .small-box .icon wrapper in favour of a direct-child
+ * .small-box-icon, which it positions as a large translucent mark in the
+ * top-right corner. The footer is a link/span inside the box, so keep its text
+ * the same colour as the box rather than Bootstrap's default link blue. */
+.small-box > .small-box-footer {
+  color: inherit;
+}
+
 /*
  * Chart.js needs a positioned, explicitly sized parent; its canvas is injected
  * by app.js. AdminLTE 3 had a .chart helper, AdminLTE 4 does not.
