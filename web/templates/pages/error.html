@@ -1,15 +1,16 @@
 {{define "content"}}
-<div class="error-page">
-  <h2 class="headline text-warning">{{.Code}}</h2>
-  <div class="error-content">
-    <h3><i class="fas fa-exclamation-triangle text-warning mr-1"></i>{{.Message}}</h3>
-    <p>{{.Detail}}</p>
-    <p>
-      <a href="/dashboard" class="btn btn-primary btn-sm">
-        <i class="fas fa-home mr-1"></i>Back to dashboard
-      </a>
-      <a href="/collections" class="btn btn-default btn-sm">Browse collections</a>
-    </p>
-  </div>
+{{/* AdminLTE 4 dropped .error-page, so this is built from Bootstrap utilities. */}}
+<div class="error-page text-center py-5">
+  <div class="error-code fw-light text-warning">{{.Code}}</div>
+  <h3 class="mt-2">
+    <i class="fas fa-exclamation-triangle text-warning me-1"></i>{{.Message}}
+  </h3>
+  <p class="text-body-secondary">{{.Detail}}</p>
+  <p class="mt-3">
+    <a href="/dashboard" class="btn btn-primary btn-sm">
+      <i class="fas fa-home me-1"></i>Back to dashboard
+    </a>
+    <a href="/collections" class="btn btn-secondary btn-sm">Browse collections</a>
+  </p>
 </div>
 {{end}}

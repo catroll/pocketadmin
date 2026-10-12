@@ -16,47 +16,30 @@ limitations under the License.
 THIRD-PARTY NOTICES
 ===============================================================================
 
-This product bundles the following components in web/static/vendor/.
+This product bundles the following components in web/static/vendor/. Each
+component's own license file is vendored alongside it by
+scripts/vendor-assets.sh; keep that step intact when updating.
 
 --------------------------------------------------------------------------------
-AdminLTE 3.2.0 — MIT License
-Copyright (c) 2014-2021 ColorlibHQ
+AdminLTE 4.10.0 — MIT License
+Copyright (c) 2014-2026 ColorlibHQ
 https://github.com/ColorlibHQ/AdminLTE
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
-Bootstrap 4.6.2 — MIT License
-Copyright (c) 2011-2021 The Bootstrap Authors
-Copyright (c) 2011-2021 Twitter, Inc.
+Bootstrap 5.3.8 — MIT License
+Copyright (c) 2011-2025 The Bootstrap Authors
 https://github.com/twbs/bootstrap
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
-jQuery 3.7.1 — MIT License
-Copyright OpenJS Foundation and other contributors
-https://jquery.org/
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-Chart.js 2.9.4 — MIT License
-Copyright (c) 2014-2021 Chart.js Contributors
+Chart.js 4.5.1 — MIT License
+Copyright (c) 2014-2025 Chart.js Contributors
 https://www.chartjs.org/
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
-OverlayScrollbars 1.13.3 — MIT License
-Copyright (c) 2018 Rene Haas
-https://github.com/KingSora/OverlayScrollbars
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-Toastr 2.1.4 — MIT License
-Copyright (c) 2016 CodeSeven
-https://github.com/CodeSeven/toastr
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-Font Awesome Free 5.15.4
+Font Awesome Free 7.3.1
 https://fontawesome.com/
 
   Icons .............. CC BY 4.0  — Copyright (c) Fonticons, Inc.
@@ -70,6 +53,19 @@ attribution as required by CC BY 4.0 and SIL OFL 1.1. The Font Awesome name and
 the font names are trademarks of Fonticons, Inc. and are not covered by the
 licenses above.
 --------------------------------------------------------------------------------
+
+===============================================================================
+Components deliberately NOT bundled
+===============================================================================
+
+jQuery, Toastr and OverlayScrollbars were vendored in earlier revisions and have
+been removed:
+
+  jQuery             AdminLTE 4 dropped its dependency on it.
+  Toastr             Last released 2017 and jQuery-dependent; notifications use
+                     the Bootstrap 5 toast component instead.
+  OverlayScrollbars  AdminLTE 4 scrolls the sidebar natively via
+                     .sidebar-wrapper.
 
 ===============================================================================
 Go module dependencies are listed in go.mod / go.sum. Their licenses are not

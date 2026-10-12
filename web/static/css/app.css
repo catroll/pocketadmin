@@ -1,31 +1,37 @@
-/* PocketAdmin — small AdminLTE 3 tweaks layered on top of the stock theme. */
+/* PocketAdmin — small AdminLTE 4 tweaks layered on top of the stock theme. */
 
-.nav-sidebar .nav-link > p {
+/* AdminLTE 4 ships no brand image, so the sidebar mark is an icon. */
+.app-sidebar .brand-mark {
+  font-size: 1.35rem;
+  margin-right: .5rem;
+  opacity: .85;
+}
+
+/* Keep long collection names from stretching the sidebar. */
+.app-sidebar .brand-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.nav-sidebar .nav-header {
+.sidebar-menu .nav-link > p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-menu .nav-header {
   letter-spacing: .05em;
   font-size: .72rem;
 }
 
-/* Keep long collection names from stretching the sidebar. */
-.main-sidebar .brand-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.content-header h1 {
-  font-size: 1.5rem;
+.app-content-header h3 {
   word-break: break-word;
 }
 
 /* Record tables: keep the id column monospaced and compact. */
 .table td code {
-  color: #4b545c;
+  color: var(--bs-secondary-color);
 }
 
 .table th a {
@@ -38,21 +44,28 @@
   vertical-align: middle;
 }
 
-/* Full-height login page matches AdminLTE's expectations. */
-.login-page {
-  min-height: 100vh;
+/*
+ * Chart.js needs a positioned, explicitly sized parent; its canvas is injected
+ * by app.js. AdminLTE 3 had a .chart helper, AdminLTE 4 does not.
+ */
+.chart-box {
+  position: relative;
+  height: 300px;
 }
 
-.error-page > .headline {
-  float: left;
-  font-size: 100px;
-  font-weight: 300;
+/* AdminLTE 3 had .error-page; AdminLTE 4 dropped it. */
+.error-page .error-code {
+  font-size: 6rem;
+  line-height: 1;
 }
 
 @media (max-width: 767.98px) {
-  .error-page > .headline {
-    float: none;
-    text-align: center;
-    font-size: 72px;
+  .error-page .error-code {
+    font-size: 4rem;
   }
+}
+
+/* Full-height login page matches AdminLTE's expectations. */
+.login-page {
+  min-height: 100vh;
 }

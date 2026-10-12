@@ -3,16 +3,11 @@
  *
  * Everything here is progressive enhancement: the panel is fully usable with
  * JavaScript disabled (forms are plain HTML posts).
+ *
+ * No jQuery. Chart.js 4 and Bootstrap 5 both ship ES5-compatible UMD builds.
  */
 (function () {
   'use strict';
-
-  // AdminLTE 3 styles its sidebar scroller through OverlayScrollbars.
-  if (window.jQuery && jQuery.fn && typeof jQuery.fn.overlayScrollbars === 'function') {
-    jQuery(function () {
-      jQuery('.sidebar').overlayScrollbars({ scrollbars: { clickScrolling: true } });
-    });
-  }
 
   document.addEventListener('DOMContentLoaded', function () {
     renderRecordsChart();
@@ -22,6 +17,9 @@
   /**
    * Draws the "records per collection" bar chart from the data-chart attribute
    * emitted by the dashboard template.
+   *
+   * Chart.js 4 replaced the v2 `scales.yAxes[]` / `legend` / `tooltips` options
+   * with `scales.y`, `plugins.legend` and `plugins.tooltip`.
    */
   function renderRecordsChart() {
     var canvas = document.getElementById('records-chart');
@@ -40,14 +38,18 @@
       return;
     }
 
-    new Chart(canvas, {
+    // Chart.js 4 needs a canvas element; the template renders a sized container.
+    var target = document.createElement('canvas');
+    canvas.appendChild(target);
+
+    new Chart(target, {
       type: 'bar',
       data: {
         labels: data.Labels,
         datasets: [{
           label: 'Records',
-          backgroundColor: 'rgba(60, 141, 188, 0.8)',
-          borderColor: 'rgba(60, 141, 188, 1)',
+          backgroundColor: 'rgba(13, 110, 253, 0.75)',
+          borderColor: 'rgba(13, 110, 253, 1)',
           borderWidth: 1,
           data: data.Values
         }]
@@ -55,12 +57,15 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        legend: { display: false },
-        tooltips: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: 'index', intersect: false }
+        },
         scales: {
-          yAxes: [{
-            ticks: { beginAtZero: true, precision: 0 }
-          }]
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
         }
       }
     });

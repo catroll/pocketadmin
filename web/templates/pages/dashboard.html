@@ -37,13 +37,13 @@
   <div class="col-lg-7">
     <div class="card card-primary card-outline">
       <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-chart-bar mr-1"></i>Records per collection</h3>
+        <h3 class="card-title"><i class="fas fa-chart-bar me-1"></i>Records per collection</h3>
       </div>
       <div class="card-body">
         {{if .Chart.Labels}}
-        <div class="chart" id="records-chart" data-chart="{{json .Chart}}" style="height:300px"></div>
+        <div class="chart-box" id="records-chart" data-chart="{{json .Chart}}"></div>
         {{else}}
-        <p class="text-muted mb-0">No records yet. Create a collection and add some data.</p>
+        <p class="text-body-secondary mb-0">No records yet. Create a collection and add some data.</p>
         {{end}}
       </div>
     </div>
@@ -52,7 +52,7 @@
   <div class="col-lg-5">
     <div class="card card-primary card-outline">
       <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-hdd mr-1"></i>Storage</h3>
+        <h3 class="card-title"><i class="fas fa-hdd me-1"></i>Storage</h3>
       </div>
       <div class="card-body p-0">
         <table class="table table-sm mb-0">
@@ -71,9 +71,9 @@
 
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-database mr-1"></i>Collections</h3>
+    <h3 class="card-title"><i class="fas fa-database me-1"></i>Collections</h3>
     <div class="card-tools">
-      <a href="/collections" class="btn btn-tool"><i class="fas fa-expand"></i></a>
+      <a href="/collections" class="btn btn-tool" aria-label="Open the collections page"><i class="fas fa-expand"></i></a>
     </div>
   </div>
   <div class="card-body table-responsive p-0">
@@ -82,9 +82,9 @@
         <tr>
           <th>Name</th>
           <th>Type</th>
-          <th class="text-right">Fields</th>
-          <th class="text-right">Records</th>
-          <th class="text-right">Actions</th>
+          <th class="text-end">Fields</th>
+          <th class="text-end">Records</th>
+          <th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -92,13 +92,14 @@
         <tr>
           <td>
             <a href="/collections/{{.Name}}/records">{{.Name}}</a>
-            {{if .System}}<span class="badge badge-secondary badge-pill">sys</span>{{end}}
+            {{if .System}}<span class="badge text-bg-secondary rounded-pill">sys</span>{{end}}
           </td>
-          <td><span class="badge badge-info">{{.Type}}</span></td>
-          <td class="text-right">{{.FieldCount}}</td>
-          <td class="text-right">{{if .IsView}}&mdash;{{else}}{{.RecordCount}}{{end}}</td>
-          <td class="text-right">
-            <a href="/collections/{{.Name}}/records" class="btn btn-xs btn-default">
+          <td><span class="badge text-bg-info">{{.Type}}</span></td>
+          <td class="text-end">{{.FieldCount}}</td>
+          <td class="text-end">{{if .IsView}}&mdash;{{else}}{{.RecordCount}}{{end}}</td>
+          <td class="text-end">
+            <a href="/collections/{{.Name}}/records" class="btn btn-sm btn-secondary"
+               title="Browse records" aria-label="Browse records in {{.Name}}">
               <i class="fas fa-list"></i>
             </a>
           </td>

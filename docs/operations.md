@@ -80,6 +80,31 @@ currently authenticate against `_superusers`. Section 1.1 of
 [`database-design.md`](database-design.md) describes the planned move to a
 `users` account with an `admins` profile.
 
+## Front-end assets
+
+`web/static/vendor/` contains four pinned packages, committed to the repository
+so the binary embeds everything it needs:
+
+| Package | Version | Files |
+| --- | --- | --- |
+| AdminLTE | 4.10.0 | `css/adminlte.min.css`, `js/adminlte.min.js` |
+| Bootstrap | 5.3.8 | `css/bootstrap.min.css`, `js/bootstrap.bundle.min.js` |
+| Font Awesome Free | 7.3.1 | `css/all.min.css`, `webfonts/*.woff2` |
+| Chart.js | 4.5.1 | `chart.umd.min.js` |
+
+`bash scripts/vendor-assets.sh` re-downloads them from the npm registry (no
+node/npm required) and caches the tarballs under `.cache/thirdparty`. It also
+vendors each package's own LICENSE file next to it — do not remove that step, as
+MIT and CC BY 4.0 both require the notice to travel with the copies.
+
+To update a version, edit the `PKGS` array and the extraction paths in that
+script, then re-run it and `make build`. Check the current version with
+`npm view <pkg> dist-tags.latest` rather than relying on memory.
+
+**Not vendored, on purpose:** jQuery (AdminLTE 4 dropped it), Toastr (last
+released 2017, jQuery-dependent; Bootstrap 5 toasts are used instead) and
+OverlayScrollbars (AdminLTE 4 scrolls the sidebar natively).
+
 ## Source layout
 
 ```

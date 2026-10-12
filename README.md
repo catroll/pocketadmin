@@ -51,8 +51,9 @@ The project runs in two layers:
 | Language | Go |
 | Data | [PocketBase](https://pocketbase.io) embedded as a library (SQLite) |
 | HTTP | [Gin](https://gin-gonic.com) |
-| UI | [AdminLTE 3](https://adminlte.io) on Bootstrap 4, server-rendered with `html/template` |
-| Charts | [Chart.js](https://www.chartjs.org) |
+| UI | [AdminLTE 4](https://adminlte.io) on Bootstrap 5, server-rendered with `html/template` |
+| Charts | [Chart.js 4](https://www.chartjs.org) |
+| Icons | [Font Awesome Free 7](https://fontawesome.com) |
 | Configuration | YAML, overridable by environment variables and CLI flags |
 | Logging | `log/slog`, one JSON object per line on stdout |
 
