@@ -1,0 +1,130 @@
+{{define "content"}}
+{{/* Generic table for a managed collection. The columns come from the
+     collection schema, capped by listColumns. */}}
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-table me-1"></i>{{.Resource.Title}}
+      <small class="text-body-secondary ms-2">{{.Pagination.Total}} record(s)</small>
+    </h3>
+    <div class="card-tools">
+      {{if .CanCreate}}
+      <a href="{{.Resource.BasePath}}/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>New {{.Resource.Singular}}
+      </a>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="card-body border-bottom">
+    <form method="get" action="{{.Resource.BasePath}}" class="d-flex flex-wrap align-items-center gap-2">
+      <div class="input-group input-group-sm flex-grow-1" style="min-width:16rem;max-width:32rem">
+        <input type="search" name="q" value="{{.Query}}" class="form-control"
+               placeholder="Search&hellip;" aria-label="Search">
+        <button class="btn btn-secondary" type="submit" aria-label="Search"><i class="fas fa-search"></i></button>
+      </div>
+
+      <label class="small text-body-secondary mb-0" for="perPage">Per page</label>
+      <select id="perPage" name="perPage" class="form-select form-select-sm" style="width:auto">
+        {{range .PerPageItems}}
+        <option value="{{.}}" {{if eq . $.Pagination.PerPage}}selected{{end}}>{{.}}</option>
+        {{end}}
+      </select>
+
+      <button class="btn btn-secondary btn-sm" type="submit">Apply</button>
+      {{if .Query}}<a href="{{.Resource.BasePath}}" class="btn btn-link btn-sm">Reset</a>{{end}}
+    </form>
+  </div>
+
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover table-striped text-nowrap mb-0">
+      <thead>
+        <tr>
+          {{range .Columns}}
+          <th>
+            <a href="?{{$.QueryPrefix}}&amp;sort={{.Name}}&amp;dir={{if and (eq $.Sort .Name) (eq $.Dir "asc")}}desc{{else}}asc{{end}}">
+              {{.Label}}
+              {{if eq $.Sort .Name}}<i class="fas fa-sort-{{if eq $.Dir "asc"}}up{{else}}down{{end}}"></i>{{end}}
+            </a>
+          </th>
+          {{end}}
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          {{range .Cells}}
+          <td>
+            {{if eq .Kind "bool"}}
+              {{if .Bool}}<span class="badge text-bg-success">true</span>{{else}}<span class="badge text-bg-secondary">false</span>{{end}}
+            {{else if eq .Kind "empty"}}
+              <span class="text-body-secondary">&mdash;</span>
+            {{else if eq .Kind "date"}}
+              <span class="text-body-secondary small">{{.Text}}</span>
+            {{else if eq .Kind "list"}}
+              {{range .Items}}<span class="badge text-bg-light border">{{.}}</span> {{end}}
+            {{else if eq .Kind "file"}}
+              {{range .Files}}
+                {{if .IsImage}}
+                  <a href="{{.URL}}" target="_blank" rel="noopener"><img src="{{.URL}}" alt="{{.Name}}" class="img-thumbnail" style="max-height:36px"></a>
+                {{else}}
+                  <a href="{{.URL}}" target="_blank" rel="noopener"><i class="fas fa-paperclip"></i> {{.Name}}</a>
+                {{end}}
+              {{end}}
+            {{else if eq .Kind "json"}}
+              <code title="{{.Title}}">{{.Text}}</code>
+            {{else}}
+              {{if .Title}}<span title="{{.Title}}">{{.Text}}</span>{{else}}{{.Text}}{{end}}
+            {{end}}
+          </td>
+          {{end}}
+          <td class="text-end">
+            {{if $.CanUpdate}}
+            <a href="{{$.Resource.BasePath}}/{{.ID}}/edit" class="btn btn-sm btn-secondary"
+               title="Edit" aria-label="Edit"><i class="fas fa-pen"></i></a>
+            {{end}}
+            {{if $.CanDelete}}
+            <form method="post" class="d-inline" action="{{$.Resource.BasePath}}/{{.ID}}/delete"
+                  onsubmit="return confirm('Delete this {{$.Resource.Singular}} permanently?');">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button type="submit" class="btn btn-sm btn-danger" title="Delete" aria-label="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr>
+          <td colspan="{{len .Columns | add 1}}" class="text-center text-body-secondary py-4">
+            No records found{{if .Query}} for &ldquo;{{.Query}}&rdquo;{{end}}.
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  {{if .Pagination.TotalPages}}
+  <div class="card-footer clearfix">
+    <div class="float-start text-body-secondary small pt-2">
+      Showing {{.Pagination.From}}&ndash;{{.Pagination.To}} of {{.Pagination.Total}}
+    </div>
+    <ul class="pagination pagination-sm m-0 float-end">
+      <li class="page-item {{if not .Pagination.HasPrev}}disabled{{end}}">
+        <a class="page-link" href="?{{.QueryPrefix}}&amp;page={{.Pagination.Page | add -1}}">&laquo;</a>
+      </li>
+      {{range .Pagination.Pages}}
+      <li class="page-item {{if eq . $.Pagination.Page}}active{{end}}">
+        <a class="page-link" href="?{{$.QueryPrefix}}&amp;page={{.}}">{{.}}</a>
+      </li>
+      {{end}}
+      <li class="page-item {{if not .Pagination.HasNext}}disabled{{end}}">
+        <a class="page-link" href="?{{.QueryPrefix}}&amp;page={{.Pagination.Page | add 1}}">&raquo;</a>
+      </li>
+    </ul>
+  </div>
+  {{end}}
+</div>
+{{end}}

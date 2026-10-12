@@ -281,12 +281,20 @@ func defaultSort(col *core.Collection) string {
 
 // buildFormFields turns a collection schema into form inputs, pre-filled from
 // rec (which may be a fresh empty record).
-func buildFormFields(app core.App, col *core.Collection, rec *core.Record, isNew bool) []formField {
+func buildFormFields(app core.App, col *core.Collection, rec *core.Record, isNew bool, skip map[string]bool) []formField {
+	// A create form has no record yet. Building one here rather than dereferencing
+	// nil keeps every caller free to pass nil for "new".
+	if rec == nil {
+		rec = core.NewRecord(col)
+	}
+
 	fields := make([]formField, 0, len(col.Fields))
 
 	for _, f := range col.Fields {
 		name := f.GetName()
-		if managedFields[name] {
+		// managedFields are PocketBase's own. skip holds fields the owning
+		// resource derives server-side, which must not appear in an editor.
+		if managedFields[name] || skip[name] {
 			continue
 		}
 
@@ -483,10 +491,12 @@ func formatGeoPoint(point types.GeoPoint) string {
 // Values are handed to Record.Set so that PocketBase's own field PrepareValue
 // implementations perform the string -> typed conversion (numbers, dates,
 // selects, relations).
-func (s *Server) applyForm(c *gin.Context, col *core.Collection, rec *core.Record) error {
+func (s *Server) applyForm(c *gin.Context, col *core.Collection, rec *core.Record, skip map[string]bool) error {
 	for _, f := range col.Fields {
 		name := f.GetName()
-		if managedFields[name] {
+		// Derived fields are server-owned: reading them back from a form would let
+		// a crafted post rewrite a materialised path.
+		if managedFields[name] || skip[name] {
 			continue
 		}
 

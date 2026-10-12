@@ -30,6 +30,9 @@ var pageDefs = []pageDef{
 	{name: "collections.html", pageFile: "pages/collections.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "records.html", pageFile: "pages/records.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "record_form.html", pageFile: "pages/record_form.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "resource_list.html", pageFile: "pages/resource_list.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "resource_form.html", pageFile: "pages/resource_form.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "dashboard.html", pageFile: "pages/dashboard.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "error.html", pageFile: "pages/error.html", layoutFile: "layout.html", layoutName: "layout"},
 }
 

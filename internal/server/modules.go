@@ -12,14 +12,23 @@ func (s *Server) registerModuleRoutes(panel *gin.RouterGroup) {
 	s.registerRBACRoutes(panel)
 }
 
-// registerIdentityRoutes mounts the account, profile, session and log screens.
+// registerIdentityRoutes mounts the account, session and sign-in history screens.
 func (s *Server) registerIdentityRoutes(panel *gin.RouterGroup) {
+	for _, r := range identityResources() {
+		s.resourceRoutes(panel, r)
+	}
 }
 
 // registerOrganizationRoutes mounts the department, position and staff screens.
 func (s *Server) registerOrganizationRoutes(panel *gin.RouterGroup) {
+	for _, r := range organizationResources() {
+		s.resourceRoutes(panel, r)
+	}
 }
 
 // registerRBACRoutes mounts the role, permission, menu and dictionary screens.
 func (s *Server) registerRBACRoutes(panel *gin.RouterGroup) {
+	for _, r := range rbacResources() {
+		s.resourceRoutes(panel, r)
+	}
 }

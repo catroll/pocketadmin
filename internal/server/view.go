@@ -25,6 +25,14 @@ type base struct {
 	// authentication. Templates use it to hide controls the user cannot use.
 	Actor *rbac.Actor
 
+	// Can reports whether the actor holds a permission point, so a template can
+	// hide an action rather than render it and fail on submit:
+	// {{if .Can "rbac:role:create"}}.
+	Can func(code string) bool
+
+	// Menus is the navigation tree projected from the actor's permissions.
+	Menus []rbac.MenuNode
+
 	// CurrentCollection highlights the active collection in the sidebar.
 	CurrentCollection string
 }
@@ -193,6 +201,53 @@ type formField struct {
 type formOption struct {
 	Value string
 	Label string
+}
+
+// ---------------------------------------------------------------------------
+// Module resources (identity, organization, rbac)
+// ---------------------------------------------------------------------------
+
+// resourceListPage renders any managed collection as a table.
+type resourceListPage struct {
+	base
+
+	Resource   resource
+	Collection *core.Collection
+	Columns    []column
+	Rows       []row
+
+	Pagination pagination
+	Query      string
+	Sort       string
+	Dir        string
+
+	// QueryPrefix carries q and perPage so they survive a sort or page change.
+	QueryPrefix string
+
+	// PerPageItems are the selectable page sizes, including the current one.
+	PerPageItems []int
+
+	// Capability flags hide controls the actor may not use, so a page never
+	// offers an action that would fail on submit.
+	CanCreate bool
+	CanUpdate bool
+	CanDelete bool
+}
+
+// resourceFormPage renders any managed collection's create/edit form.
+type resourceFormPage struct {
+	base
+
+	Resource  resource
+	IsNew     bool
+	Action    string
+	CancelURL string
+	Fields    []formField
+	Errors    []string
+	RecordID  string
+
+	CanDelete  bool
+	DeletePath string
 }
 
 // ---------------------------------------------------------------------------

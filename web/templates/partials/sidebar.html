@@ -10,34 +10,39 @@
   <div class="sidebar-wrapper">
     <nav class="mt-2">
       <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
-        <li class="nav-item">
-          <a href="/dashboard" class="nav-link {{if eq .Active "dashboard"}}active{{end}}">
-            <i class="nav-icon fas fa-tachometer-alt"></i>
-            <p>Dashboard</p>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="/collections" class="nav-link {{if eq .Active "collections"}}active{{end}}">
-            <i class="nav-icon fas fa-database"></i>
-            <p>Collections</p>
-          </a>
-        </li>
-
-        <li class="nav-header">COLLECTIONS</li>
-        {{range .Nav}}
-        <li class="nav-item">
-          <a href="/collections/{{.Name}}/records"
-             class="nav-link {{if eq .Name $.CurrentCollection}}active{{end}}">
-            <i class="nav-icon {{if eq .Type "auth"}}fas fa-users{{else if eq .Type "view"}}fas fa-eye{{else}}far fa-circle{{end}}"></i>
-            <p>
-              {{.Name}}
-              {{if .System}}<span class="badge text-bg-secondary rounded-pill">sys</span>{{end}}
-            </p>
-          </a>
-        </li>
-        {{end}}
+        {{/* Navigation is derived from the actor's permissions, not authored per
+             role: the projector already dropped everything this actor may not
+             see, including empty directories and the parents of granted
+             children. */}}
+        {{template "menuNodes" dict "nodes" .Menus "active" .Active}}
       </ul>
     </nav>
   </div>
 </aside>
+{{end}}
+
+{{/* menuNodes renders a level of the projected tree. It recurses for
+     directories that have children. */}}
+{{define "menuNodes"}}
+{{$active := .active}}
+{{range .nodes}}
+  {{if .Children}}
+  <li class="nav-item {{if hasPrefix $active .Name}}menu-open{{end}}">
+    <a href="#" class="nav-link {{if hasPrefix $active .Name}}active{{end}}">
+      <i class="nav-icon {{.Icon}}"></i>
+      <p>{{.Title}}<i class="nav-arrow fas fa-angle-right"></i></p>
+    </a>
+    <ul class="nav nav-treeview">
+      {{template "menuNodes" dict "nodes" .Children "active" $active}}
+    </ul>
+  </li>
+  {{else}}
+  <li class="nav-item">
+    <a href="{{.Path}}" class="nav-link {{if eq $active .Name}}active{{end}}">
+      <i class="nav-icon {{if .Icon}}{{.Icon}}{{else}}far fa-circle{{end}}"></i>
+      <p>{{.Title}}</p>
+    </a>
+  </li>
+  {{end}}
+{{end}}
 {{end}}

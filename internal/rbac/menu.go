@@ -118,6 +118,16 @@ func buildNodes(rows []menuRow, children map[string][]menuRow, depth int) []Menu
 
 	out := make([]MenuNode, 0, len(rows))
 	for _, r := range rows {
+		kids := children[r.id]
+		sortRows(kids)
+
+		// A directory that has no visible children is itself invisible: rendering
+		// it would show an expandable heading that leads nowhere, for a module
+		// the actor has no access to at all.
+		if r.menuType == "directory" && len(kids) == 0 {
+			continue
+		}
+
 		node := MenuNode{
 			ID:    r.id,
 			Name:  r.name,
@@ -127,9 +137,6 @@ func buildNodes(rows []menuRow, children map[string][]menuRow, depth int) []Menu
 			Icon:  r.icon,
 			Sort:  r.sort,
 		}
-
-		kids := children[r.id]
-		sortRows(kids)
 		node.Children = buildNodes(kids, children, depth+1)
 
 		out = append(out, node)

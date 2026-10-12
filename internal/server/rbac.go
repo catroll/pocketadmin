@@ -121,9 +121,23 @@ func (s *Server) superuserGuarded(g *gin.RouterGroup, method, path string, handl
 
 // safe registers a read-only route. Safe methods change no state, so they are
 // guarded only by authentication.
+//
+// Use readGuarded instead when a read still needs a permission: browsing a
+// collection is a read, but it is no less sensitive than editing it.
 func (s *Server) safe(g *gin.RouterGroup, method, path string, handlers ...gin.HandlerFunc) {
 	s.registerGuard(method, joinPath(g.BasePath(), path), "")
 	g.Handle(method, path, handlers...)
+}
+
+// readGuarded registers a read-only route that nevertheless requires a
+// permission.
+//
+// Rendering a list is a read, so the startup self-check does not demand a guard
+// here; but leaving reads ungated would let any signed-in account enumerate
+// every screen by URL.
+func (s *Server) readGuarded(g *gin.RouterGroup, method, path, code string, handlers ...gin.HandlerFunc) {
+	s.registerGuard(method, joinPath(g.BasePath(), path), code)
+	g.Handle(method, path, append([]gin.HandlerFunc{s.requirePermission(code)}, handlers...)...)
 }
 
 // selfCheckRoutes walks the registered routes and fails when a state-changing

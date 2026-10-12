@@ -225,6 +225,8 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 		Nav:       s.navCollections(),
 		Flash:     s.flashFrom(c),
 		Actor:     actor,
+		Can:       s.hasPermissionFunc(c),
+		Menus:     s.navFromActor(c),
 	}
 }
 

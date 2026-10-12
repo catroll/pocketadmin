@@ -161,7 +161,7 @@ func (s *Server) handleRecordCreate(c *gin.Context) {
 		rec.RefreshTokenKey()
 	}
 
-	if err := s.applyForm(c, col, rec); err != nil {
+	if err := s.applyForm(c, col, rec, nil); err != nil {
 		s.renderForm(c, http.StatusBadRequest, col, rec, true, []string{err.Error()})
 		return
 	}
@@ -205,7 +205,7 @@ func (s *Server) handleRecordUpdate(c *gin.Context) {
 		return
 	}
 
-	if err := s.applyForm(c, col, rec); err != nil {
+	if err := s.applyForm(c, col, rec, nil); err != nil {
 		s.renderForm(c, http.StatusBadRequest, col, rec, false, []string{err.Error()})
 		return
 	}
@@ -268,7 +268,7 @@ func (s *Server) renderForm(c *gin.Context, status int, col *core.Collection, re
 		IsNew:      isNew,
 		Action:     action,
 		RecordID:   recordID,
-		Fields:     buildFormFields(s.app, col, rec, isNew),
+		Fields:     buildFormFields(s.app, col, rec, isNew, nil),
 		Errors:     errs,
 	}
 	page.CurrentCollection = col.Name
