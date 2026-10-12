@@ -161,6 +161,57 @@ this reason.
 
 ---
 
+## Module decisions
+
+### D-011 — The audit collection is renamed and reshaped to match the schema design
+
+**Decision.** `audit_logs` becomes `security_audit_logs` with the shape in
+`database-design.md` § 3.9: a closed `event` enum, `severity`
+(`info`/`warning`/`critical`), `actorType` (`user`/`system`/`api_key`), a
+`requestId`, and `targetType`/`targetId` in place of `resource`/`resourceId`.
+
+**Why.** `audit_logs` was created opportunistically in the identity module because
+impersonation needed somewhere to write, and its shape was invented rather than
+designed: a free-text `action`, a three-level `riskLevel`, and no `requestId`, so
+the spec's requirement to correlate with PocketBase's own `_logs` by request id
+could not be met.
+
+The closed `event` enum is the spec's choice and it is the right one for an audit
+log: the set of auditable events should be knowable and reviewable, not whatever
+a caller happens to write. The known hazard is that an enum rejects an unlisted
+value — which is exactly how the account-lifecycle audit trail was silently lost
+in an earlier round — so the event names become **Go constants with a drift test**,
+the same treatment as permission points, and the write path must log failures at
+`error` level rather than warn.
+
+**Given up.** The flexibility of free-text actions. Adding an event is now a code
+change, which is correct for an audit catalogue but does mean the enum has to be
+extended deliberately.
+
+### D-012 — Forward dependencies are satisfied by an interface now and a caller later
+
+**Decision.** Where a module in an earlier wave needs configuration or scheduling
+that a later wave owns, the earlier module defines the type or function and uses
+a built-in default; the later module supplies the real source.
+
+Two instances so far:
+
+- `storage` needs upload policy (allowed extensions, maximum size, image
+  dimension limits), owned by `settings` (wave 3). Storage reads a `Policy` from
+  `config.Config` with sensible defaults.
+- `audit` needs retention pruning, which is a scheduled task owned by `jobs`
+  (wave 4). Audit exposes the pruning function; `jobs` schedules it.
+
+**Why.** The alternative is either to stub the later module, which produces two
+implementations to reconcile, or to reorder the build, which breaks the dependency
+order that the waves encode. Defining the seam now and filling it later keeps each
+module complete and testable on its own.
+
+**Given up.** A module is briefly "complete except that one value comes from
+elsewhere". This is recorded here so it is not mistaken for an oversight.
+
+---
+
 ## Pending
 
 Decisions for the remaining modules are appended below as they are taken.
