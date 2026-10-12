@@ -9,6 +9,7 @@ Read in this order. Each document is reviewable on its own.
 | 3 | [`database-design.md`](database-design.md) | What collections exist, what fields and indexes do they carry, and what are the relationships? |
 | 4 | [`design.md`](design.md) | How the platform is built: architecture, authentication, authorisation, audit, jobs, integrations, security, phasing, risks. |
 | 5 | [`business-design.md`](business-design.md) | How the business domain works: pricing pipeline, order state machine, payment idempotency, refund workflow, subscription billing, inventory. |
+| 6 | [`features.md`](features.md) | What gets built: every feature, grouped by module. |
 
 Operational reference, outside the specification set:
 
@@ -25,6 +26,7 @@ Operational reference, outside the specification set:
 | `database-design.md` | draft (revision 2) — awaiting review |
 | `design.md` | draft (revision 2) — awaiting review |
 | `business-design.md` | draft (revision 2) — awaiting review |
+| `features.md` | feature list |
 
 No implementation work starts until the capability map is approved
 (`spec-driven-development` Phase 0 gate).
@@ -103,4 +105,4 @@ questions are worth settling at the same time:
   collapse into one `commerce` module with three packages.
 
 Once approved, the per-module specs (`SPEC-identity.md`, `SPEC-rbac.md`, …) are
-written in build order, and `design.md` § 16 becomes the milestone plan.
+written in the order `CAPABILITY-MAP.md` gives.
