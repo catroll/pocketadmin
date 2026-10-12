@@ -27,6 +27,12 @@ type Scheduler struct {
 	// pathological schedule cannot start every task in the same instant.
 	maxConcurrent int
 
+	// lastTick is when the loop last looked for due work. A scheduler that is
+	// "running" but has not ticked in minutes is stuck, which is the failure a
+	// liveness check exists to catch.
+	lastTick   time.Time
+	lastTickMu sync.Mutex
+
 	stop     chan struct{}
 	stopOnce sync.Once
 	done     chan struct{}
@@ -76,9 +82,19 @@ func (s *Scheduler) loop(app core.App) {
 			slog.Info("scheduler stopped")
 			return
 		case <-ticker.C:
+			s.lastTickMu.Lock()
+			s.lastTick = time.Now()
+			s.lastTickMu.Unlock()
 			s.runDue(app)
 		}
 	}
+}
+
+// LastTick returns when the loop last looked for due work.
+func (s *Scheduler) LastTick() time.Time {
+	s.lastTickMu.Lock()
+	defer s.lastTickMu.Unlock()
+	return s.lastTick
 }
 
 // runDue starts every job whose time has arrived.

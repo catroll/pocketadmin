@@ -77,3 +77,32 @@ func normalise(v string) string {
 	}
 	return v
 }
+
+// buildTime and commit are set at link time:
+//
+//	go build -ldflags "-X pocketadmin/internal/version.buildTime=... -X pocketadmin/internal/version.commit=..."
+//
+// They are empty in a plain build, and the panel says so rather than showing a
+// placeholder that looks like a value.
+var (
+	buildTime string
+	commit    string
+)
+
+// BuildTime returns when the binary was built, or "".
+func BuildTime() string { return buildTime }
+
+// Commit returns the revision the binary was built from, or "".
+func Commit() string { return commit }
+
+// UpdateChecksEnabled reports whether this build offers to check for a newer
+// release.
+//
+// It is off unless an update feed is configured, because a version check is an
+// outbound request that names the installation and its version to a third party,
+// and turning that on without being asked is not a decision this platform should
+// make on an operator's behalf.
+func UpdateChecksEnabled() bool { return updateFeedURL != "" }
+
+// updateFeedURL is set at link time when a release feed exists.
+var updateFeedURL string

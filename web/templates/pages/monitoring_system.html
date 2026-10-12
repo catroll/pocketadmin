@@ -1,0 +1,89 @@
+{{define "content"}}
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card card-primary card-outline">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-circle-info me-1"></i>Versions and build</h3></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-5">PocketAdmin</dt><dd class="col-7"><code>{{.Version}}</code></dd>
+          <dt class="col-5">PocketBase</dt><dd class="col-7"><code>{{.PocketBase}}</code></dd>
+          <dt class="col-5">Go</dt><dd class="col-7"><code>{{.GoVersion}}</code></dd>
+          <dt class="col-5">Platform</dt><dd class="col-7"><code>{{.GOOS}}/{{.GOARCH}}</code></dd>
+          <dt class="col-5">CPUs</dt><dd class="col-7">{{.NumCPU}}</dd>
+          <dt class="col-5">Built</dt>
+          <dd class="col-7">{{if .BuildTime}}{{.BuildTime}}{{else}}<span class="text-body-secondary">not set at build time</span>{{end}}</dd>
+          <dt class="col-5">Commit</dt>
+          <dd class="col-7">{{if .Commit}}<code>{{.Commit}}</code>{{else}}<span class="text-body-secondary">not set at build time</span>{{end}}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-folder-tree me-1"></i>Locations</h3></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-4">Data</dt><dd class="col-8 text-break"><code>{{.DataDir}}</code></dd>
+          <dt class="col-4">Storage</dt><dd class="col-8 text-break"><code>{{.StorageDir}}</code></dd>
+          <dt class="col-4">Configuration</dt>
+          <dd class="col-8 text-break">
+            {{if .ConfigFile}}<code>{{.ConfigFile}}</code>
+            {{else}}<span class="text-body-secondary">built-in defaults and environment only</span>{{end}}
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-arrows-rotate me-1"></i>Updates</h3></div>
+      <div class="card-body">
+        {{if not .UpdateChecks}}
+        <p class="small text-body-secondary mb-0">
+          This build has no update feed configured, so nothing is checked and nothing is
+          downloaded. An update is a deliberate act performed by whoever runs this
+          deployment; this platform does not replace its own binary.
+        </p>
+        {{else}}
+        <p class="small">An update feed is configured.</p>
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-clock-rotate-left me-1"></i>Update record</h3>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Version</th><th>From</th><th>Channel</th><th>Status</th><th>Published</th><th>Applied</th><th>Error</th></tr></thead>
+      <tbody>
+        {{range .Updates}}
+        <tr class="small">
+          <td><code>{{.GetString "version"}}</code></td>
+          <td><code>{{.GetString "fromVersion"}}</code></td>
+          <td>{{.GetString "channel"}}</td>
+          <td>
+            {{$s := .GetString "status"}}
+            <span class="badge {{if eq $s "applied"}}text-bg-success{{else if eq $s "failed"}}text-bg-danger{{else if eq $s "rolled_back"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{$s}}</span>
+          </td>
+          <td>{{with .GetDateTime "publishedAt"}}{{formatTime .}}{{end}}</td>
+          <td>{{with .GetDateTime "appliedAt"}}{{formatTime .}}{{end}}</td>
+          <td class="text-danger">{{truncate (.GetString "error") 80}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="7" class="text-center text-body-secondary py-4">
+          No version has ever been recorded as checked or applied.
+        </td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer small text-body-secondary">
+    Every applied update records the version it came from, so there is always a before
+    and an after. Nothing here updates the running binary by itself.
+  </div>
+</div>
+{{end}}

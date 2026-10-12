@@ -1,0 +1,196 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <p class="text-body-secondary mb-0">
+      What this process is doing right now. The traffic figures cover the last minute;
+      the runtime and database figures are read when this page is opened.
+    </p>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    <a href="/monitoring/system" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-circle-info me-1"></i>System
+    </a>
+    {{if .CanSnapshot}}
+    <form method="post" action="/monitoring/snapshot" class="d-inline">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <button class="btn btn-primary btn-sm"><i class="fas fa-camera me-1"></i>Snapshot</button>
+    </form>
+    {{end}}
+  </div>
+</div>
+
+{{/* Health first, because it is the only panel that answers "is anything wrong"
+     rather than "what are the numbers". */}}
+<div class="card card-outline {{if eq .Health.Status "ok"}}card-success{{else if eq .Health.Status "degraded"}}card-warning{{else}}card-danger{{end}}">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-heart-pulse me-1"></i>Health
+      <span class="badge {{if eq .Health.Status "ok"}}text-bg-success{{else if eq .Health.Status "degraded"}}text-bg-warning{{else}}text-bg-danger{{end}} ms-1">
+        {{.Health.Status}}
+      </span>
+    </h3>
+    <div class="card-tools">
+      <span class="small text-body-secondary">checked in {{.Health.Duration}}</span>
+    </div>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-sm mb-0">
+      <tbody>
+        {{range .Health.Checks}}
+        <tr>
+          <td style="width:1%">
+            {{if eq .Status "ok"}}<i class="fas fa-circle-check text-success"></i>
+            {{else if eq .Status "degraded"}}<i class="fas fa-triangle-exclamation text-warning"></i>
+            {{else}}<i class="fas fa-circle-xmark text-danger"></i>{{end}}
+          </td>
+          <td><code>{{.Name}}</code></td>
+          <td class="small text-body-secondary">{{.Detail}}</td>
+          <td class="small text-body-secondary text-end">{{.Duration}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-microchip me-1"></i>Runtime</h3></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-6">Uptime</dt><dd class="col-6">{{.Runtime.Uptime}}</dd>
+          <dt class="col-6">Goroutines</dt><dd class="col-6">{{.Runtime.Goroutines}}</dd>
+          <dt class="col-6">Heap</dt><dd class="col-6">{{bytes .Runtime.HeapBytes}}</dd>
+          <dt class="col-6">Heap in use</dt><dd class="col-6">{{bytes .Runtime.HeapInUse}}</dd>
+          <dt class="col-6">Stacks</dt><dd class="col-6">{{bytes .Runtime.StackBytes}}</dd>
+          <dt class="col-6">Total allocated</dt><dd class="col-6">{{bytes .Runtime.TotalAlloc}}</dd>
+          <dt class="col-6">Reserved</dt><dd class="col-6">{{bytes .Runtime.SysBytes}}</dd>
+          <dt class="col-6">GC runs</dt><dd class="col-6">{{.Runtime.GCCount}}</dd>
+          <dt class="col-6">Longest GC pause</dt><dd class="col-6">{{.Runtime.GCPauseMaxMs}} ms</dd>
+          <dt class="col-6">Last GC</dt><dd class="col-6">{{.LastGCAgo}}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-database me-1"></i>Database</h3></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-6">Main file</dt><dd class="col-6">{{bytes .Database.MainBytes}}</dd>
+          <dt class="col-6">Auxiliary</dt><dd class="col-6">{{bytes .Database.AuxBytes}}</dd>
+          <dt class="col-6">Write-ahead log</dt><dd class="col-6">{{bytes .Database.WALBytes}}</dd>
+          <dt class="col-6">Tables</dt><dd class="col-6">{{.Database.TableCount}}</dd>
+          <dt class="col-6">Disk free</dt>
+          <dd class="col-6">
+            {{if .Database.TotalBytes}}
+            {{bytes .Database.AvailableBytes}} of {{bytes .Database.TotalBytes}}
+            {{else}}<span class="text-body-secondary">unavailable</span>{{end}}
+          </dd>
+          <dt class="col-6">Data directory</dt>
+          <dd class="col-6 text-break"><code class="small">{{.Database.DataDir}}</code></dd>
+        </dl>
+      </div>
+      <div class="card-footer small text-body-secondary">
+        A write-ahead log that stays large means checkpoints are not completing.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-folder-open me-1"></i>File library</h3></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-6">Files</dt><dd class="col-6">{{.Storage.FileCount}}</dd>
+          <dt class="col-6">Live bytes</dt><dd class="col-6">{{bytes .Storage.TotalBytes}}</dd>
+          <dt class="col-6">On disk</dt><dd class="col-6">{{bytes .Storage.DirectoryBytes}}</dd>
+          <dt class="col-6">Added in 24h</dt>
+          <dd class="col-6">+{{bytes .Storage.Growth24hBytes}} ({{.Storage.Growth24hCount}} files)</dd>
+        </dl>
+      </div>
+      {{if gt .Storage.DirectoryBytes .Storage.TotalBytes}}
+      <div class="card-footer small text-body-secondary">
+        The directory holds {{bytes .Storage.DirectoryBytes}} but the live files total
+        {{bytes .Storage.TotalBytes}}. The difference is deduplicated or orphaned objects.
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-line me-1"></i>Traffic, last minute</h3></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-6">Requests / minute</dt><dd class="col-6">{{printf "%.1f" .Traffic.RequestsPerMinute}}</dd>
+          <dt class="col-6">Error rate</dt>
+          <dd class="col-6">
+            {{percentf .Traffic.ErrorRate}}
+            {{if gt .Traffic.TotalErrors 0}}<span class="text-body-secondary">({{.Traffic.TotalErrors}} of {{.Traffic.TotalRequests}})</span>{{end}}
+          </dd>
+          <dt class="col-6">p50</dt><dd class="col-6">{{.Traffic.P50Ms}} ms</dd>
+          <dt class="col-6">p95</dt><dd class="col-6">{{.Traffic.P95Ms}} ms</dd>
+          <dt class="col-6">p99</dt><dd class="col-6">{{.Traffic.P99Ms}} ms</dd>
+          <dt class="col-6">Mean</dt><dd class="col-6">{{printf "%.2f" .Traffic.MeanMs}} ms</dd>
+        </dl>
+      </div>
+      <div class="card-footer small text-body-secondary">
+        Percentiles come from a fixed histogram, so a figure is the upper bound of the
+        bucket it falls in and never an understatement. Only 5xx counts as an error:
+        a 4xx is the caller being wrong.
+      </div>
+    </div>
+  </div>
+</div>
+
+{{if .Recent}}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-wave-square me-1"></i>Last hour, per minute</h3>
+  </div>
+  <div class="card-body">
+    <div class="d-flex align-items-end" style="height:4rem;gap:1px">
+      {{$max := 1}}
+      {{range .Recent}}{{if gt . $max}}{{$max = .}}{{end}}{{end}}
+      {{range .Recent}}
+      <div class="bg-primary" style="flex:1;min-width:2px;height:{{if gt . 0}}{{percentf (divf . $max)}}{{else}}2%{{end}}"
+           title="{{.}} requests"></div>
+      {{end}}
+    </div>
+    <div class="small text-body-secondary mt-2">
+      One bar per minute, oldest first. The window is in memory and resets when the
+      process restarts.
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{if .Snapshots}}
+<div class="card">
+  <div class="card-header"><h3 class="card-title"><i class="fas fa-clock-rotate-left me-1"></i>Recorded snapshots</h3></div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-sm table-striped mb-0">
+      <thead><tr><th>When</th><th>Goroutines</th><th>Heap</th><th>Files</th><th>Requests/min</th><th>Error rate</th><th>p95</th></tr></thead>
+      <tbody>
+        {{range .Snapshots}}
+        <tr class="small">
+          <td>{{formatTime .When}}</td>
+          <td>{{.Goroutines}}</td>
+          <td>{{bytes .HeapBytes}}</td>
+          <td>{{.FileCount}}</td>
+          <td>{{printf "%.1f" .RequestsRate}}</td>
+          <td>{{percentf .ErrorRate}}</td>
+          <td>{{.LatencyP95}} ms</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+{{end}}

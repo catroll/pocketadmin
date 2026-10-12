@@ -190,6 +190,13 @@ const (
 	IntegrationProviderTest   = "integrations:provider:test"
 	IntegrationLogList        = "integrations:log:list"
 
+	// Monitoring. The health endpoint's detailed view is a permission of its own:
+	// it names the database, the storage directory and the reason a component is
+	// unwell, which is more than knowing the service is up.
+	MonitoringDashboard   = "monitoring:dashboard:view"
+	MonitoringHealth      = "monitoring:health:view"
+	MonitoringSystemInfo  = "monitoring:system:info"
+	MonitoringSnapshotRun = "monitoring:snapshot:run"
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -296,6 +303,10 @@ func All() []Point {
 		{IntegrationProviderDelete, "Remove an integration provider", ModuleIntegrations, "provider", "delete", "button"},
 		{IntegrationProviderTest, "Test an integration provider", ModuleIntegrations, "provider", "test", "button"},
 		{IntegrationLogList, "Read the integration log", ModuleIntegrations, "log", "list", "api"},
+		{MonitoringDashboard, "View the monitoring dashboard", ModuleMonitoring, "dashboard", "view", "menu"},
+		{MonitoringHealth, "See detailed component health", ModuleMonitoring, "health", "view", "button"},
+		{MonitoringSystemInfo, "See system information", ModuleMonitoring, "system", "info", "api"},
+		{MonitoringSnapshotRun, "Record a metric snapshot", ModuleMonitoring, "snapshot", "run", "button"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

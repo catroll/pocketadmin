@@ -22,6 +22,7 @@ import (
 	"pocketadmin/internal/developer"
 	"pocketadmin/internal/jobs"
 	"pocketadmin/internal/logging"
+	"pocketadmin/internal/monitoring"
 	"pocketadmin/internal/rbac"
 	"pocketadmin/internal/settings"
 	"pocketadmin/internal/storage"
@@ -78,6 +79,9 @@ type Server struct {
 	// apiKeyLimiter counts requests per key.
 	apiKeyLimiter *developer.Limiter
 
+	// metrics accumulates the in-memory traffic picture.
+	metrics *monitoring.Collector
+
 	// guards records the permission each route requires, keyed
 	// "METHOD /path". selfCheckRoutes compares it against the router.
 	guards map[string]string
@@ -112,6 +116,7 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 		settings:          settings.NewEngine(app),
 		announcements:     announcement.NewEngine(app),
 		apiKeyLimiter:     developer.NewLimiter(),
+		metrics:           monitoring.NewCollector(),
 		guards:            make(map[string]string),
 	}
 
@@ -125,7 +130,7 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 	// prints to stderr and returns 500, which keeps the server up but loses the
 	// most important thing an operator could be told, so a panic is recorded
 	// before the request fails.
-	r.Use(requestID(), s.exceptionRecovery(), logging.RequestLogger(logger))
+	r.Use(requestID(), s.exceptionRecovery(), s.trafficMetrics(), logging.RequestLogger(logger))
 
 	store := cookie.NewStore(cfg.SessionKey)
 	store.Options(sessions.Options{
@@ -195,6 +200,11 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 	// redirect instead of JSON. The first version of this was mounted on the
 	// group and did exactly that.
 	s.registerDeveloperAPIRoutes(r)
+
+	// The health endpoints are on the root router because they must be reachable
+	// without a session: a load balancer has none, and a liveness probe that needs
+	// a cookie answers the wrong question.
+	s.registerHealthRoutes(r)
 
 	// selfCheckRoutes reads the router, so the engine must be assigned first.
 	s.http = r

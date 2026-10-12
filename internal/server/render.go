@@ -37,6 +37,8 @@ var pageDefs = []pageDef{
 	{name: "mfa.html", pageFile: "pages/mfa.html", layoutFile: "layout_auth.html", layoutName: "layout_auth"},
 	{name: "org_chart.html", pageFile: "pages/org_chart.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "storage_upload.html", pageFile: "pages/storage_upload.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "monitoring.html", pageFile: "pages/monitoring.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "monitoring_system.html", pageFile: "pages/monitoring_system.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "integrations.html", pageFile: "pages/integrations.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "integration_form.html", pageFile: "pages/integration_form.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "integration_logs.html", pageFile: "pages/integration_logs.html", layoutFile: "layout.html", layoutName: "layout"},
@@ -118,6 +120,15 @@ func templateFuncs() template.FuncMap {
 		"jsonPretty": jsonPretty,
 		"truncate":   truncate,
 
+		// divf divides for a chart height, guarding a zero denominator so a quiet
+		// minute renders as an empty bar rather than a division by zero.
+		"divf": func(a, b int) float64 {
+			if b == 0 {
+				return 0
+			}
+			return float64(a) / float64(b)
+		},
+
 		// safeHTML renders a stored body as markup rather than as text.
 		//
 		// It is only safe because the value has been through the sanitiser at the
@@ -130,13 +141,73 @@ func templateFuncs() template.FuncMap {
 		"isImage":    isImage,
 		"json":       jsonString,
 		"percent":    percent,
-		"ago":        relativeTime,
-		"bytes":      formatBytes,
+
+		// percentf renders a fraction that is already a ratio, for a value computed
+		// in Go rather than from two counts in the template.
+		"percentf": func(fraction float64) string {
+			return fmt.Sprintf("%.2f%%", fraction*100)
+		},
+		"ago":   relativeTime,
+		"bytes": formatBytes,
 	}
 }
 
 // formatBytes renders a byte count with a binary unit suffix.
-func formatBytes(n int64) string {
+// toInt64 converts any numeric value to int64.
+//
+// It exists because the values rendered as byte counts come from three places that
+// do not agree: runtime.MemStats reports uint64, database file sizes are int64 and a
+// JSON number arrives as float64. A template that failed on the difference is
+// exactly what happened when the monitoring panel first rendered.
+func toInt64(value any) int64 {
+	switch v := value.(type) {
+	case int:
+		return int64(v)
+	case int8:
+		return int64(v)
+	case int16:
+		return int64(v)
+	case int32:
+		return int64(v)
+	case int64:
+		return v
+	case uint:
+		return int64(v)
+	case uint8:
+		return int64(v)
+	case uint16:
+		return int64(v)
+	case uint32:
+		return int64(v)
+	case uint64:
+		// Clamped rather than wrapped: a negative size on a screen is worse than a
+		// very large one.
+		if v > uint64(1<<63-1) {
+			return 1<<63 - 1
+		}
+		return int64(v)
+	case float32:
+		return int64(v)
+	case float64:
+		return int64(v)
+	default:
+		return 0
+	}
+}
+
+// formatBytes renders a byte count.
+//
+// It takes any numeric type because the values it formats come from three places
+// that do not agree: runtime.MemStats reports uint64, the database file sizes are
+// int64 and a JSON number arrives as float64. A template that failed on the
+// difference would be a template that broke when a source changed its mind, which
+// is exactly what happened.
+func formatBytes(value any) string {
+	n := toInt64(value)
+	if n < 0 {
+		n = 0
+	}
+
 	const unit = 1024
 	if n < unit {
 		return fmt.Sprintf("%d B", n)

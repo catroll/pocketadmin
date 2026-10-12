@@ -642,6 +642,62 @@ though they had been examined.
 
 **Given up.** Nothing.
 
+### D-032 — The public health endpoint says one word
+
+**Decision.** `/healthz` and `/readyz` are unauthenticated and answer
+`{"status":"..."}` and nothing else. The detailed view, naming each component and
+the reason it is unwell, is behind a permission on the panel.
+
+**Why.** A health endpoint has to be reachable by an orchestrator, which holds no
+session. A health endpoint that names the failing component to an anonymous caller
+is a free map of the system for anyone who asks: it discloses the database engine,
+the storage layout and where the weak point is. The two audiences want different
+things and get different answers.
+
+Liveness and readiness are separate endpoints because they call for opposite
+actions. A process whose database is unreachable is **alive** and should be taken
+out of a load balancer's rotation, not killed; reporting one status for both makes
+an orchestrator restart a process that was working.
+
+**Given up.** An operator who wants the detail needs a session. That is the point.
+
+### D-033 — Only 5xx counts as an error
+
+**Decision.** The error rate counts responses with status 5xx. A 4xx does not count.
+
+**Why.** A 4xx is the caller being wrong; a 5xx is this process being wrong. An
+error rate that includes 404s is a rate that goes up when somebody follows a stale
+link, which is not a thing an operator can act on, and mixing the two means the
+number cannot be alerted on at all. The request count includes both, so the two
+figures together still say everything.
+
+**Given up.** A surge of 401s -- a credential-stuffing attempt, say -- is invisible
+in the error rate. It is visible in the request count and in the security log,
+which is where it belongs.
+
+### D-034 — The update feature records, it does not self-update
+
+**Decision.** `system_updates` records version checks and applied updates with a
+before and an after version. This build performs no automatic update and checks no
+feed unless one is configured at link time.
+
+**Why.** `features.md` asks for an "assisted, explicit update with a recorded before
+and after version; never a silent self-update". The record is the part that makes an
+update auditable, and it is implemented. The mechanism is not: replacing a running
+binary is a deployment concern, and a web panel that can download and execute a new
+version of itself is a remote code execution feature with a permission attached,
+which is not a trade this platform should make on an operator's behalf.
+
+The version check is off by default for a related reason: it is an outbound request
+that names the installation and its version to a third party, and enabling that
+without being asked is not a decision the software should make silently.
+
+This is recorded as a deliberate omission rather than left to be discovered, in the
+same way as D-029.
+
+**Given up.** No "check for updates" button by default. An operator updates the way
+they deployed.
+
 ---
 
 ## Pending
