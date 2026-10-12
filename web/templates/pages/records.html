@@ -1,0 +1,143 @@
+{{define "content"}}
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-table mr-1"></i>{{.Collection.Name}}
+      {{if eq .Collection.Type "auth"}}<span class="badge badge-success">auth</span>
+      {{else if eq .Collection.Type "view"}}<span class="badge badge-warning">view</span>
+      {{else}}<span class="badge badge-info">base</span>{{end}}
+      <small class="text-muted ml-2">{{.Pagination.Total}} record(s)</small>
+    </h3>
+    <div class="card-tools">
+      {{if not .Collection.IsView}}
+      <a href="/collections/{{.Collection.Name}}/records/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus mr-1"></i>New record
+      </a>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="card-body border-bottom">
+    <form method="get" action="/collections/{{.Collection.Name}}/records" class="form-inline">
+      <div class="input-group input-group-sm mr-2 mb-1 flex-grow-1" style="min-width:16rem;max-width:32rem">
+        <input type="search" name="q" value="{{.Query}}" class="form-control"
+               placeholder="Search across text fields&hellip;" aria-label="Search records">
+        <div class="input-group-append">
+          <button class="btn btn-default" type="submit"><i class="fas fa-search"></i></button>
+        </div>
+      </div>
+
+      <label class="mr-1 mb-1 small text-muted" for="perPage">Per page</label>
+      <select id="perPage" name="perPage" class="form-control form-control-sm mr-2 mb-1">
+        {{$current := .Pagination.PerPage}}
+        <option value="10" {{if eq $current 10}}selected{{end}}>10</option>
+        <option value="20" {{if eq $current 20}}selected{{end}}>20</option>
+        <option value="30" {{if eq $current 30}}selected{{end}}>30</option>
+        <option value="50" {{if eq $current 50}}selected{{end}}>50</option>
+        <option value="100" {{if eq $current 100}}selected{{end}}>100</option>
+      </select>
+
+      <button class="btn btn-default btn-sm mb-1" type="submit">Apply</button>
+
+      {{if .Query}}
+      <a href="/collections/{{.Collection.Name}}/records" class="btn btn-link btn-sm mb-1">Reset</a>
+      {{end}}
+    </form>
+  </div>
+
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover table-striped text-nowrap mb-0">
+      <thead>
+        <tr>
+          {{range .Columns}}
+          <th>
+            <a href="?{{$.QueryPrefix}}&amp;sort={{.Name}}&amp;dir={{if and (eq $.Sort .Name) (eq $.Dir "asc")}}desc{{else}}asc{{end}}">
+              {{.Label}}
+              {{if eq $.Sort .Name}}<i class="fas fa-sort-{{if eq $.Dir "asc"}}up{{else}}down{{end}}"></i>{{end}}
+            </a>
+          </th>
+          {{end}}
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          {{range .Cells}}
+          <td>
+            {{if eq .Kind "bool"}}
+              {{if .Bool}}<span class="badge badge-success">true</span>{{else}}<span class="badge badge-secondary">false</span>{{end}}
+            {{else if eq .Kind "empty"}}
+              <span class="text-muted">&mdash;</span>
+            {{else if eq .Kind "date"}}
+              <span class="text-muted small">{{.Text}}</span>
+            {{else if eq .Kind "list"}}
+              {{range .Items}}<span class="badge badge-light border">{{.}}</span> {{end}}
+            {{else if eq .Kind "file"}}
+              {{range .Files}}
+                {{if .IsImage}}
+                  <a href="{{.URL}}" target="_blank" rel="noopener">
+                    <img src="{{.URL}}" alt="{{.Name}}" class="img-thumbnail" style="max-height:36px">
+                  </a>
+                {{else}}
+                  <a href="{{.URL}}" target="_blank" rel="noopener"><i class="fas fa-paperclip"></i> {{.Name}}</a>
+                {{end}}
+              {{end}}
+            {{else if eq .Kind "json"}}
+              <code title="{{.Title}}">{{.Text}}</code>
+            {{else}}
+              {{if .Title}}<span title="{{.Title}}">{{.Text}}</span>{{else}}{{.Text}}{{end}}
+            {{end}}
+          </td>
+          {{end}}
+          <td class="text-right">
+            <a href="/collections/{{$.Collection.Name}}/records/{{.ID}}/edit"
+               class="btn btn-xs btn-default" title="Edit"><i class="fas fa-pen"></i></a>
+
+            {{if not $.Collection.IsView}}
+            <form method="post" class="d-inline"
+                  action="/collections/{{$.Collection.Name}}/records/{{.ID}}/delete"
+                  onsubmit="return confirm('Delete this record permanently?');">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button type="submit" class="btn btn-xs btn-danger" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr>
+          <td colspan="{{len .Columns | add 1}}" class="text-center text-muted py-4">
+            No records found{{if .Query}} for &ldquo;{{.Query}}&rdquo;{{end}}.
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  {{if .Pagination.TotalPages}}
+  <div class="card-footer clearfix">
+    <div class="float-left text-muted small pt-2">
+      Showing {{.Pagination.From}}&ndash;{{.Pagination.To}} of {{.Pagination.Total}}
+    </div>
+    <ul class="pagination pagination-sm m-0 float-right">
+      <li class="page-item {{if not .Pagination.HasPrev}}disabled{{end}}">
+        <a class="page-link"
+           href="?{{.QueryPrefix}}&amp;sort={{.Sort}}&amp;dir={{.Dir}}&amp;page={{.Pagination.Page | add -1}}">&laquo;</a>
+      </li>
+      {{range .Pagination.Pages}}
+      <li class="page-item {{if eq . $.Pagination.Page}}active{{end}}">
+        <a class="page-link" href="?{{$.QueryPrefix}}&amp;sort={{$.Sort}}&amp;dir={{$.Dir}}&amp;page={{.}}">{{.}}</a>
+      </li>
+      {{end}}
+      <li class="page-item {{if not .Pagination.HasNext}}disabled{{end}}">
+        <a class="page-link"
+           href="?{{.QueryPrefix}}&amp;sort={{.Sort}}&amp;dir={{.Dir}}&amp;page={{.Pagination.Page | add 1}}">&raquo;</a>
+      </li>
+    </ul>
+  </div>
+  {{end}}
+</div>
+{{end}}

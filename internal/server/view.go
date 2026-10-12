@@ -1,0 +1,195 @@
+package server
+
+import "github.com/pocketbase/pocketbase/core"
+
+// base carries the data that every rendered page needs.
+//
+// Page-specific view models embed base, so templates can reference `.Title`,
+// `.CSRF`, `.Nav`, ... directly on the outer struct.
+type base struct {
+	Title     string
+	Active    string
+	CSRF      string
+	UserEmail string
+	AppName   string
+	PBVersion string
+	PanelVer  string
+	Nav       []navCollection
+	Flash     *flash
+
+	// CurrentCollection highlights the active collection in the sidebar.
+	CurrentCollection string
+}
+
+// flash is a one-shot notification rendered once and then dropped.
+type flash struct {
+	Type    string // success | danger | warning | info
+	Message string
+}
+
+// navCollection is one entry of the sidebar collection list.
+type navCollection struct {
+	Name   string
+	Type   string
+	System bool
+	Count  int64
+	Active bool
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard
+// ---------------------------------------------------------------------------
+
+type dashboardPage struct {
+	base
+	Stats       dashboardStats
+	Collections []collectionStat
+	Chart       chartData
+}
+
+type dashboardStats struct {
+	Collections   int
+	Records       int64
+	Superusers    int64
+	AuthRecords   int64
+	Files         int
+	DataDir       string
+	DatabaseBytes int64
+	UploadBytes   int64
+}
+
+type collectionStat struct {
+	Name        string
+	Type        string
+	System      bool
+	FieldCount  int
+	RecordCount int64
+	IsView      bool
+}
+
+type chartData struct {
+	Labels []string
+	Values []int64
+}
+
+// ---------------------------------------------------------------------------
+// Collections
+// ---------------------------------------------------------------------------
+
+type collectionsPage struct {
+	base
+	Collections []collectionStat
+	TotalRecs   int64
+}
+
+// ---------------------------------------------------------------------------
+// Record listing
+// ---------------------------------------------------------------------------
+
+type recordsPage struct {
+	base
+	Collection *core.Collection
+	Columns    []column
+	Rows       []row
+	Pagination pagination
+	Query      string
+	Sort       string
+	Dir        string
+	NextDir    string
+
+	// QueryPrefix carries only the filters that must survive a sort or page
+	// change (q, perPage). Sort/dir/page are appended explicitly by the links.
+	QueryPrefix string
+}
+
+type pagination struct {
+	Page       int
+	PerPage    int
+	Total      int64
+	TotalPages int
+	HasPrev    bool
+	HasNext    bool
+	From       int64
+	To         int64
+	Pages      []int
+}
+
+type column struct {
+	Name  string
+	Label string
+	Type  string
+	Sort  string // sort key to emit, "" when not sortable
+}
+
+type row struct {
+	ID    string
+	Cells []cell
+}
+
+// cell is a single rendered table cell. Kind selects the template branch.
+type cell struct {
+	Kind      string // text | bool | list | file | json | date | empty
+	Text      string
+	Title     string
+	Bool      bool
+	Items     []string
+	Files     []fileRef
+	Truncated bool
+}
+
+type fileRef struct {
+	Name    string
+	URL     string
+	IsImage bool
+	Size    string
+}
+
+// ---------------------------------------------------------------------------
+// Record create / edit form
+// ---------------------------------------------------------------------------
+
+type recordFormPage struct {
+	base
+	Collection *core.Collection
+	IsNew      bool
+	Action     string
+	RecordID   string
+	Fields     []formField
+	Errors     []string
+}
+
+// formField describes a single input generated from a PocketBase field.
+type formField struct {
+	Name        string
+	Label       string
+	Type        string
+	Help        string
+	Required    bool
+	ReadOnly    bool
+	Input       string // text | number | checkbox | textarea | select | file | datetime | geopoint | password | json | readonly
+	Value       string
+	Placeholder string
+	Step        string
+	Multiple    bool
+	Checked     bool
+	Options     []formOption
+	Selected    map[string]bool
+	Files       []fileRef
+	MaxSelect   int
+}
+
+type formOption struct {
+	Value string
+	Label string
+}
+
+// ---------------------------------------------------------------------------
+// Error page
+// ---------------------------------------------------------------------------
+
+type errorPage struct {
+	base
+	Code    int
+	Message string
+	Detail  string
+}

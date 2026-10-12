@@ -1,0 +1,8 @@
+# Build output
+/bin/
+
+# Workspace-local Go caches and downloaded third-party archives
+/.cache/
+
+# PocketBase data directory (SQLite database, uploads, session key)
+/pb_data/

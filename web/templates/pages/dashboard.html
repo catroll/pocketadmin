@@ -1,0 +1,111 @@
+{{define "content"}}
+<div class="row">
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-info">
+      <div class="inner"><h3>{{.Stats.Collections}}</h3><p>Collections</p></div>
+      <div class="icon"><i class="fas fa-database"></i></div>
+      <a href="/collections" class="small-box-footer">Browse <i class="fas fa-arrow-circle-right"></i></a>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-success">
+      <div class="inner"><h3>{{.Stats.Records}}</h3><p>Records</p></div>
+      <div class="icon"><i class="fas fa-table"></i></div>
+      <span class="small-box-footer">Across all collections</span>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-warning">
+      <div class="inner"><h3>{{.Stats.Superusers}}</h3><p>Superusers</p></div>
+      <div class="icon"><i class="fas fa-user-shield"></i></div>
+      <a href="/collections/_superusers/records" class="small-box-footer">Manage <i class="fas fa-arrow-circle-right"></i></a>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-danger">
+      <div class="inner"><h3>{{.Stats.Files}}</h3><p>Stored files</p></div>
+      <div class="icon"><i class="fas fa-file-upload"></i></div>
+      <span class="small-box-footer">{{bytes .Stats.UploadBytes}}</span>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-7">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-bar mr-1"></i>Records per collection</h3>
+      </div>
+      <div class="card-body">
+        {{if .Chart.Labels}}
+        <div class="chart" id="records-chart" data-chart="{{json .Chart}}" style="height:300px"></div>
+        {{else}}
+        <p class="text-muted mb-0">No records yet. Create a collection and add some data.</p>
+        {{end}}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-hdd mr-1"></i>Storage</h3>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr><th style="width:45%">Database</th><td>{{bytes .Stats.DatabaseBytes}}</td></tr>
+            <tr><th>Uploaded files</th><td>{{bytes .Stats.UploadBytes}} ({{.Stats.Files}})</td></tr>
+            <tr><th>Auth records</th><td>{{.Stats.AuthRecords}}</td></tr>
+            <tr><th>Data directory</th><td><code class="text-break">{{.Stats.DataDir}}</code></td></tr>
+            <tr><th>PocketBase</th><td>{{.PBVersion}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-database mr-1"></i>Collections</h3>
+    <div class="card-tools">
+      <a href="/collections" class="btn btn-tool"><i class="fas fa-expand"></i></a>
+    </div>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover table-striped mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th class="text-right">Fields</th>
+          <th class="text-right">Records</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Collections}}
+        <tr>
+          <td>
+            <a href="/collections/{{.Name}}/records">{{.Name}}</a>
+            {{if .System}}<span class="badge badge-secondary badge-pill">sys</span>{{end}}
+          </td>
+          <td><span class="badge badge-info">{{.Type}}</span></td>
+          <td class="text-right">{{.FieldCount}}</td>
+          <td class="text-right">{{if .IsView}}&mdash;{{else}}{{.RecordCount}}{{end}}</td>
+          <td class="text-right">
+            <a href="/collections/{{.Name}}/records" class="btn btn-xs btn-default">
+              <i class="fas fa-list"></i>
+            </a>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

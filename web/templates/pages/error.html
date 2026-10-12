@@ -1,0 +1,15 @@
+{{define "content"}}
+<div class="error-page">
+  <h2 class="headline text-warning">{{.Code}}</h2>
+  <div class="error-content">
+    <h3><i class="fas fa-exclamation-triangle text-warning mr-1"></i>{{.Message}}</h3>
+    <p>{{.Detail}}</p>
+    <p>
+      <a href="/dashboard" class="btn btn-primary btn-sm">
+        <i class="fas fa-home mr-1"></i>Back to dashboard
+      </a>
+      <a href="/collections" class="btn btn-default btn-sm">Browse collections</a>
+    </p>
+  </div>
+</div>
+{{end}}

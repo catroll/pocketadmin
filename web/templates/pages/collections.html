@@ -1,0 +1,53 @@
+{{define "content"}}
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fas fa-database mr-1"></i>Collections
+      <small class="text-muted ml-2">{{len .Collections}} total &middot; {{.TotalRecs}} records</small>
+    </h3>
+  </div>
+
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover table-striped mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th class="text-right">Fields</th>
+          <th class="text-right">Records</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Collections}}
+        <tr>
+          <td>
+            <a href="/collections/{{.Name}}/records">{{.Name}}</a>
+            {{if .System}}<span class="badge badge-secondary badge-pill">system</span>{{end}}
+          </td>
+          <td>
+            {{if eq .Type "auth"}}<span class="badge badge-success">auth</span>
+            {{else if eq .Type "view"}}<span class="badge badge-warning">view</span>
+            {{else}}<span class="badge badge-info">base</span>{{end}}
+          </td>
+          <td class="text-right">{{.FieldCount}}</td>
+          <td class="text-right">{{if .IsView}}&mdash;{{else}}{{.RecordCount}}{{end}}</td>
+          <td class="text-right">
+            <a href="/collections/{{.Name}}/records" class="btn btn-xs btn-default" title="Browse records">
+              <i class="fas fa-list"></i>
+            </a>
+            {{if not .IsView}}
+            <a href="/collections/{{.Name}}/records/new" class="btn btn-xs btn-primary" title="New record">
+              <i class="fas fa-plus"></i>
+            </a>
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="5" class="text-center text-muted py-4">No collections found.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

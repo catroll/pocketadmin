@@ -1,0 +1,42 @@
+{{define "sidebar"}}
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+  <a href="/dashboard" class="brand-link">
+    <img src="/static/vendor/adminlte/img/AdminLTELogo.png" alt=""
+         class="brand-image img-circle elevation-3" style="opacity:.8">
+    <span class="brand-text font-weight-light">{{.AppName}}</span>
+  </a>
+
+  <div class="sidebar">
+    <nav class="mt-2">
+      <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+        <li class="nav-item">
+          <a href="/dashboard" class="nav-link {{if eq .Active "dashboard"}}active{{end}}">
+            <i class="nav-icon fas fa-tachometer-alt"></i>
+            <p>Dashboard</p>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/collections" class="nav-link {{if eq .Active "collections"}}active{{end}}">
+            <i class="nav-icon fas fa-database"></i>
+            <p>Collections</p>
+          </a>
+        </li>
+
+        <li class="nav-header">COLLECTIONS</li>
+        {{range .Nav}}
+        <li class="nav-item">
+          <a href="/collections/{{.Name}}/records"
+             class="nav-link {{if eq .Name $.CurrentCollection}}active{{end}}">
+            <i class="nav-icon {{if eq .Type "auth"}}fas fa-users{{else if eq .Type "view"}}fas fa-eye{{else}}far fa-circle{{end}}"></i>
+            <p>
+              {{.Name}}
+              {{if .System}}<span class="badge badge-secondary badge-pill">sys</span>{{end}}
+            </p>
+          </a>
+        </li>
+        {{end}}
+      </ul>
+    </nav>
+  </div>
+</aside>
+{{end}}

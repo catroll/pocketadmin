@@ -1,0 +1,140 @@
+{{define "content"}}
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title">
+      {{if .IsNew}}<i class="fas fa-plus mr-1"></i>New record{{else}}<i class="fas fa-pen mr-1"></i>Edit record{{end}}
+      <small class="text-muted ml-2">{{.Collection.Name}}</small>
+    </h3>
+    <div class="card-tools">
+      <a href="/collections/{{.Collection.Name}}/records" class="btn btn-default btn-sm">
+        <i class="fas fa-arrow-left mr-1"></i>Back to list
+      </a>
+    </div>
+  </div>
+
+  <form method="post" action="{{.Action}}" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+
+    <div class="card-body">
+      {{if .Errors}}
+      <div class="alert alert-danger">
+        <h5 class="mb-2"><i class="fas fa-exclamation-triangle mr-1"></i>Could not save the record</h5>
+        <ul class="mb-0 pl-3">
+          {{range .Errors}}<li>{{.}}</li>{{end}}
+        </ul>
+      </div>
+      {{end}}
+
+      {{range .Fields}}
+      <div class="form-group row">
+        <label class="col-sm-3 col-form-label" for="field-{{.Name}}">
+          {{.Label}}{{if .Required}} <span class="text-danger" title="Required">*</span>{{end}}
+        </label>
+        <div class="col-sm-9">
+          {{if eq .Input "checkbox"}}
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="field-{{.Name}}"
+                     name="{{.Name}}" {{if .Checked}}checked{{end}}>
+              <label class="custom-control-label" for="field-{{.Name}}">Enabled</label>
+            </div>
+
+          {{else if eq .Input "select"}}
+            <select class="form-control" id="field-{{.Name}}" name="{{.Name}}"
+                    {{if .Multiple}}multiple size="6"{{end}} {{if .Required}}required{{end}}>
+              {{if not .Multiple}}<option value="">&mdash; none &mdash;</option>{{end}}
+              {{$selected := .Selected}}
+              {{range .Options}}
+              <option value="{{.Value}}" {{if index $selected .Value}}selected{{end}}>{{.Label}}</option>
+              {{end}}
+            </select>
+            {{if .Multiple}}<small class="form-text text-muted">Hold Ctrl/Cmd to select several values.</small>{{end}}
+
+          {{else if eq .Input "relation"}}
+            <select class="form-control" id="field-{{.Name}}" name="{{.Name}}"
+                    {{if .Multiple}}multiple size="6"{{end}} {{if .Required}}required{{end}}>
+              {{if not .Multiple}}<option value="">&mdash; none &mdash;</option>{{end}}
+              {{$selected := .Selected}}
+              {{range .Options}}
+              <option value="{{.Value}}" {{if index $selected .Value}}selected{{end}}>{{.Label}}</option>
+              {{end}}
+            </select>
+            {{if not .Options}}<small class="form-text text-warning">No related records available yet.</small>{{end}}
+
+          {{else if eq .Input "file"}}
+            {{$fname := .Name}}
+            {{if .Files}}
+            <div class="mb-2">
+              <span class="text-muted small d-block mb-1">Existing files &mdash; tick to remove:</span>
+              {{range .Files}}
+              <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="rm-{{$fname}}-{{.Name}}"
+                       name="{{$fname}}-" value="{{.Name}}">
+                <label class="custom-control-label" for="rm-{{$fname}}-{{.Name}}">
+                  {{if .IsImage}}<img src="{{.URL}}" alt="" class="img-thumbnail mr-1" style="max-height:32px">{{end}}
+                  <a href="{{.URL}}" target="_blank" rel="noopener">{{.Name}}</a>
+                </label>
+              </div>
+              {{end}}
+            </div>
+            {{end}}
+            <input type="file" class="form-control-file" id="field-{{.Name}}" name="{{.Name}}"
+                   {{if .Multiple}}multiple{{end}}>
+            {{if .Multiple}}<small class="form-text text-muted">New uploads are added to the existing files.</small>{{end}}
+
+          {{else if eq .Input "textarea"}}
+            <textarea class="form-control" id="field-{{.Name}}" name="{{.Name}}" rows="8"
+                      {{if .Required}}required{{end}}>{{.Value}}</textarea>
+
+          {{else if eq .Input "json"}}
+            <textarea class="form-control text-monospace" id="field-{{.Name}}" name="{{.Name}}"
+                      rows="6" spellcheck="false" {{if .Required}}required{{end}}>{{.Value}}</textarea>
+
+          {{else if eq .Input "password"}}
+            <input type="password" class="form-control" id="field-{{.Name}}" name="{{.Name}}"
+                   autocomplete="new-password" {{if .Required}}required{{end}}>
+
+          {{else if eq .Input "readonly"}}
+            <input type="text" class="form-control" id="field-{{.Name}}" value="{{.Value}}" readonly>
+
+          {{else if eq .Input "number"}}
+            <input type="number" step="{{.Step}}" class="form-control" id="field-{{.Name}}"
+                   name="{{.Name}}" value="{{.Value}}" {{if .Required}}required{{end}}>
+
+          {{else if eq .Input "datetime-local"}}
+            <input type="datetime-local" class="form-control" id="field-{{.Name}}"
+                   name="{{.Name}}" value="{{.Value}}" {{if .Required}}required{{end}}>
+
+          {{else if eq .Input "geopoint"}}
+            <input type="text" class="form-control" id="field-{{.Name}}" name="{{.Name}}"
+                   value="{{.Value}}" placeholder="longitude,latitude">
+
+          {{else}}
+            <input type="{{.Input}}" class="form-control" id="field-{{.Name}}" name="{{.Name}}"
+                   value="{{.Value}}" {{if .Required}}required{{end}}>
+          {{end}}
+
+          {{if .Help}}<small class="form-text text-muted">{{.Help}}</small>{{end}}
+        </div>
+      </div>
+      {{end}}
+    </div>
+
+    <div class="card-footer">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save mr-1"></i>{{if .IsNew}}Create record{{else}}Save changes{{end}}
+      </button>
+      <a href="/collections/{{.Collection.Name}}/records" class="btn btn-default">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{{if not .IsNew}}
+<form method="post" action="{{.Action}}/delete" class="mt-3"
+      onsubmit="return confirm('Delete this record permanently? This cannot be undone.');">
+  <input type="hidden" name="_csrf" value="{{.CSRF}}">
+  <button type="submit" class="btn btn-outline-danger btn-sm">
+    <i class="fas fa-trash mr-1"></i>Delete this record
+  </button>
+</form>
+{{end}}
+{{end}}
