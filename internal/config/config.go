@@ -44,16 +44,17 @@ const (
 	DefaultLogLevel  = "info"
 	DefaultLogFormat = "json"
 
-	configEnv       = "POCKETADMIN_CONFIG"
-	addrEnv         = "POCKETADMIN_ADDR"
-	appNameEnv      = "POCKETADMIN_APP_NAME"
-	dataDirEnv      = "POCKETADMIN_DATA_DIR"
-	sessionKeyEnv   = "POCKETADMIN_SESSION_KEY"
-	secureCookieEnv = "POCKETADMIN_SECURE_COOKIE"
-	devEnv          = "POCKETADMIN_DEV"
-	perPageEnv      = "POCKETADMIN_PER_PAGE"
-	logLevelEnv     = "POCKETADMIN_LOG_LEVEL"
-	logFormatEnv    = "POCKETADMIN_LOG_FORMAT"
+	configEnv          = "POCKETADMIN_CONFIG"
+	addrEnv            = "POCKETADMIN_ADDR"
+	appNameEnv         = "POCKETADMIN_APP_NAME"
+	dataDirEnv         = "POCKETADMIN_DATA_DIR"
+	sessionKeyEnv      = "POCKETADMIN_SESSION_KEY"
+	secureCookieEnv    = "POCKETADMIN_SECURE_COOKIE"
+	devEnv             = "POCKETADMIN_DEV"
+	perPageEnv         = "POCKETADMIN_PER_PAGE"
+	apiKeyRateLimitEnv = "POCKETADMIN_API_KEY_RATE_LIMIT"
+	logLevelEnv        = "POCKETADMIN_LOG_LEVEL"
+	logFormatEnv       = "POCKETADMIN_LOG_FORMAT"
 
 	// sessionKeyFile is where a generated session signing key is persisted so
 	// that restarting the process does not invalidate every session.
@@ -84,6 +85,12 @@ type Config struct {
 
 	// StorageDir is where the local storage driver keeps library file bytes.
 	// Empty means a "storage" directory inside DataDir.
+	// APIKeyRateLimit is the requests-per-minute a key gets when it does not
+	// declare its own. Zero means no limit: an installation that has not thought
+	// about it keeps working, and a silent small default would break an
+	// integration on upgrade.
+	APIKeyRateLimit int
+
 	StorageDir string
 
 	// UploadMaxSize is the largest accepted upload in bytes. Zero means the
@@ -137,6 +144,7 @@ type fileConfig struct {
 	AppName                 *string   `yaml:"appName"`
 	DataDir                 *string   `yaml:"dataDir"`
 	StorageDir              *string   `yaml:"storageDir"`
+	APIKeyRateLimit         *int      `yaml:"apiKeyRateLimit"`
 	UploadMaxSize           *int64    `yaml:"uploadMaxSize"`
 	UploadAllowedExtensions *[]string `yaml:"uploadAllowedExtensions"`
 	PerPage                 *int      `yaml:"perPage"`
@@ -284,6 +292,9 @@ func applyFile(cfg *Config, path string, required bool) error {
 	if fc.StorageDir != nil {
 		cfg.StorageDir = *fc.StorageDir
 	}
+	if fc.APIKeyRateLimit != nil {
+		cfg.APIKeyRateLimit = *fc.APIKeyRateLimit
+	}
 	if fc.UploadMaxSize != nil {
 		cfg.UploadMaxSize = *fc.UploadMaxSize
 	}
@@ -329,6 +340,11 @@ func applyEnv(cfg *Config) {
 	if v := os.Getenv(perPageEnv); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			cfg.PerPage = n
+		}
+	}
+	if v := os.Getenv(apiKeyRateLimitEnv); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.APIKeyRateLimit = n
 		}
 	}
 	if v := os.Getenv(secureCookieEnv); v != "" {

@@ -11,6 +11,7 @@ import (
 
 	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/audit"
+	"pocketadmin/internal/developer"
 	"pocketadmin/internal/jobs"
 	"pocketadmin/internal/workbench"
 )
@@ -31,6 +32,7 @@ func (s *Server) RegisterJobHandlers() {
 		s.registerSessionCleanupJob()
 		s.registerAnnouncementJob()
 		s.registerTodoReminderJob()
+		s.registerAPIKeyExpiryJob()
 	})
 }
 
@@ -229,6 +231,30 @@ func (s *Server) reminderAlreadySent(todo *core.Record) bool {
 		"message = {:m} && user = {:u}",
 		map[string]any{"m": existing.Id, "u": todo.GetString("owner")})
 	return err == nil && delivered != nil
+}
+
+// registerAPIKeyExpiryJob marks keys whose expiry has passed.
+//
+// The expiry is enforced on every request anyway, so this is about the list
+// telling the truth: a key shown as active that cannot be used is a key an
+// operator will waste time investigating.
+func (s *Server) registerAPIKeyExpiryJob() {
+	jobs.Register(jobs.Handler{
+		Code:        "developer.api_key_expiry",
+		Name:        "API key expiry",
+		Description: "Marks API keys whose expiry has passed so the list reflects what can actually be used.",
+		DefaultCron: "*/30 * * * *",
+		Run: func(ctx context.Context, _ map[string]any) (string, error) {
+			expired, err := developer.ExpireStale(s.app, time.Now())
+			if err != nil {
+				return "", err
+			}
+			if expired == 0 {
+				return "no keys had expired", nil
+			}
+			return fmt.Sprintf("marked %d key(s) expired", expired), nil
+		},
+	})
 }
 
 // ---------------------------------------------------------------------------

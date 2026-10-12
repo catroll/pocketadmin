@@ -267,6 +267,36 @@ func (s *Server) setFlash(c *gin.Context, kind, message string) {
 	_ = sess.Save()
 }
 
+// secretKey is the session entry holding a value shown exactly once.
+const secretKey = "oneTimeSecret"
+
+// setFlashSecret holds a value for exactly one render.
+//
+// It is what lets a freshly created API key be shown to the person who made it
+// without the key ever being written to the database, to a log or to a URL. The
+// session cookie is encrypted and the entry is deleted the first time it is read,
+// so the key exists in the browser for exactly one page.
+func (s *Server) setFlashSecret(c *gin.Context, secret string) {
+	sess := sessions.Default(c)
+	sess.Set(secretKey, secret)
+	_ = sess.Save()
+}
+
+// takeFlashSecret returns and clears the pending one-time value.
+func (s *Server) takeFlashSecret(c *gin.Context) string {
+	sess := sessions.Default(c)
+
+	raw := sess.Get(secretKey)
+	if raw == nil {
+		return ""
+	}
+	sess.Delete(secretKey)
+	_ = sess.Save()
+
+	secret, _ := raw.(string)
+	return secret
+}
+
 // loadFlash promotes a pending flash message into the request context.
 func (s *Server) loadFlash() gin.HandlerFunc {
 	return func(c *gin.Context) {

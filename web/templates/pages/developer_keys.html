@@ -1,0 +1,138 @@
+{{define "content"}}
+{{/* A newly issued key is shown here and nowhere else: it is not stored, not
+     logged and not in the URL, so this panel appears once and then the value is
+     gone from the server entirely. */}}
+{{if .Plaintext}}
+<div class="alert alert-warning">
+  <h5 class="alert-heading"><i class="fas fa-key me-1"></i>Copy this key now</h5>
+  <p class="mb-2">
+    It is shown once. Only a hash and the prefix below are stored, so it cannot be
+    recovered or displayed again.
+  </p>
+  <div class="input-group">
+    <input type="text" class="form-control font-monospace" value="{{.Plaintext}}" readonly
+           onclick="this.select()" id="the-key">
+    <button class="btn btn-outline-dark" type="button"
+            onclick="navigator.clipboard.writeText(document.getElementById('the-key').value)">
+      <i class="fas fa-copy me-1"></i>Copy
+    </button>
+  </div>
+</div>
+{{end}}
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-key me-1"></i>API keys</h3>
+      </div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr><th>Name</th><th>Key</th><th>Owner</th><th>State</th><th>Used</th><th></th></tr>
+          </thead>
+          <tbody>
+            {{range .Rows}}
+            <tr>
+              <td>
+                <div>{{.Name}}</div>
+                <div class="small text-body-secondary">{{.Scopes}} scope(s)
+                  {{if .RateLimit}}&middot; {{.RateLimit}}/min{{end}}
+                  {{if .AllowList}}&middot; <code>{{.AllowList}}</code>{{end}}
+                </div>
+              </td>
+              <td><code>{{.Prefix}}&hellip;</code></td>
+              <td class="small">{{.Owner}}</td>
+              <td>
+                {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
+                {{else if eq .Status "revoked"}}<span class="badge text-bg-danger">revoked</span>
+                {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+                {{if .Expires}}<div class="small text-body-secondary">expires {{.Expires}}</div>{{end}}
+              </td>
+              <td class="small">
+                {{if .Usage}}{{.Usage}} request(s)
+                  <div class="text-body-secondary">{{.LastUsed}}{{if .LastUsedIP}} from {{.LastUsedIP}}{{end}}</div>
+                {{else}}<span class="text-body-secondary">never</span>{{end}}
+              </td>
+              <td class="text-end">
+                {{if and $.CanRevoke (eq .Status "active")}}
+                <form method="post" action="/developer/keys/{{.Record.Id}}/revoke"
+                      onsubmit="return confirm('Revoke this key? It stops working immediately.')">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <button class="btn btn-sm btn-outline-danger">Revoke</button>
+                </form>
+                {{else if .Revoked}}
+                <span class="small text-body-secondary">revoked {{.Revoked}}</span>
+                {{end}}
+              </td>
+            </tr>
+            {{else}}
+            <tr><td colspan="6" class="text-center text-body-secondary py-4">No keys have been issued.</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer small text-body-secondary">
+        A key carries the intersection of its scopes and its owner's current permissions, so removing a
+        permission from the owner narrows every key they issued without editing the keys.
+      </div>
+    </div>
+  </div>
+
+  {{if .CanCreate}}
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Issue a key</h3></div>
+      <div class="card-body">
+        <form method="post" action="/developer/keys">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="mb-2">
+            <label class="form-label small" for="name">Name</label>
+            <input type="text" class="form-control form-control-sm" id="name" name="name" required
+                   placeholder="Reporting integration">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="owner">Owning account</label>
+            <select class="form-select form-select-sm" id="owner" name="owner" required>
+              {{range .Users}}<option value="{{.ID}}">{{.Email}}</option>{{end}}
+            </select>
+            <div class="form-text">Only accounts the key may act for.</div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Scopes</label>
+            <div style="max-height:14rem;overflow-y:auto" class="border rounded p-2">
+              {{range .Permissions}}
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="scopes" value="{{.ID}}" id="s-{{.ID}}">
+                <label class="form-check-label small" for="s-{{.ID}}" title="{{.Code}}">
+                  <code>{{.Code}}</code>
+                </label>
+              </div>
+              {{end}}
+            </div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small" for="rateLimitPerMinute">Rate limit</label>
+              <input type="number" class="form-control form-control-sm" id="rateLimitPerMinute"
+                     name="rateLimitPerMinute" min="0" placeholder="default">
+            </div>
+            <div class="col-6">
+              <label class="form-label small" for="expiresAt">Expires</label>
+              <input type="date" class="form-control form-control-sm" id="expiresAt" name="expiresAt">
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="ipAllowList">IP allow-list</label>
+            <input type="text" class="form-control form-control-sm" id="ipAllowList" name="ipAllowList"
+                   placeholder="10.0.0.0/8, 203.0.113.7">
+            <div class="form-text">Empty allows any address.</div>
+          </div>
+          <button class="btn btn-primary btn-sm w-100">Issue key</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}

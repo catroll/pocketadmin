@@ -513,6 +513,80 @@ against, and it is tested.
 **Given up.** A delivery row per recipient, which is more rows than a query would
 need. At this scale that is not a cost worth optimising.
 
+### D-027 — An API key's authority is the intersection of its scopes and its owner's permissions
+
+**Decision.** A key carries `ownerPermissions ∩ scopes`. It is never a superuser,
+whatever its owner is. Scoping a key beyond what its owner holds is **refused at
+creation** rather than silently narrowed.
+
+**Why.** Without the intersection a key would be a way to become somebody else
+rather than a way for a person to act. The intersection also gives the property
+that makes key management tractable: withdrawing a permission from the owner
+narrows every key they ever issued, immediately, without anybody remembering to
+edit the keys. Verified by emptying the owner's role and watching the key start
+returning 403 with no change to the key.
+
+Refusing an excess scope rather than storing it is the honest version. A stored
+scope the owner does not hold would produce a key that looks more powerful than it
+is, and the difference would surface as a puzzling 403 much later.
+
+A key is never a superuser: a break-glass account issuing one would otherwise hand
+out its own unlimited authority with no scope able to narrow it.
+
+Only a SHA-256 hash and a short clear prefix are stored. SHA-256 without a salt is
+correct here and would be wrong for a password: a password is short, guessable and
+reused, so it needs a slow salted hash; a key is 256 bits of randomness, so there
+is nothing to guess and a slow hash would only make every request slower. The
+prefix is not a secret and is not treated as one -- it exists so a key can be
+identified in a list. Lookup is by prefix and the match is then confirmed by
+constant-time hash comparison, because searching on the visible part alone would
+mean the visible part was sufficient.
+
+The plaintext is shown once, held in the encrypted session for exactly one render,
+and never written to the database, a log or a URL.
+
+**Given up.** Nothing. This is the arrangement the documentation describes.
+
+### D-028 — The machine API is mounted outside the session middleware
+
+**Decision.** `/developer/api/v1/` is registered on the root router, not on the
+panel group. It authenticates with a key and returns JSON for every outcome,
+including failures.
+
+**Why.** Found by driving it. The panel group carries the session middleware, so
+the first version intercepted every key-authenticated request and redirected it to
+the sign-in page -- the key middleware never ran at all, and every machine caller
+received an HTML redirect rather than JSON. The unit tests passed throughout,
+because the defect was in where the route was attached rather than in what it did.
+
+A machine caller that follows a redirect to a sign-in page reports a parse failure
+instead of an authentication failure, which is the worst possible diagnostic. Every
+refusal is therefore JSON with a stable code, and the codes are documented on the
+reference page.
+
+**Given up.** The API does not share the panel's middleware, so anything the panel
+gains there -- request logging, size limits, CSRF -- has to be considered
+separately for the API. CSRF is not applicable to a bearer token; the others are.
+
+### D-029 — The API reference is hand-written, and the generated specification is not done
+
+**Decision.** `/developer/api` is a hand-written table of operations and error
+codes. The OpenAPI 3 specification and the drift test that `features.md` asks for
+are **not implemented**.
+
+**Why, and what is outstanding.** The drift test is the valuable half: it is what
+keeps a document true. A generated specification for a surface this size would be
+complete and unreadable, and the honest position is that the readable version is
+done and the machine-readable one is not, rather than shipping a generator with no
+test behind it.
+
+This is recorded as outstanding work rather than left to be discovered. It should
+be closed when the API surface is large enough that a hand-written table stops
+being maintainable, which is also when the drift test starts paying for itself.
+
+**Given up.** No machine-readable specification, so no generated client and no
+Swagger UI. An integrator reads a page instead.
+
 ---
 
 ## Pending

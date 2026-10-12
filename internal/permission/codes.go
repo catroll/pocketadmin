@@ -22,6 +22,7 @@ const (
 	ModuleJobs         = "jobs"
 	ModuleAnnouncement = "announcement"
 	ModuleWorkbench    = "workbench"
+	ModuleDeveloper    = "developer"
 )
 
 // Point is a single permission point.
@@ -167,6 +168,15 @@ const (
 	WorkbenchQuickLinkOwn = "workbench:quicklink:own"
 	WorkbenchQuickLinkAll = "workbench:quicklink:all"
 
+	// Developer. Issuing a key is separate from revoking one: an operator who can
+	// hand out access should not automatically be able to withdraw somebody
+	// else's, and the reverse is equally true. Seeing the specification is open to
+	// anyone who can read the API.
+	DeveloperKeyList   = "developer:key:list"
+	DeveloperKeyCreate = "developer:key:create"
+	DeveloperKeyRevoke = "developer:key:revoke"
+	DeveloperAPIView   = "developer:api:view"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves
 	// are separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -261,6 +271,11 @@ func All() []Point {
 		{WorkbenchMessageSend, "Send a message to administrators", ModuleWorkbench, "message", "send", "button"},
 		{WorkbenchQuickLinkOwn, "Edit your own quick links", ModuleWorkbench, "quicklink", "own", "button"},
 		{WorkbenchQuickLinkAll, "Edit the default quick links", ModuleWorkbench, "quicklink", "all", "button"},
+
+		{DeveloperKeyList, "List API keys", ModuleDeveloper, "key", "list", "menu"},
+		{DeveloperKeyCreate, "Issue an API key", ModuleDeveloper, "key", "create", "button"},
+		{DeveloperKeyRevoke, "Revoke an API key", ModuleDeveloper, "key", "revoke", "button"},
+		{DeveloperAPIView, "Open the API reference", ModuleDeveloper, "api", "view", "menu"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }

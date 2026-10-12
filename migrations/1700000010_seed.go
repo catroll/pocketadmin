@@ -108,6 +108,12 @@ func seededMenus() []menuSeed {
 			Path: "/audit/exceptions", Icon: "far fa-circle",
 			Permission: permission.AuditExceptionList, Sort: 40},
 
+		{Name: "developer", Title: "Developer", Type: "menu", Path: "/developer/keys",
+			Icon: "fas fa-code", Sort: 90, Permission: permission.DeveloperKeyList},
+		{Name: "developer.api", Title: "API reference", Parent: "developer", Type: "menu",
+			Path: "/developer/api", Icon: "far fa-circle",
+			Permission: permission.DeveloperAPIView, Sort: 20},
+
 		{Name: "settings", Title: "Settings", Type: "directory", Icon: "fas fa-gears", Sort: 70},
 		{Name: "settings.admin", Title: "Back office", Parent: "settings", Type: "menu",
 			Path: "/settings/admin", Icon: "far fa-circle",

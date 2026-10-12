@@ -19,6 +19,7 @@ import (
 
 	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/config"
+	"pocketadmin/internal/developer"
 	"pocketadmin/internal/jobs"
 	"pocketadmin/internal/logging"
 	"pocketadmin/internal/rbac"
@@ -74,6 +75,9 @@ type Server struct {
 	// announcements answers audience questions for the announcement module.
 	announcements *announcement.Engine
 
+	// apiKeyLimiter counts requests per key.
+	apiKeyLimiter *developer.Limiter
+
 	// guards records the permission each route requires, keyed
 	// "METHOD /path". selfCheckRoutes compares it against the router.
 	guards map[string]string
@@ -107,6 +111,7 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 		files:             openStorageDriver(cfg),
 		settings:          settings.NewEngine(app),
 		announcements:     announcement.NewEngine(app),
+		apiKeyLimiter:     developer.NewLimiter(),
 		guards:            make(map[string]string),
 	}
 
@@ -181,6 +186,15 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 
 		s.registerModuleRoutes(panel)
 	}
+
+	// The machine API is mounted on the root router, not on the panel group.
+	//
+	// The panel group carries the session middleware, which would intercept every
+	// request with an API key and redirect it to the sign-in page -- so the key
+	// middleware would never run and every machine caller would receive an HTML
+	// redirect instead of JSON. The first version of this was mounted on the
+	// group and did exactly that.
+	s.registerDeveloperAPIRoutes(r)
 
 	// selfCheckRoutes reads the router, so the engine must be assigned first.
 	s.http = r

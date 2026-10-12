@@ -37,6 +37,8 @@ var pageDefs = []pageDef{
 	{name: "mfa.html", pageFile: "pages/mfa.html", layoutFile: "layout_auth.html", layoutName: "layout_auth"},
 	{name: "org_chart.html", pageFile: "pages/org_chart.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "storage_upload.html", pageFile: "pages/storage_upload.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "developer_keys.html", pageFile: "pages/developer_keys.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "developer_api.html", pageFile: "pages/developer_api.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "workbench.html", pageFile: "pages/workbench.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "workbench_inbox.html", pageFile: "pages/workbench_inbox.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "announcements.html", pageFile: "pages/announcements.html", layoutFile: "layout.html", layoutName: "layout"},
@@ -238,6 +240,15 @@ func percent(part, total int64) float64 {
 }
 
 // relativeTime renders a coarse "x ago" string for dashboards.
+// formatDate renders a date without the time, for fields where only the day
+// matters -- an expiry or a revocation.
+func formatDate(ts types.DateTime) string {
+	if ts.IsZero() {
+		return ""
+	}
+	return ts.Time().Local().Format("2 Jan 2006")
+}
+
 func relativeTime(ts types.DateTime) string {
 	if ts.IsZero() {
 		return "—"
