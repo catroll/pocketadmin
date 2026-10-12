@@ -11,7 +11,8 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/pocketbase/pocketbase/core"
-	"golang.org/x/crypto/bcrypt"
+
+	"pocketadmin/internal/rbac"
 )
 
 const (
@@ -76,29 +77,76 @@ func limitBody(max int64) gin.HandlerFunc {
 	}
 }
 
-// requireAuth resolves the signed-in superuser from the session cookie and
-// aborts the request with a redirect to the login page when it is missing or
-// no longer valid.
+// requireAuth resolves the signed-in account from the session cookie and aborts
+// with a redirect when it is missing or no longer valid.
+//
+// Two identity paths are supported:
+//
+//   - a `users` account, which is the platform's normal sign-in identity. It is
+//     accepted even without an admin profile so the account can reach its own
+//     preferences; every module route then fails closed on its permission.
+//   - a PocketBase `_superusers` record, kept as break-glass so an operator can
+//     always repair a damaged RBAC configuration.
 func (s *Server) requireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sess := sessions.Default(c)
 
 		uid, _ := sess.Get(sessionUserKey).(string)
-		if uid != "" {
-			if rec, err := s.app.FindRecordById(core.CollectionNameSuperusers, uid); err == nil && rec.IsSuperuser() {
-				c.Set(ctxUser, rec)
-				c.Next()
-				return
-			}
+		if uid == "" {
+			s.clearSession(c)
+			s.redirectToLogin(c)
+			return
 		}
 
-		sess.Clear()
-		_ = sess.Save()
+		switch sess.Get(sessionKindKey) {
+		case sessionKindSuperuser:
+			rec, err := s.app.FindRecordById(core.CollectionNameSuperusers, uid)
+			if err != nil || rec == nil || !rec.IsSuperuser() {
+				s.clearSession(c)
+				s.redirectToLogin(c)
+				return
+			}
+			c.Set(ctxActor, rbac.SuperuserActor(rec))
+			c.Next()
+			return
+
+		case sessionKindUser:
+			rec, err := s.app.FindRecordById(rbac.CollectionUsers, uid)
+			if err != nil || rec == nil || rec.GetString("status") == "banned" {
+				s.clearSession(c)
+				s.redirectToLogin(c)
+				return
+			}
+
+			a, err := s.resolver.Resolve(rec)
+			if err != nil {
+				s.clearSession(c)
+				s.redirectToLogin(c)
+				return
+			}
+
+			c.Set(ctxActor, a)
+			c.Set(ctxUser, rec)
+			c.Next()
+			return
+		}
+
+		s.clearSession(c)
 		s.redirectToLogin(c)
 	}
 }
 
-// currentUser returns the authenticated superuser, or nil when unauthenticated.
+// clearSession drops the panel session cookie.
+func (s *Server) clearSession(c *gin.Context) {
+	sess := sessions.Default(c)
+	sess.Clear()
+	_ = sess.Save()
+}
+
+// currentUser returns the authenticated `users` record, or nil.
+//
+// A break-glass superuser has no `users` record, so callers that need a label
+// should prefer currentActor.
 func (s *Server) currentUser(c *gin.Context) *core.Record {
 	raw, ok := c.Get(ctxUser)
 	if !ok {
@@ -137,36 +185,6 @@ func (s *Server) handleLoginForm(c *gin.Context) {
 	})
 }
 
-// handleLogin authenticates against PocketBase's _superusers collection.
-func (s *Server) handleLogin(c *gin.Context) {
-	email := strings.TrimSpace(c.PostForm("email"))
-	password := c.PostForm("password")
-	next := safeNext(c.PostForm("next"))
-
-	rec, err := s.app.FindAuthRecordByEmail(core.CollectionNameSuperusers, email)
-	if err != nil || rec == nil {
-		// Burn a comparable amount of CPU so that the response time does not
-		// reveal whether the account exists.
-		_ = bcrypt.CompareHashAndPassword([]byte(s.dummyPasswordHash), []byte(password))
-		s.renderLoginFailure(c, email, next, "Invalid email or password.")
-		return
-	}
-
-	if !rec.ValidatePassword(password) || !rec.IsSuperuser() {
-		s.renderLoginFailure(c, email, next, "Invalid email or password.")
-		return
-	}
-
-	sess := sessions.Default(c)
-	sess.Set(sessionUserKey, rec.Id)
-	if err := sess.Save(); err != nil {
-		s.renderLoginFailure(c, email, next, "Could not start a session. Please try again.")
-		return
-	}
-
-	c.Redirect(http.StatusSeeOther, next)
-}
-
 func (s *Server) renderLoginFailure(c *gin.Context, email, next, message string) {
 	s.render(c, http.StatusUnauthorized, "login.html", struct {
 		base
@@ -181,26 +199,33 @@ func (s *Server) renderLoginFailure(c *gin.Context, email, next, message string)
 	})
 }
 
-// handleLogout clears the session.
-func (s *Server) handleLogout(c *gin.Context) {
-	sess := sessions.Default(c)
-	sess.Clear()
-	_ = sess.Save()
-	c.Redirect(http.StatusSeeOther, "/login")
-}
-
-// currentUserFromSession is a cheap "is there a session?" probe used before
-// the auth middleware runs (i.e. on the login page itself).
+// currentUserFromSession is a cheap "is there a session?" probe used before the
+// auth middleware runs (i.e. on the login page itself). It deliberately does not
+// touch the database beyond resolving the account.
 func (s *Server) currentUserFromSession(c *gin.Context) *core.Record {
-	uid, _ := sessions.Default(c).Get(sessionUserKey).(string)
+	sess := sessions.Default(c)
+
+	uid, _ := sess.Get(sessionUserKey).(string)
 	if uid == "" {
 		return nil
 	}
-	rec, err := s.app.FindRecordById(core.CollectionNameSuperusers, uid)
-	if err != nil || !rec.IsSuperuser() {
-		return nil
+
+	switch sess.Get(sessionKindKey) {
+	case sessionKindSuperuser:
+		rec, err := s.app.FindRecordById(core.CollectionNameSuperusers, uid)
+		if err != nil || rec == nil || !rec.IsSuperuser() {
+			return nil
+		}
+		return rec
+	case sessionKindUser:
+		rec, err := s.app.FindRecordById(rbac.CollectionUsers, uid)
+		if err != nil || rec == nil || rec.GetString("status") == "banned" {
+			return nil
+		}
+		return rec
 	}
-	return rec
+
+	return nil
 }
 
 // setFlash stores a one-shot notification for the next rendered page.

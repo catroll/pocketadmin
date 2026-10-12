@@ -18,6 +18,10 @@ import (
 	"pocketadmin/internal/logging"
 	"pocketadmin/internal/pbapp"
 	"pocketadmin/internal/server"
+
+	// Registering the platform's schema migrations is a side effect of the
+	// package's init functions.
+	_ "pocketadmin/migrations"
 )
 
 func main() {

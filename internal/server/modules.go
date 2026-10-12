@@ -1,0 +1,25 @@
+package server
+
+import "github.com/gin-gonic/gin"
+
+// registerModuleRoutes mounts the identity, organization and rbac modules.
+//
+// Every route goes through safe(), guarded() or superuserGuarded() so that the
+// startup self-check can prove no state-changing route was left unprotected.
+func (s *Server) registerModuleRoutes(panel *gin.RouterGroup) {
+	s.registerIdentityRoutes(panel)
+	s.registerOrganizationRoutes(panel)
+	s.registerRBACRoutes(panel)
+}
+
+// registerIdentityRoutes mounts the account, profile, session and log screens.
+func (s *Server) registerIdentityRoutes(panel *gin.RouterGroup) {
+}
+
+// registerOrganizationRoutes mounts the department, position and staff screens.
+func (s *Server) registerOrganizationRoutes(panel *gin.RouterGroup) {
+}
+
+// registerRBACRoutes mounts the role, permission, menu and dictionary screens.
+func (s *Server) registerRBACRoutes(panel *gin.RouterGroup) {
+}

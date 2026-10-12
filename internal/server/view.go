@@ -1,6 +1,10 @@
 package server
 
-import "github.com/pocketbase/pocketbase/core"
+import (
+	"github.com/pocketbase/pocketbase/core"
+
+	"pocketadmin/internal/rbac"
+)
 
 // base carries the data that every rendered page needs.
 //
@@ -16,6 +20,10 @@ type base struct {
 	PanelVer  string
 	Nav       []navCollection
 	Flash     *flash
+
+	// Actor is the resolved principal, or nil on pages rendered before
+	// authentication. Templates use it to hide controls the user cannot use.
+	Actor *rbac.Actor
 
 	// CurrentCollection highlights the active collection in the sidebar.
 	CurrentCollection string

@@ -18,6 +18,7 @@ import (
 
 	"pocketadmin/internal/config"
 	"pocketadmin/internal/logging"
+	"pocketadmin/internal/rbac"
 	"pocketadmin/internal/version"
 	webassets "pocketadmin/web"
 )
@@ -49,6 +50,16 @@ type Server struct {
 	cfg  *config.Config
 	http *gin.Engine
 
+	// resolver caches each account's resolved authority.
+	resolver *rbac.Resolver
+
+	// menus projects the navigation an actor may see.
+	menus *rbac.Projector
+
+	// guards records the permission each route requires, keyed
+	// "METHOD /path". selfCheckRoutes compares it against the router.
+	guards map[string]string
+
 	// dummyPasswordHash equalizes login timing for unknown accounts.
 	dummyPasswordHash string
 }
@@ -73,6 +84,9 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 		app:               app,
 		cfg:               cfg,
 		dummyPasswordHash: string(dummy),
+		resolver:          rbac.NewResolver(app),
+		menus:             rbac.NewProjector(app),
+		guards:            make(map[string]string),
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -119,20 +133,32 @@ func New(app core.App, cfg *config.Config, logger *slog.Logger) (*Server, error)
 	panel := r.Group("/")
 	panel.Use(limitBody(maxUploadBody), s.csrf(), s.requireAuth())
 	{
-		panel.GET("/", func(c *gin.Context) {
+		s.safe(panel, http.MethodGet, "/", func(c *gin.Context) {
 			c.Redirect(http.StatusSeeOther, "/dashboard")
 		})
-		panel.GET("/dashboard", s.handleDashboard)
-		panel.GET("/collections", s.handleCollections)
-		panel.GET("/collections/:collection/records", s.handleRecordList)
-		panel.GET("/collections/:collection/records/new", s.handleRecordNew)
-		panel.POST("/collections/:collection/records", s.handleRecordCreate)
-		panel.GET("/collections/:collection/records/:id/edit", s.handleRecordEdit)
-		panel.POST("/collections/:collection/records/:id", s.handleRecordUpdate)
-		panel.POST("/collections/:collection/records/:id/delete", s.handleRecordDelete)
+		s.safe(panel, http.MethodGet, "/dashboard", s.handleDashboard)
+		s.safe(panel, http.MethodGet, "/collections", s.handleCollections)
+		s.safe(panel, http.MethodGet, "/collections/:collection/records", s.handleRecordList)
+		s.safe(panel, http.MethodGet, "/collections/:collection/records/new", s.handleRecordNew)
+		s.safe(panel, http.MethodGet, "/collections/:collection/records/:id/edit", s.handleRecordEdit)
+
+		// The raw data browser writes directly to arbitrary collections, so it
+		// is not delegated to roles: it stays a break-glass capability.
+		s.superuserGuarded(panel, http.MethodPost, "/collections/:collection/records", s.handleRecordCreate)
+		s.superuserGuarded(panel, http.MethodPost, "/collections/:collection/records/:id", s.handleRecordUpdate)
+		s.superuserGuarded(panel, http.MethodPost, "/collections/:collection/records/:id/delete", s.handleRecordDelete)
+
+		s.registerModuleRoutes(panel)
 	}
 
+	// selfCheckRoutes reads the router, so the engine must be assigned first.
 	s.http = r
+
+	// Fail startup rather than serve an unprotected state-changing route.
+	if err := s.selfCheckRoutes(); err != nil {
+		return nil, err
+	}
+
 	return s, nil
 }
 
@@ -171,14 +197,18 @@ func (s *Server) render(c *gin.Context, status int, name string, data any) {
 
 // newBase assembles the data shared by every page.
 func (s *Server) newBase(c *gin.Context, title, active string) base {
-	user := s.currentUser(c)
-	if user == nil {
-		user = s.currentUserFromSession(c)
+	actor := s.actor(c)
+	if actor == nil {
+		// Pages rendered before the auth middleware runs (the login form) have no
+		// actor yet.
+		if rec := s.currentUserFromSession(c); rec != nil {
+			actor = &rbac.Actor{UserID: rec.Id, Email: rec.Email(), IsSuperuser: true}
+		}
 	}
 
 	email := ""
-	if user != nil {
-		email = user.Email()
+	if actor != nil {
+		email = actor.Email
 	}
 
 	csrf, _ := c.Get(ctxCSRF)
@@ -194,6 +224,7 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 		PanelVer:  version.Panel,
 		Nav:       s.navCollections(),
 		Flash:     s.flashFrom(c),
+		Actor:     actor,
 	}
 }
 
