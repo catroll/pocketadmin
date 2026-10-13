@@ -21,6 +21,7 @@ var Fields = map[string][]string{
 	"product_categories": {"description"},
 	"member_tiers":       {"description"},
 	"campaigns":          {"description"},
+	"monitor_nodes":      {"note"},
 	"products":           {"description"},
 }
 

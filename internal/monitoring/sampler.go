@@ -56,6 +56,9 @@ type Sampler struct {
 	done     chan struct{}
 	stopOnce sync.Once
 
+	// node is the row for the machine running this process, resolved on first write.
+	node *core.Record
+
 	mu         sync.Mutex
 	previous   *HostSample
 	lastSample time.Time
@@ -167,7 +170,16 @@ func (s *Sampler) write(sample HostSample) error {
 		return err
 	}
 
+	// The machine is resolved once and cached. A missing row is recreated rather than
+	// reported as a failure: a sample that belongs to no machine is worse than a
+	// registry row appearing on its own.
+	node, err := s.localNode()
+	if err != nil {
+		return err
+	}
+
 	rec := core.NewRecord(col)
+	rec.Set("node", node.Id)
 	rec.Set("at", sample.At.UTC())
 	rec.Set("cpuUsedSeconds", sample.CPUUsedSeconds)
 	rec.Set("cpuTotalSeconds", sample.CPUTotalSeconds)
@@ -185,7 +197,33 @@ func (s *Sampler) write(sample HostSample) error {
 		rec.Set("unsupported", sample.Unsupported)
 	}
 
-	return s.app.Save(rec)
+	if err := s.app.Save(rec); err != nil {
+		return err
+	}
+
+	return RecordSample(s.app, node, sample.At)
+}
+
+// localNode returns this machine's registry row, creating it when it is missing.
+func (s *Sampler) localNode() (*core.Record, error) {
+	s.mu.Lock()
+	cached := s.node
+	s.mu.Unlock()
+
+	if cached != nil {
+		return cached, nil
+	}
+
+	node, err := EnsureLocalNode(s.app)
+	if err != nil {
+		return nil, err
+	}
+
+	s.mu.Lock()
+	s.node = node
+	s.mu.Unlock()
+
+	return node, nil
 }
 
 // SampleNow takes a reading immediately, for a screen that has just been opened.

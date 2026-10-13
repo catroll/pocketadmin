@@ -32,6 +32,7 @@ const (
 	ModuleOrders        = "orders"
 	ModulePayments      = "payments"
 	ModuleRefunds       = "refunds"
+	ModuleNodes         = "nodes"
 )
 
 // Point is a single permission point.
@@ -282,6 +283,14 @@ const (
 	RefundExecute  = "refunds:refund:execute"
 	RefundSettings = "refunds:settings:manage"
 
+	// Monitored nodes. Registering a machine is separate from reading its figures,
+	// and submitting is the permission a remote agent's key carries -- it is
+	// deliberately not enough to read anything.
+	NodeList      = "monitoring:node:list"
+	NodeManage    = "monitoring:node:manage"
+	MetricsRead   = "monitoring:metrics:read"
+	MetricsSubmit = "monitoring:metrics:submit"
+
 	// RBACSettingsManage guards the settings surfaces. The surfaces themselves are
 	// separate modules; this point only covers who may change configuration.
 	RBACSettingsManage = "rbac:settings:manage"
@@ -441,6 +450,10 @@ func All() []Point {
 		{RefundReject, "Reject a refund", ModuleRefunds, "refund", "reject", "button"},
 		{RefundExecute, "Execute an approved refund", ModuleRefunds, "refund", "execute", "button"},
 		{RefundSettings, "Change the refund policy", ModuleRefunds, "settings", "manage", "button"},
+		{NodeList, "List monitored machines", ModuleNodes, "node", "list", "menu"},
+		{NodeManage, "Register and configure a machine", ModuleNodes, "node", "manage", "button"},
+		{MetricsRead, "Read host measurements", ModuleNodes, "metrics", "read", "api"},
+		{MetricsSubmit, "Submit measurements as a node", ModuleNodes, "metrics", "submit", "api"},
 		{RBACSettingsManage, "Change platform settings", ModuleRBAC, "settings", "manage", "menu"},
 	}
 }
