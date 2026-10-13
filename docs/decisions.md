@@ -1408,6 +1408,89 @@ behind the navigation -- tables, forms, field labels and help text -- are still 
 The catalogue and the two helpers are the whole mechanism, so adding a module is adding
 keys.
 
+### D-070 — The example dataset is a subcommand, and installation never runs it
+
+**Decision.** `pocketadmin demo seed` writes about 250 example rows. A fresh install is
+empty and stays empty until somebody types the command.
+
+**Why.** A panel that quietly filled itself with example customers would be worse than one
+that showed nothing, because nobody would know which records were theirs. The dataset is
+for a demonstration or a test, and both of those are somebody deciding to have one.
+
+`demo seed` refuses a second run rather than half-succeeding. The dataset has unique slugs,
+SKUs, coupon codes and order numbers, so a second seed inserts until it hits one and stops,
+leaving a half-duplicated state worse than either the old data or the new. The refusal names
+the row count and the flag to use.
+
+Without `--yes` the command prints every collection and row count it is about to destroy
+and asks. It also refuses when standard input is not a terminal, so a script cannot destroy
+a demonstration by accident. A `--force` flag was rejected: the size of what is being
+removed is the thing an operator needs to see, and a prompt is the only place they read it.
+
+**Given up.** Demonstrating the panel needs one extra command. That is the cost of not
+guessing which records are real.
+
+### D-071 — The examples are written through the modules, not around them
+
+**Decision.** Orders are created by `order.Create`, stock moves through the catalogue
+ledger, refunds go through request, approval and execution, memberships through
+`membership.GrantMembership`.
+
+**Why.** Inserting rows directly would produce a demonstration whose totals do not add up,
+which is the one thing a demonstration of a money system must not do. Writing through the
+modules means the example data is priced and scheduled by the same code the panel uses, so
+a defect in the arithmetic shows up as a broken demonstration rather than as a
+demonstration that is quietly wrong.
+
+It also means the dataset cannot show a state the panel could not have produced. A refund
+is requested by one person and approved by another because that is the rule the screen
+enforces; the examples show the rule rather than an exception to it.
+
+**Given up.** The seed is coupled to the modules' signatures and breaks when they change.
+That is the point: a change that breaks the examples is a change that would break a real
+caller.
+
+### D-072 — A reset detaches relations rather than ordering around them
+
+**Decision.** Before deleting anything, a reset empties every **optional** relation that
+points inside the set being cleared. Required relations are resolved by sweeping: delete
+whatever can be deleted, go round again.
+
+**Why.** The first version walked a hand-written list backwards so a child went before its
+parent. Deriving the requirement from the schemas showed that cannot work:
+`departments.leader` points at `employees` and `employees.department` points back, so those
+two have no correct order at all. Five more single-direction pairs were the wrong way
+round. The reset emptied fifteen of thirty-eight collections, hit a delete that a child
+record blocked, and returned no error -- so it printed a list of what it had cleared and
+the operator had no reason to look further.
+
+Detaching removes the problem instead of ordering around it. A required relation cannot be
+emptied -- a variant with no product is not a state the panel can produce, and the schema
+refuses it -- so those are left to the sweep, which derives the order from the data.
+
+A per-collection count afterwards turns a partial clear into a failure. **A clear that
+stops halfway is worse than one that fails**, because it looks like success.
+
+**Given up.** The reset does more work than a correct hand-written order would. It is
+bounded by the number of relation fields rather than the number of rows, and it cannot be
+wrong.
+
+### D-073 — Deriving an invariant beats writing it down twice
+
+**Decision.** The test that guards the reset derives its requirement from the relation
+fields in the schemas. It does not check a second hand-written list.
+
+**Why.** The order requirement was originally stated in prose and checked by reading. A
+test written that way would have agreed with the prose and missed all six mistakes. The
+schema-derived version found five of them on its first run, including the cycle that made
+the whole approach unfinishable.
+
+A hand-written list agrees with itself. It is the same reason the permission points are Go
+constants mirrored by a drift test rather than a document.
+
+**Given up.** The test reads schemas and is slower and more indirect than asserting a list.
+It is also the only version that can be wrong in a way somebody notices.
+
 ---
 
 ## Pending
