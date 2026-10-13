@@ -24,15 +24,23 @@ func (b base) Can(code string) bool {
 // Page-specific view models embed base, so templates can reference `.Title`,
 // `.CSRF`, `.Nav`, ... directly on the outer struct.
 type base struct {
-	Title     string
-	Active    string
-	CSRF      string
-	UserEmail string
-	AppName   string
-	PBVersion string
-	PanelVer  string
-	Nav       []navCollection
-	Flash     *flash
+	Title string
+	// Active is the menu node name of the page being rendered.
+	Active string
+
+	// ActivePath is the set of node names from a root to Active, so the sidebar can
+	// open the branch the operator is standing in. A string-prefix test cannot do it:
+	// it works only when a child's name begins with its parent's, which is true of
+	// `identity.accounts` under `identity` and false of `catalog.products` under the
+	// top-level `business`.
+	ActivePath map[string]bool
+	CSRF       string
+	UserEmail  string
+	AppName    string
+	PBVersion  string
+	PanelVer   string
+	Nav        []navCollection
+	Flash      *flash
 
 	// Actor is the resolved principal, or nil on pages rendered before
 	// authentication. Templates use it to hide controls the user cannot use.

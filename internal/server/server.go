@@ -328,9 +328,12 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 	csrf, _ := c.Get(ctxCSRF)
 	csrfToken, _ := csrf.(string)
 
+	menus := s.navFromActor(c)
+
 	return base{
 		Title:             title,
 		Active:            active,
+		ActivePath:        rbac.ActiveAncestors(menus, active),
 		CSRF:              csrfToken,
 		UserEmail:         email,
 		AppName:           s.cfg.AppName,
@@ -341,7 +344,7 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 		Actor:             actor,
 		Perms:             actorPermissions(actor),
 		Superuser:         actor != nil && actor.IsSuperuser,
-		Menus:             s.navFromActor(c),
+		Menus:             menus,
 		Theme:             s.preferenceTheme(c),
 		SidebarCollapsed:  s.preferenceSidebarCollapsed(c),
 		Impersonating:     s.impersonatorID(c) != "",

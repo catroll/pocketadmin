@@ -14,7 +14,7 @@
              role: the projector already dropped everything this actor may not
              see, including empty directories and the parents of granted
              children. */}}
-        {{template "menuNodes" dict "nodes" .Menus "active" .Active}}
+        {{template "menuNodes" dict "nodes" .Menus "active" .Active "path" .ActivePath}}
       </ul>
     </nav>
   </div>
@@ -25,15 +25,21 @@
      directories that have children. */}}
 {{define "menuNodes"}}
 {{$active := .active}}
+{{$path := .path}}
 {{range .nodes}}
+  {{/* Whether this node is on the path to the page being rendered, which is what
+       decides whether its branch is open and its heading lit. It is asked of the
+       server-computed path rather than of a name prefix: `catalog.products` is
+       under `business`, and neither name contains the other. */}}
+  {{$onPath := index $path .Name}}
   {{if .Children}}
-  <li class="nav-item {{if hasPrefix $active .Name}}menu-open{{end}}">
-    <a href="#" class="nav-link nav-parent {{if hasPrefix $active .Name}}active{{end}}">
+  <li class="nav-item {{if $onPath}}menu-open{{end}}">
+    <a href="#" class="nav-link nav-parent {{if $onPath}}active{{end}}">
       <i class="nav-icon {{.Icon}}"></i>
       <p>{{.Title}}<i class="nav-arrow fas fa-angle-right"></i></p>
     </a>
     <ul class="nav nav-treeview">
-      {{template "menuNodes" dict "nodes" .Children "active" $active}}
+      {{template "menuNodes" dict "nodes" .Children "active" $active "path" $path}}
     </ul>
   </li>
   {{else}}
