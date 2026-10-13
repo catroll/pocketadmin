@@ -1,0 +1,132 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <h4 class="mb-0">{{.Name}}</h4>
+    <div class="small text-body-secondary">
+      <code>{{.Code}}</code>
+      {{if .Hostname}}&middot; {{.Hostname}}{{end}}
+      {{if .OS}}&middot; {{.OS}}{{end}}
+      {{if .Agent}}&middot; agent {{.Agent}}{{end}}
+      {{if .IsSelf}}&middot; <span class="badge text-bg-info">this machine</span>{{end}}
+      &middot;
+      {{if eq .Health.State "active"}}<span class="badge text-bg-success">reporting</span>
+      {{else if eq .Health.State "stale"}}<span class="badge text-bg-warning">{{.Health.Detail}}</span>
+      {{else if eq .Health.State "off"}}<span class="badge text-bg-secondary">switched off</span>
+      {{else}}<span class="badge text-bg-danger">{{.Health.Detail}}</span>{{end}}
+    </div>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    <a href="/monitoring/nodes" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Machines</a>
+  </div>
+</div>
+
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <div class="btn-group btn-group-sm">
+      {{$w := .Window}}
+      {{range .Windows}}
+      <a href="/monitoring/nodes/{{$.Record.Id}}?window={{.}}"
+         class="btn btn-outline-secondary {{if eq . $w}}active{{end}}">{{.}}</a>
+      {{end}}
+    </div>
+  </div>
+  <div class="col-lg-4 text-lg-end small text-body-secondary">
+    {{.Samples}} reading(s) recorded
+    {{if .Seen}}&middot; last {{.Seen}}{{end}}
+  </div>
+</div>
+
+{{if .HasData}}
+<div class="row">
+  {{range .Charts}}
+  <div class="col-lg-6 mb-3">
+    <div class="card card-outline card-primary h-100">
+      <div class="card-header">
+        <h3 class="card-title">{{.Title}}</h3>
+        {{if .Unit}}<div class="card-tools small text-body-secondary">{{.Unit}}</div>{{end}}
+      </div>
+      <div class="card-body">
+        <div class="chart-box" style="height:200px" data-series="{{.JSON}}"></div>
+      </div>
+    </div>
+  </div>
+  {{end}}
+</div>
+<div class="small text-body-secondary">
+  A bucket with no reading is drawn as a break rather than as zero: a machine that was
+  down for an hour was absent, not idle. Network figures are differences between
+  consecutive readings, because the stored counters are cumulative since boot.
+</div>
+{{else}}
+<div class="card">
+  <div class="card-body text-center text-body-secondary py-5">
+    No readings in this window.
+    {{if .Samples}}Try a longer one.{{else}}This machine has not reported yet.{{end}}
+  </div>
+</div>
+{{end}}
+
+{{if .CanManage}}
+<div class="row mt-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Configure</h3></div>
+      <div class="card-body">
+        <form method="post" action="/monitoring/nodes/save">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <input type="hidden" name="id" value="{{.Record.Id}}">
+          <div class="mb-2">
+            <label class="form-label small" for="name">Name</label>
+            <input type="text" class="form-control form-control-sm" id="name" name="name" value="{{.Name}}" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="code">Code</label>
+            <input type="text" class="form-control form-control-sm font-monospace" id="code" name="code"
+                   value="{{.Code}}" {{if .Samples}}readonly{{end}} required>
+            {{if .Samples}}<div class="form-text">Fixed, because this machine has already reported.</div>{{end}}
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="note">Note</label>
+            <textarea class="form-control form-control-sm" id="note" name="note" rows="2">{{.Record.GetString "note"}}</textarea>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small" for="status">Status</label>
+            <select class="form-select form-select-sm" id="status" name="status">
+              <option value="active" {{if eq .Status "active"}}selected{{end}}>active</option>
+              <option value="disabled" {{if eq .Status "disabled"}}selected{{end}}>disabled</option>
+            </select>
+            <div class="form-text">A switched-off machine is not recorded, and its agent is told so.</div>
+          </div>
+          <button class="btn btn-primary btn-sm">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {{if not .IsSelf}}
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Remove</h3></div>
+      <div class="card-body">
+        <form method="post" action="/monitoring/nodes/{{.Record.Id}}/delete">
+          <input type="hidden" name="_csrf" value="{{.CSRF}}">
+          <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" id="withHistory" name="withHistory" value="1">
+            <label class="form-check-label small" for="withHistory">
+              Also delete its {{.Samples}} recorded reading(s)
+            </label>
+          </div>
+          <div class="form-text mb-2">
+            Left unchecked the readings stay, which is the default: losing a machine's
+            history as a side effect of tidying the list is a surprising amount to lose
+            to one click.
+          </div>
+          <button class="btn btn-outline-danger btn-sm">Remove the machine</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}
+{{end}}

@@ -59,6 +59,8 @@ var pageDefs = []pageDef{
 	{name: "catalog_products.html", pageFile: "pages/catalog_products.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "catalog_product_form.html", pageFile: "pages/catalog_product_form.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "catalog_variants.html", pageFile: "pages/catalog_variants.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "monitoring_nodes.html", pageFile: "pages/monitoring_nodes.html", layoutFile: "layout.html", layoutName: "layout"},
+	{name: "monitoring_node.html", pageFile: "pages/monitoring_node.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "monitoring.html", pageFile: "pages/monitoring.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "monitoring_system.html", pageFile: "pages/monitoring_system.html", layoutFile: "layout.html", layoutName: "layout"},
 	{name: "integrations.html", pageFile: "pages/integrations.html", layoutFile: "layout.html", layoutName: "layout"},

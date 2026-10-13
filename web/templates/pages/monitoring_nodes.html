@@ -1,0 +1,102 @@
+{{define "content"}}
+<div class="row mb-3">
+  <div class="col-lg-8">
+    <p class="text-body-secondary mb-0">
+      Each machine reports its own processor, memory, disk and network use. This machine
+      reports by itself; another one does it with an API key bound to it, so one agent
+      cannot rewrite another machine's history.
+    </p>
+  </div>
+  <div class="col-lg-4 text-lg-end small text-body-secondary">
+    {{if .Enabled}}Reporting every {{.Interval}}, kept {{.Retention}}.{{else}}Sampling is off.{{end}}
+    <a href="{{.SettingsSite}}" class="ms-1">Configure</a>
+  </div>
+</div>
+
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-server me-1"></i>Machines</h3>
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Machine</th><th>Processor</th><th>Memory</th><th>Disk</th>
+          <th>Last reported</th><th>Health</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td>
+            <a href="/monitoring/nodes/{{.Record.Id}}">{{.Name}}</a>
+            {{if .IsSelf}}<span class="badge text-bg-info">this one</span>{{end}}
+            <div class="small text-body-secondary">
+              <code>{{.Code}}</code>
+              {{if .Hostname}}&middot; {{.Hostname}}{{end}}
+              {{if .OS}}&middot; {{.OS}}{{end}}
+              {{if .Agent}}&middot; agent {{.Agent}}{{end}}
+            </div>
+          </td>
+          <td class="small">{{if .Summary.CPU}}{{.Summary.CPU}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
+          <td class="small">{{if .Summary.Memory}}{{.Summary.Memory}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
+          <td class="small">{{if .Summary.Disk}}{{.Summary.Disk}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
+          <td class="small">
+            {{if .Seen}}{{.Seen}}{{else}}<span class="text-body-secondary">never</span>{{end}}
+            <div class="small text-body-secondary">{{.Samples}} reading(s)</div>
+          </td>
+          <td>
+            {{if eq .Health.State "active"}}<span class="badge text-bg-success">{{.Health.Detail}}</span>
+            {{else if eq .Health.State "stale"}}<span class="badge text-bg-warning">{{.Health.Detail}}</span>
+            {{else if eq .Health.State "off"}}<span class="badge text-bg-secondary">switched off</span>
+            {{else}}<span class="badge text-bg-danger">{{.Health.Detail}}</span>{{end}}
+          </td>
+          <td class="text-end">
+            <a href="/monitoring/nodes/{{.Record.Id}}" class="btn btn-sm btn-secondary"><i class="fas fa-chart-line"></i></a>
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="7" class="text-center text-body-secondary py-4">No machines are registered.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{if .CanManage}}
+<div class="card">
+  <div class="card-header"><h3 class="card-title">Register a machine</h3></div>
+  <div class="card-body">
+    <form method="post" action="/monitoring/nodes/save" class="row g-2 align-items-end">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}">
+      <div class="col-sm-3">
+        <label class="form-label small" for="name">Name</label>
+        <input type="text" class="form-control form-control-sm" id="name" name="name" required>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="code">Code</label>
+        <input type="text" class="form-control form-control-sm font-monospace" id="code" name="code" required>
+        <div class="form-text">What the agent reports under.</div>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label small" for="note">Note</label>
+        <input type="text" class="form-control form-control-sm" id="note" name="note">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small" for="status">Status</label>
+        <select class="form-select form-select-sm" id="status" name="status">
+          <option value="active">active</option>
+          <option value="disabled">disabled</option>
+        </select>
+      </div>
+      <div class="col-sm-1"><button class="btn btn-primary btn-sm w-100">Add</button></div>
+    </form>
+    <div class="form-text mt-2">
+      Then issue an API key on <a href="/developer/keys">the API keys page</a> with the
+      "Submit measurements as a node" permission and bind it to this machine. The code
+      cannot change once the machine has reported: renaming it would orphan its history.
+    </div>
+  </div>
+</div>
+{{end}}
+{{end}}
