@@ -1,6 +1,7 @@
 package jobs_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -168,7 +169,7 @@ func TestParseRejectsMalformedExpressions(t *testing.T) {
 	bad := map[string]string{
 		"":                  "empty",
 		"* * * *":           "four fields",
-		"* * * * * *":       "six fields",
+		"* * * * * * *":     "seven fields",
 		"60 * * * *":        "minute out of range",
 		"* 24 * * *":        "hour out of range",
 		"* * 0 * *":         "day of month below one",
@@ -271,5 +272,115 @@ func TestNextRespectsTheLocation(t *testing.T) {
 	}
 	if got.Hour() != 0 {
 		t.Errorf("the result is at hour %d local, want 0", got.Hour())
+	}
+}
+
+// TestSixFieldsAddSeconds is the shape operators expect from Quartz and Spring: the
+// seconds field leads, and the familiar five shift along behind it.
+func TestSixFieldsAddSeconds(t *testing.T) {
+	base := time.Date(2026, time.March, 15, 10, 30, 45, 0, time.UTC)
+
+	cases := []struct {
+		expression string
+		want       time.Time
+		why        string
+	}{
+		{"*/5 * * * * *", time.Date(2026, time.March, 15, 10, 30, 50, 0, time.UTC), "every five seconds"},
+		{"* * * * * *", time.Date(2026, time.March, 15, 10, 30, 46, 0, time.UTC), "every second"},
+		{"0 * * * * *", time.Date(2026, time.March, 15, 10, 31, 0, 0, time.UTC), "on the minute"},
+		{"30 * * * * *", time.Date(2026, time.March, 15, 10, 31, 30, 0, time.UTC), "at :30"},
+		{"45 30 10 * * *", time.Date(2026, time.March, 16, 10, 30, 45, 0, time.UTC), "once a day, tomorrow"},
+	}
+
+	for _, tc := range cases {
+		schedule, err := jobs.ParseSchedule(tc.expression)
+		if err != nil {
+			t.Errorf("%q (%s) was refused: %v", tc.expression, tc.why, err)
+			continue
+		}
+		if !schedule.HasSeconds() {
+			t.Errorf("%q does not report a seconds field", tc.expression)
+		}
+
+		got, ok := schedule.Next(base)
+		if !ok {
+			t.Errorf("%q (%s) found no occurrence", tc.expression, tc.why)
+			continue
+		}
+		if !got.Equal(tc.want) {
+			t.Errorf("%q (%s) gave %s, want %s", tc.expression, tc.why,
+				got.Format("2006-01-02 15:04:05"), tc.want.Format("2006-01-02 15:04:05"))
+		}
+	}
+}
+
+// TestFiveFieldsStayOnTheMinute: the familiar shape is unchanged, and its seconds are
+// always zero.
+func TestFiveFieldsStayOnTheMinute(t *testing.T) {
+	base := time.Date(2026, time.March, 15, 10, 30, 45, 0, time.UTC)
+
+	schedule, err := jobs.ParseSchedule("*/15 * * * *")
+	if err != nil {
+		t.Fatalf("ParseSchedule: %v", err)
+	}
+	if schedule.HasSeconds() {
+		t.Error("a five-field expression reports a seconds field")
+	}
+
+	got, ok := schedule.Next(base)
+	if !ok {
+		t.Fatal("no occurrence found")
+	}
+	if got.Second() != 0 {
+		t.Errorf("a five-field occurrence is at second %d, want 0", got.Second())
+	}
+	if want := time.Date(2026, time.March, 15, 10, 45, 0, 0, time.UTC); !got.Equal(want) {
+		t.Errorf("got %s, want %s", got.Format("15:04:05"), want.Format("15:04:05"))
+	}
+}
+
+// TestTheSecondsFieldAcceptsWhatTheMinuteFieldDoes: ranges, steps and lists, and an
+// error that names "second" rather than "minute".
+func TestTheSecondsFieldAcceptsWhatTheMinuteFieldDoes(t *testing.T) {
+	for _, expression := range []string{
+		"0,15,30,45 * * * * *",
+		"10-20 * * * * *",
+		"*/10 * * * * *",
+	} {
+		if _, err := jobs.ParseSchedule(expression); err != nil {
+			t.Errorf("%q was refused: %v", expression, err)
+		}
+	}
+
+	// An out-of-range second names the field an operator can find.
+	_, err := jobs.ParseSchedule("75 * * * * *")
+	if err == nil {
+		t.Fatal("a second above 59 was accepted")
+	}
+	if !strings.Contains(err.Error(), "second") {
+		t.Errorf("the refusal does not name the seconds field: %v", err)
+	}
+	if strings.Contains(err.Error(), "minute") {
+		t.Errorf("the refusal names the wrong field: %v", err)
+	}
+}
+
+// TestNamesAreResolvedByFieldNotPosition is a regression test for a defect the seconds
+// field would have introduced.
+//
+// The month and weekday name lookups were keyed on the field's index. That was correct
+// while every expression had five fields, and a leading seconds field moves both by
+// one -- so "jan" would have been accepted in the hour field and refused in the month.
+func TestNamesAreResolvedByFieldNotPosition(t *testing.T) {
+	if _, err := jobs.ParseSchedule("0 0 9 * jan *"); err != nil {
+		t.Errorf("a month name in a six-field expression was refused: %v", err)
+	}
+	if _, err := jobs.ParseSchedule("0 0 9 * * mon"); err != nil {
+		t.Errorf("a weekday name in a five-field expression was refused: %v", err)
+	}
+
+	// A month name in the hour field is still a mistake.
+	if _, err := jobs.ParseSchedule("0 jan * * * *"); err == nil {
+		t.Error("a month name was accepted in the hour field")
 	}
 }

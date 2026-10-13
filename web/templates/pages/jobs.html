@@ -22,8 +22,12 @@
 {{end}}
 
 <div class="card card-primary card-outline">
-  <div class="card-header">
+<div class="card-header">
     <h3 class="card-title"><i class="fas fa-clock me-1"></i>Scheduled tasks</h3>
+    <div class="card-tools small text-body-secondary">
+      Five fields are <code>minute hour day month weekday</code>. Six add a leading
+      <code>second</code>, so <code>*/30 * * * * *</code> is every thirty seconds.
+    </div>
   </div>
   <div class="card-body table-responsive p-0">
     <table class="table table-hover mb-0">

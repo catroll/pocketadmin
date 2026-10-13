@@ -40,13 +40,32 @@ type Scheduler struct {
 	// running is a wait group so shutdown can wait for in-flight work rather
 	// than killing it mid-write.
 	wg sync.WaitGroup
+
+	// rescan bounds how long the loop will go without looking at the database.
+	//
+	// A schedule can be changed, or a task created, by an operator at any moment, and
+	// the loop would not know. Re-looking at least this often means such a change is
+	// picked up promptly without a query on every tick.
+	rescan time.Duration
+
+	// dueMu guards the two fields below, which are the loop's memory of when it next
+	// has something to do.
+	dueMu sync.Mutex
+
+	// earliestDue is the soonest nextRunAt the last look saw. While the clock is
+	// short of it there is provably nothing to run, so the query is skipped.
+	earliestDue time.Time
+
+	// lastLook is when the database was last consulted.
+	lastLook time.Time
 }
 
 // NewScheduler returns a scheduler over a store.
 func NewScheduler(store *Store) *Scheduler {
 	return &Scheduler{
 		store:         store,
-		tick:          20 * time.Second,
+		tick:          time.Second,
+		rescan:        30 * time.Second,
 		maxConcurrent: 4,
 		stop:          make(chan struct{}),
 		done:          make(chan struct{}),
@@ -82,12 +101,57 @@ func (s *Scheduler) loop(app core.App) {
 			slog.Info("scheduler stopped")
 			return
 		case <-ticker.C:
+			now := time.Now()
+
 			s.lastTickMu.Lock()
-			s.lastTick = time.Now()
+			s.lastTick = now
 			s.lastTickMu.Unlock()
+
+			// The tick is every second, because a schedule may name a second. The
+			// query is not: while the clock is short of the earliest due time there is
+			// nothing that could be due, so the database is left alone.
+			if !s.shouldLook(now) {
+				continue
+			}
+
 			s.runDue(app)
 		}
 	}
+}
+
+// shouldLook reports whether it is worth asking the database for due work.
+//
+// It answers yes when the earliest known due time has arrived, and also when the loop
+// has gone `rescan` without looking -- because a schedule may have been changed by an
+// operator, and the loop's memory of the earliest due time would then be stale.
+func (s *Scheduler) shouldLook(now time.Time) bool {
+	s.dueMu.Lock()
+	defer s.dueMu.Unlock()
+
+	if now.Sub(s.lastLook) >= s.rescan {
+		return true
+	}
+	return !s.earliestDue.IsZero() && !now.Before(s.earliestDue)
+}
+
+// rememberDue records when the loop next has something to do.
+//
+// It is called after every look. The value comes from the database rather than from
+// the jobs that were started, because the job that is due next may be one that was not
+// due yet, and a schedule changed a moment ago is already reflected in its row.
+func (s *Scheduler) rememberDue(app core.App, now time.Time) {
+	s.dueMu.Lock()
+	defer s.dueMu.Unlock()
+
+	s.lastLook = now
+	s.earliestDue = time.Time{}
+
+	records, err := app.FindRecordsByFilter(CollectionJobs,
+		"status = 'enabled' && nextRunAt != ''", "nextRunAt", 1, 0)
+	if err != nil || len(records) == 0 {
+		return
+	}
+	s.earliestDue = records[0].GetDateTime("nextRunAt").Time()
 }
 
 // LastTick returns when the loop last looked for due work.
@@ -99,6 +163,10 @@ func (s *Scheduler) LastTick() time.Time {
 
 // runDue starts every job whose time has arrived.
 func (s *Scheduler) runDue(app core.App) {
+	// The memory is refreshed however this returns, so a fault inside does not leave
+	// the loop convinced there is nothing to do for ever.
+	defer s.rememberDue(app, time.Now())
+
 	defer func() {
 		// A panic in the scheduler would take down the process, and a scheduling
 		// loop is not worth that. The job runner already contains handler panics
