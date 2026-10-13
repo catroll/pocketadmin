@@ -1243,6 +1243,56 @@ refusal risks sending the same refund twice to a provider that is about to accep
 **Given up.** A genuinely transient failure that the provider forgot to classify needs
 a person to press the button again. That is the correct direction to be wrong in.
 
+### D-063 — Cron accepts a leading seconds field, superseding the earlier refusal
+
+**Decision.** A cron expression may have five fields or six. Six adds a **leading**
+seconds field, the shape Quartz and Spring use. Anything else is refused by count.
+
+**Why, and what it supersedes.** This reverses D-021's neighbour rule that six-field
+expressions are rejected. The rejection existed to prevent a silent misreading -- a
+six-field expression read as five would take seconds for minutes -- and the field count
+already prevents that, so the rejection was buying nothing once seconds were wanted.
+
+The count is the only safe discriminator: five or six, nothing else, because there is no
+ambiguity about which shape an expression is when it has to be one of two.
+
+The scheduler's tick went from twenty seconds to one, because a twenty-second tick cannot
+run a ten-second task more often than once per twenty seconds -- the field would have
+parsed and then meant nothing. The **query** did not follow the tick: the loop remembers
+the earliest `nextRunAt` it has seen and skips the database entirely while the clock is
+short of it, re-looking at least every thirty seconds so an operator's change is still
+picked up. An empty tick is a mutex read.
+
+**Given up.** Five-field expressions keep their old meaning, so nothing an operator has
+already written changes. The cost is that the two shapes are distinguished by a count,
+which is not self-describing -- the jobs screen now says both shapes out loud.
+
+### D-064 — Host measurements store counters, not rates
+
+**Decision.** The lightweight host monitor stores processor time as used and total
+seconds, and network as cumulative byte totals. Percentages and rates are derived when
+the rows are read.
+
+**Why.** A percentage computed at write time is frozen against the interval it was
+computed over; if that interval is later read differently the figure cannot be
+recomputed. A rate needs two rows and the time between them, so storing one makes each
+row's meaning depend on its neighbour's. Both are cheap to derive and impossible to get
+wrong twice.
+
+The sampler is a **goroutine**, not a scheduled task. A task would write a run row every
+time it fired -- a thousand a day at the default interval, every one saying "took a
+measurement" -- and the interval would be limited to what a cron expression can say. A
+one-second ticker comparing two times is cheaper than either, and fifty-nine of every
+sixty wake-ups do nothing at all.
+
+A platform that cannot read something lists it as unavailable rather than reporting zero.
+Zero and unknown are different claims, and a monitoring screen is exactly where confusing
+them costs somebody an afternoon.
+
+**Given up.** The screen does the arithmetic, so two rows are needed before a rate can be
+shown and the first row after a restart has none. That is stated in the card's footer
+rather than hidden.
+
 ---
 
 ## Pending
