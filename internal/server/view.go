@@ -83,9 +83,8 @@ type navCollection struct {
 
 type dashboardPage struct {
 	base
-	Stats       dashboardStats
-	Collections []collectionStat
-	Chart       chartData
+	Stats dashboardStats
+	Chart chartData
 }
 
 type dashboardStats struct {

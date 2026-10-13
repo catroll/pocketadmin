@@ -72,42 +72,6 @@
   </div>
 </div>
 
-<div class="card card-primary card-outline">
-  <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-database me-1"></i>Collections</h3>
-    <div class="card-tools">
-      <a href="/collections" class="btn btn-tool" aria-label="Open the collections page"><i class="fas fa-expand"></i></a>
-    </div>
-  </div>
-  <div class="card-body table-responsive p-0">
-    <table class="table table-hover table-striped mb-0">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th class="text-end">Fields</th>
-          <th class="text-end">Records</th>
-          <th class="text-end">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{range .Collections}}
-        <tr>
-          <td>
-            <a href="/collections/{{.Name}}/records">{{.Name}}</a>
-            {{if .System}}<span class="badge text-bg-secondary rounded-pill">sys</span>{{end}}
-          </td>
-          <td><span class="badge text-bg-info">{{.Type}}</span></td>
-          <td class="text-end">{{.FieldCount}}</td>
-          <td class="text-end">{{if .IsView}}&mdash;{{else}}{{.RecordCount}}{{end}}</td>
-          <td class="text-end">
-            <a href="/collections/{{.Name}}/records" class="btn btn-sm btn-secondary"
-               title="Browse records" aria-label="Browse records in {{.Name}}">
-              <i class="fas fa-list"></i>
-            </a>
-          </td>
-        </tr>
-        {{end}}
       </tbody>
     </table>
   </div>

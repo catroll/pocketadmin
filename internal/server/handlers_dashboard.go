@@ -14,8 +14,12 @@ import (
 // maxChartSeries caps how many collections appear in the dashboard chart.
 const maxChartSeries = 12
 
-// handleDashboard renders the overview page: headline counters, a per
-// collection record chart and the storage footprint.
+// handleDashboard renders the overview page: headline counters, a per-collection
+// record chart and the storage footprint.
+//
+// It deliberately does not list the collections. There is a page for that, reachable
+// from the navigation, and a copy of its table on the dashboard is a second thing to
+// keep in step that nobody reads twice.
 func (s *Server) handleDashboard(c *gin.Context) {
 	collections, err := s.app.FindAllCollections()
 	if err != nil {
@@ -86,8 +90,7 @@ func (s *Server) handleDashboard(c *gin.Context) {
 			DatabaseBytes: databaseBytes,
 			UploadBytes:   uploadBytes,
 		},
-		Collections: stats,
-		Chart:       chart,
+		Chart: chart,
 	})
 }
 
