@@ -7,38 +7,37 @@
 <div class="row mb-3">
   <div class="col-lg-8">
     <p class="text-body-secondary mb-0">
-      Tasks are registered in the application. You choose the schedule and whether each one runs.
+      {{.T "jobs.intro"}}
     </p>
   </div>
   <div class="col-lg-4 text-lg-end">
-    <span class="badge text-bg-secondary">next run is computed from now, missed runs are not replayed</span>
+    <span class="badge text-bg-secondary">{{.T "jobs.scheduleNote"}}</span>
   </div>
 </div>
 
 {{if .Running}}
 <div class="alert alert-info py-2">
-  <i class="fas fa-spinner fa-spin me-1"></i>Running now: {{range .Running}}<code>{{.}}</code> {{end}}
+  <i class="fas fa-spinner fa-spin me-1"></i>{{.T "jobs.runningNow"}} {{range .Running}}<code>{{.}}</code> {{end}}
 </div>
 {{end}}
 
 <div class="card card-primary card-outline">
 <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-clock me-1"></i>Scheduled tasks</h3>
+    <h3 class="card-title"><i class="fas fa-clock me-1"></i>{{.T "nav.jobs"}}</h3>
     <div class="card-tools small text-body-secondary">
-      Five fields are <code>minute hour day month weekday</code>. Six add a leading
-      <code>second</code>, so <code>*/30 * * * * *</code> is every thirty seconds.
+      {{.T "jobs.cronHintFields"}} <code>{{.T "jobs.cronFieldNames"}}</code>. {{.T "jobs.cronHintSix"}} <code>{{.T "jobs.cronSecond"}}</code>, {{.T "jobs.cronSo"}} <code>*/30 * * * * *</code> {{.T "jobs.cronEveryThirty"}}
     </div>
   </div>
   <div class="card-body table-responsive p-0">
     <table class="table table-hover mb-0">
       <thead>
         <tr>
-          <th>Task</th>
-          <th>Schedule</th>
-          <th>State</th>
-          <th>Last run</th>
-          <th>Next run</th>
-          <th class="text-end">Actions</th>
+          <th>{{.T "jobs.task"}}</th>
+          <th>{{.T "subscriptions.detail.schedule"}}</th>
+          <th>{{.T "common.state"}}</th>
+          <th>{{.T "common.lastRun"}}</th>
+          <th>{{.T "jobs.nextRun"}}</th>
+          <th class="text-end">{{.T "common.actions"}}</th>
         </tr>
       </thead>
       <tbody>
@@ -48,8 +47,8 @@
             <div class="fw-semibold">{{.Name}}</div>
             <code class="small text-body-secondary">{{.Code}}</code>
             {{if .Orphaned}}
-            <span class="badge text-bg-danger ms-1" title="No handler with this code is registered in this build">
-              no handler
+            <span class="badge text-bg-danger ms-1" title="{{$.T "jobs.noHandlerHint"}}">
+              {{$.T "jobs.noHandler"}}
             </span>
             {{end}}
             {{if .Description}}<div class="small text-body-secondary">{{.Description}}</div>{{end}}
@@ -59,8 +58,8 @@
             <form method="post" action="/jobs/{{.Record.Id}}/schedule" class="d-flex gap-1">
               <input type="hidden" name="_csrf" value="{{$.CSRF}}">
               <input type="text" class="form-control form-control-sm font-monospace" name="cron"
-                     value="{{.Cron}}" size="16" aria-label="Cron expression">
-              <button type="submit" class="btn btn-sm btn-secondary" title="Save the schedule">
+                     value="{{.Cron}}" size="16" aria-label="{{$.T "jobs.cron"}}">
+              <button type="submit" class="btn btn-sm btn-secondary" title="{{$.T "jobs.saveSchedule"}}">
                 <i class="fas fa-check"></i>
               </button>
             </form>
@@ -69,13 +68,13 @@
             {{end}}
           </td>
           <td>
-            {{if eq .Status "enabled"}}<span class="badge text-bg-success">enabled</span>
-            {{else if eq .Status "paused"}}<span class="badge text-bg-warning">paused</span>
-            {{else}}<span class="badge text-bg-secondary">disabled</span>{{end}}
-            {{if .Running}}<span class="badge text-bg-info">running</span>{{end}}
+            {{if eq .Status "enabled"}}<span class="badge text-bg-success">{{$.T "jobs.status.enabled"}}</span>
+            {{else if eq .Status "paused"}}<span class="badge text-bg-warning">{{$.T "jobs.status.paused"}}</span>
+            {{else}}<span class="badge text-bg-secondary">{{$.T "jobs.status.disabled"}}</span>{{end}}
+            {{if .Running}}<span class="badge text-bg-info">{{$.T "jobs.status.running"}}</span>{{end}}
           </td>
           <td class="small">
-            {{if .LastRun}}{{.LastRun}}{{else}}<span class="text-body-secondary">never</span>{{end}}
+            {{if .LastRun}}{{.LastRun}}{{else}}<span class="text-body-secondary">{{$.T "jobs.never"}}</span>{{end}}
             {{if .LastStatus}}
             <div>
               {{if eq .LastStatus "success"}}<span class="badge text-bg-success">{{.LastStatus}}</span>
@@ -86,13 +85,13 @@
           </td>
           <td class="small">{{if .NextRun}}{{.NextRun}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
           <td class="text-end text-nowrap">
-            <a href="/jobs/{{.Record.Id}}/runs" class="btn btn-sm btn-secondary" title="Run history">
+            <a href="/jobs/{{.Record.Id}}/runs" class="btn btn-sm btn-secondary" title="{{$.T "page.Run history"}}">
               <i class="fas fa-list"></i>
             </a>
             {{if $.CanRun}}
             <form method="post" class="d-inline" action="/jobs/{{.Record.Id}}/run">
               <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-              <button type="submit" class="btn btn-sm btn-primary" title="Run now"
+              <button type="submit" class="btn btn-sm btn-primary" title="{{$.T "jobs.runNow"}}"
                       {{if .Orphaned}}disabled{{end}}>
                 <i class="fas fa-play"></i>
               </button>
@@ -102,14 +101,14 @@
             <form method="post" class="d-inline" action="/jobs/{{.Record.Id}}/state">
               <input type="hidden" name="_csrf" value="{{$.CSRF}}">
               {{if eq .Status "enabled"}}
-              <button type="submit" name="status" value="paused" class="btn btn-sm btn-outline-warning" title="Pause">
+              <button type="submit" name="status" value="paused" class="btn btn-sm btn-outline-warning" title="{{$.T "jobs.pause"}}">
                 <i class="fas fa-pause"></i>
               </button>
-              <button type="submit" name="status" value="disabled" class="btn btn-sm btn-outline-secondary" title="Disable">
+              <button type="submit" name="status" value="disabled" class="btn btn-sm btn-outline-secondary" title="{{$.T "jobs.disable"}}">
                 <i class="fas fa-power-off"></i>
               </button>
               {{else}}
-              <button type="submit" name="status" value="enabled" class="btn btn-sm btn-outline-success" title="Enable"
+              <button type="submit" name="status" value="enabled" class="btn btn-sm btn-outline-success" title="{{$.T "jobs.enable"}}"
                       {{if .Orphaned}}disabled{{end}}>
                 <i class="fas fa-play-circle"></i>
               </button>
@@ -119,14 +118,13 @@
           </td>
         </tr>
         {{else}}
-        <tr><td colspan="6" class="text-center text-body-secondary py-4">No tasks are registered.</td></tr>
+        <tr><td colspan="6" class="text-center text-body-secondary py-4">{{.T "jobs.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>
   </div>
   <div class="card-footer text-body-secondary small">
-    Enabling a task recomputes its next run from now. A task that was missed while the process was
-    stopped is not replayed: an hourly task that missed a day runs once, not twenty-four times.
+    {{.T "jobs.footer"}}
   </div>
 </div>
 {{end}}

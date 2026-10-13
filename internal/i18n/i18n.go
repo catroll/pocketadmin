@@ -186,3 +186,53 @@ func Extra(locale Locale) []string {
 	sort.Strings(extra)
 	return extra
 }
+
+// byEnglish indexes the source catalogue by its English text.
+//
+// It exists so a caller that holds an English sentence -- a page title, a flash message,
+// an error string -- can render it without knowing which key it lives under. Without it
+// every one of those call sites would need a constant, and the constants would drift from
+// the messages the moment somebody reworded one.
+//
+// It is built once, lazily, because the catalogue is a package-level value and the map is
+// derived from it.
+var byEnglish map[string]string
+
+// indexByEnglish builds the reverse index.
+func indexByEnglish() map[string]string {
+	if byEnglish != nil {
+		return byEnglish
+	}
+
+	index := make(map[string]string, len(english))
+	for key, message := range english {
+		// First key wins. Two keys with identical English is a duplication the coverage
+		// test reports; until it is fixed, either answer is the same text.
+		if _, taken := index[message]; !taken {
+			index[message] = key
+		}
+	}
+	byEnglish = index
+	return byEnglish
+}
+
+// Text translates an English sentence by looking it up as a message.
+//
+// It returns the input unchanged when there is no message with that English, which is what
+// makes it safe to wrap a string speculatively: a sentence that has not been catalogued
+// yet is shown as it was rather than replaced by a key nobody recognises in a flash
+// message that lasts two seconds.
+//
+// It is the wrong tool for a template, where the key is known and a missing one should be
+// visible. It is the right tool for a Go string.
+func Text(locale Locale, message string) string {
+	if message == "" || locale == Default {
+		return message
+	}
+
+	key, ok := indexByEnglish()[message]
+	if !ok {
+		return message
+	}
+	return T(locale, key)
+}

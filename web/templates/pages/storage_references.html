@@ -5,28 +5,28 @@
 <div class="card card-primary card-outline">
   <div class="card-header">
     <h3 class="card-title">
-      <i class="fas fa-link me-1"></i>References to {{.File.GetString "name"}}
+      <i class="fas fa-link me-1"></i>{{.T "storage.references.title" (.File.GetString "name")}}
     </h3>
     <div class="card-tools">
       <a href="/storage/files" class="btn btn-secondary btn-sm">
-        <i class="fas fa-arrow-left me-1"></i>Back to the library
+        <i class="fas fa-arrow-left me-1"></i>{{.T "storage.backToLibrary"}}
       </a>
     </div>
   </div>
 
   <div class="card-body border-bottom">
     <dl class="row mb-0 small">
-      <dt class="col-sm-2">Type</dt><dd class="col-sm-4"><code>{{.File.GetString "mimeType"}}</code></dd>
-      <dt class="col-sm-2">Size</dt><dd class="col-sm-4">{{bytes .File.GetInt "size"}}</dd>
-      <dt class="col-sm-2">Checksum</dt><dd class="col-sm-4"><code class="small">{{.File.GetString "checksum"}}</code></dd>
-      <dt class="col-sm-2">Stored count</dt><dd class="col-sm-4">{{.File.GetInt "refCount"}}</dd>
+      <dt class="col-sm-2">{{.T "storage.file.type"}}</dt><dd class="col-sm-4"><code>{{.File.GetString "mimeType"}}</code></dd>
+      <dt class="col-sm-2">{{.T "storage.file.size"}}</dt><dd class="col-sm-4">{{bytes (.File.GetInt "size")}}</dd>
+      <dt class="col-sm-2">{{.T "common.checksum"}}</dt><dd class="col-sm-4"><code class="small">{{.File.GetString "checksum"}}</code></dd>
+      <dt class="col-sm-2">{{.T "storage.file.storedCount"}}</dt><dd class="col-sm-4">{{.File.GetInt "refCount"}}</dd>
     </dl>
   </div>
 
   <div class="card-body table-responsive p-0">
     <table class="table table-sm table-striped mb-0">
       <thead>
-        <tr><th>Owner type</th><th>Owner id</th><th>Field</th><th>Created</th><th class="text-end">Actions</th></tr>
+        <tr><th>{{.T "storage.references.col.ownerType"}}</th><th>{{.T "storage.references.col.ownerId"}}</th><th>{{.T "common.field"}}</th><th>{{.T "common.created"}}</th><th class="text-end">{{.T "common.actions"}}</th></tr>
       </thead>
       <tbody>
         {{range .Attachments}}
@@ -38,9 +38,9 @@
           <td class="text-end">
             {{if $.CanDetach}}
             <form method="post" class="d-inline" action="/storage/attachments/{{.Id}}/detach"
-                  onsubmit="return confirm('Detach this reference?');">
+                  onsubmit="return confirm('{{$.T "storage.references.detachConfirm"}}');">
               <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-              <button type="submit" class="btn btn-sm btn-outline-danger">Detach</button>
+              <button type="submit" class="btn btn-sm btn-outline-danger">{{$.T "common.detach"}}</button>
             </form>
             {{end}}
           </td>
@@ -48,7 +48,7 @@
         {{else}}
         <tr>
           <td colspan="5" class="text-center text-body-secondary py-4">
-            Nothing references this file.
+            {{$.T "storage.references.empty"}}
           </td>
         </tr>
         {{end}}

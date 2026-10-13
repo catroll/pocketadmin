@@ -24,14 +24,13 @@ func (s *Server) translate(c *gin.Context, message string) string {
 		return message
 	}
 
-	// The title handed in is the English word, which is also the last third of its key
-	// in most cases. Rather than guess, the title is looked up as a message and falls
-	// back to itself -- so a screen whose title has a translation gets it and one that
-	// does not is unchanged.
+	// A title is an English sentence, so it is looked up as a message. The menu key is
+	// tried first because a title and the menu entry for the same screen share a word,
+	// and the reverse index covers every other catalogued message.
 	if translated := i18n.T(locale, "nav."+menuKeyFor(message)); translated != "nav."+menuKeyFor(message) {
 		return translated
 	}
-	return message
+	return i18n.Text(locale, message)
 }
 
 // menuKeyFor turns a page title into the menu key it is most likely to share.

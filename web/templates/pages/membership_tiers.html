@@ -2,40 +2,38 @@
 <div class="row mb-3">
   <div class="col-lg-8">
     <p class="text-body-secondary mb-0">
-      Tiers are ordered by level, and the highest level an account holds is the one that
-      applies. Benefits are typed rows, so a discount is a number that checkout reads
-      rather than a sentence somebody has to interpret.
+      {{.T "membership.tiers.intro"}}
     </p>
   </div>
 </div>
 
 {{if .CanManage}}
 <div class="card">
-  <div class="card-header"><h3 class="card-title">New tier</h3></div>
+  <div class="card-header"><h3 class="card-title">{{.T "membership.tiers.new"}}</h3></div>
   <div class="card-body">
     <form method="post" action="/membership/tiers" class="row g-2 align-items-end">
       <input type="hidden" name="_csrf" value="{{.CSRF}}">
       <div class="col-sm-3">
-        <label class="form-label small" for="name">Name</label>
+        <label class="form-label small" for="name">{{.T "common.name"}}</label>
         <input type="text" class="form-control form-control-sm" id="name" name="name" required>
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="code">Code</label>
+        <label class="form-label small" for="code">{{.T "common.code"}}</label>
         <input type="text" class="form-control form-control-sm font-monospace" id="code" name="code" required>
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="level">Level</label>
+        <label class="form-label small" for="level">{{.T "common.level"}}</label>
         <input type="number" class="form-control form-control-sm" id="level" name="level" value="10">
-        <div class="form-text">Higher is better.</div>
+        <div class="form-text">{{.T "common.higherIsBetter"}}</div>
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="status">Status</label>
+        <label class="form-label small" for="status">{{.T "common.status"}}</label>
         <select class="form-select form-select-sm" id="status" name="status">
-          <option value="active">active</option><option value="disabled">disabled</option>
+          <option value="active">{{.T "membership.status.active"}}</option><option value="disabled">{{.T "membership.status.disabled"}}</option>
         </select>
       </div>
       <div class="col-sm-3">
-        <button class="btn btn-primary btn-sm w-100">Add tier</button>
+        <button class="btn btn-primary btn-sm w-100">{{.T "membership.tiers.addTier"}}</button>
       </div>
     </form>
   </div>
@@ -43,62 +41,61 @@
 {{end}}
 
 <div class="card card-primary card-outline">
-  <div class="card-header"><h3 class="card-title"><i class="fas fa-id-card me-1"></i>Tiers</h3></div>
+  <div class="card-header"><h3 class="card-title"><i class="fas fa-id-card me-1"></i>{{.T "membership.tiers.title"}}</h3></div>
   <div class="card-body table-responsive p-0">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Level</th><th>Tier</th><th>Benefits</th><th>Members</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>{{.T "common.level"}}</th><th>{{.T "membership.tier"}}</th><th>{{.T "common.benefits"}}</th><th>{{.T "common.members"}}</th><th>{{.T "common.status"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Rows}}
         <tr>
           <td class="small">{{.Level}}</td>
           <td>
             <a href="/membership/tiers/{{.Record.Id}}" class="text-decoration-none">{{.Name}}</a>
-            {{if .IsDefault}}<span class="badge text-bg-info ms-1" title="Granted on registration">default</span>{{end}}
+            {{if .IsDefault}}<span class="badge text-bg-info ms-1" title="{{$.T "membership.tiers.grantedOnRegistration"}}">{{$.T "membership.tier.default"}}</span>{{end}}
             <div><code class="small text-body-secondary">{{.Code}}</code></div>
           </td>
           <td class="small">
-            {{if .HasDiscount}}<span class="badge text-bg-success">{{.Discount}} &times; price</span>{{end}}
+            {{if .HasDiscount}}<span class="badge text-bg-success">{{.Discount}} &times; {{$.T "membership.tiers.price"}}</span>{{end}}
             {{range .Labels}}<span class="badge text-bg-light">{{.}}</span>{{end}}
-            {{if not .Labels}}<span class="text-body-secondary">none</span>{{end}}
+            {{if not .Labels}}<span class="text-body-secondary">{{$.T "membership.none"}}</span>{{end}}
           </td>
           <td class="small">
             {{if .Members}}<a href="/membership/members?tier={{.Record.Id}}">{{.Members}}</a>
             {{else}}<span class="text-body-secondary">0</span>{{end}}
           </td>
           <td>
-            {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
-            {{else}}<span class="badge text-bg-secondary">disabled</span>{{end}}
+            {{if eq .Status "active"}}<span class="badge text-bg-success">{{$.T "membership.status.active"}}</span>
+            {{else}}<span class="badge text-bg-secondary">{{$.T "membership.status.disabled"}}</span>{{end}}
           </td>
           <td class="text-end text-nowrap">
-            <a href="/membership/tiers/{{.Record.Id}}" class="btn btn-sm btn-secondary" title="Benefits">
+            <a href="/membership/tiers/{{.Record.Id}}" class="btn btn-sm btn-secondary" title="{{$.T "common.benefits"}}">
               <i class="fas fa-list-check"></i>
             </a>
             {{if and $.CanManage (not .IsDefault)}}
             <form method="post" class="d-inline" action="/membership/tiers/{{.Record.Id}}/default">
               <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-              <button class="btn btn-sm btn-outline-info" title="Grant this on registration">
+              <button class="btn btn-sm btn-outline-info" title="{{$.T "membership.tiers.grantOnRegistration"}}">
                 <i class="far fa-star"></i>
               </button>
             </form>
             {{end}}
             {{if and $.CanManage (not .IsDefault)}}
             <form method="post" class="d-inline" action="/membership/tiers/{{.Record.Id}}/delete"
-                  onsubmit="return confirm('Delete this tier?')">
+                  onsubmit="return confirm('{{$.T "membership.tiers.confirmDelete"}}')">
               <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-              <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+              <button class="btn btn-sm btn-outline-danger" title="{{$.T "common.delete"}}"><i class="fas fa-trash"></i></button>
             </form>
             {{end}}
           </td>
         </tr>
         {{else}}
-        <tr><td colspan="6" class="text-center text-body-secondary py-4">No tiers yet.</td></tr>
+        <tr><td colspan="6" class="text-center text-body-secondary py-4">{{$.T "membership.tiers.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>
   </div>
   <div class="card-footer small text-body-secondary">
-    A tier with members, a plan granting it, or the registration default cannot be deleted;
-    disable it instead so the people holding it keep what they have.
+    {{.T "membership.tiers.footerNote"}}
   </div>
 </div>
 {{end}}

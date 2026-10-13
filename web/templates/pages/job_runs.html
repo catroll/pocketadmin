@@ -2,28 +2,28 @@
 <div class="card card-primary card-outline">
   <div class="card-header">
     <h3 class="card-title">
-      <i class="fas fa-list me-1"></i>Run history &middot; {{.Job.GetString "name"}}
+      <i class="fas fa-list me-1"></i>{{.T "page.Run history"}} &middot; {{.Job.GetString "name"}}
       <code class="small text-body-secondary ms-2">{{.Job.GetString "code"}}</code>
     </h3>
     <div class="card-tools">
-      <a href="/jobs" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back</a>
+      <a href="/jobs" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>{{.T "common.back"}}</a>
     </div>
   </div>
 
   <div class="card-body border-bottom">
     <dl class="row mb-0 small">
-      <dt class="col-sm-2">Schedule</dt><dd class="col-sm-4"><code>{{.Job.GetString "cron"}}</code></dd>
-      <dt class="col-sm-2">State</dt><dd class="col-sm-4">{{.Job.GetString "status"}}</dd>
-      <dt class="col-sm-2">Timeout</dt><dd class="col-sm-4">{{.Job.GetInt "timeoutSeconds"}}s</dd>
-      <dt class="col-sm-2">Retries</dt><dd class="col-sm-4">{{.Job.GetInt "maxRetries"}} &times; {{.Job.GetInt "retryBackoffSeconds"}}s backoff</dd>
-      <dt class="col-sm-2">Concurrency</dt><dd class="col-sm-4">{{.Job.GetString "concurrency"}}</dd>
+      <dt class="col-sm-2">{{.T "subscriptions.detail.schedule"}}</dt><dd class="col-sm-4"><code>{{.Job.GetString "cron"}}</code></dd>
+      <dt class="col-sm-2">{{.T "common.state"}}</dt><dd class="col-sm-4">{{.Job.GetString "status"}}</dd>
+      <dt class="col-sm-2">{{.T "jobs.timeout"}}</dt><dd class="col-sm-4">{{.Job.GetInt "timeoutSeconds"}}s</dd>
+      <dt class="col-sm-2">{{.T "jobs.retries"}}</dt><dd class="col-sm-4">{{.T "jobs.retryBackoff" (.Job.GetInt "maxRetries") (.Job.GetInt "retryBackoffSeconds")}}</dd>
+      <dt class="col-sm-2">{{.T "common.concurrency"}}</dt><dd class="col-sm-4">{{.Job.GetString "concurrency"}}</dd>
     </dl>
   </div>
 
   <div class="card-body table-responsive p-0">
     <table class="table table-sm table-striped mb-0">
       <thead>
-        <tr><th>Started</th><th>Status</th><th>Trigger</th><th>Duration</th><th>Attempts</th><th>Output or error</th></tr>
+        <tr><th>{{.T "jobs.started"}}</th><th>{{.T "common.status"}}</th><th>{{.T "jobs.trigger"}}</th><th>{{.T "common.duration"}}</th><th>{{.T "common.attempts"}}</th><th>{{.T "jobs.outputOrError"}}</th></tr>
       </thead>
       <tbody>
         {{range .Runs}}
@@ -31,9 +31,9 @@
           <td class="small text-nowrap">{{formatTime (.GetDateTime "startedAt")}}</td>
           <td>
             {{$s := .GetString "status"}}
-            {{if eq $s "success"}}<span class="badge text-bg-success">success</span>
-            {{else if eq $s "running"}}<span class="badge text-bg-info">running</span>
-            {{else if eq $s "skipped"}}<span class="badge text-bg-secondary">skipped</span>
+            {{if eq $s "success"}}<span class="badge text-bg-success">{{$.T "jobs.status.success"}}</span>
+            {{else if eq $s "running"}}<span class="badge text-bg-info">{{$.T "jobs.status.running"}}</span>
+            {{else if eq $s "skipped"}}<span class="badge text-bg-secondary">{{$.T "jobs.status.skipped"}}</span>
             {{else}}<span class="badge text-bg-danger">{{$s}}</span>{{end}}
           </td>
           <td class="small">{{.GetString "triggeredBy"}}</td>
@@ -45,7 +45,7 @@
           </td>
         </tr>
         {{else}}
-        <tr><td colspan="6" class="text-center text-body-secondary py-4">This task has not run yet.</td></tr>
+        <tr><td colspan="6" class="text-center text-body-secondary py-4">{{.T "jobs.notRunYet"}}</td></tr>
         {{end}}
       </tbody>
     </table>

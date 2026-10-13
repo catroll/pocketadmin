@@ -9,16 +9,16 @@
 
       <div class="card card-primary card-outline">
         <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-palette me-1"></i>Appearance</h3>
+          <h3 class="card-title"><i class="fas fa-palette me-1"></i>{{.T "preferences.appearance"}}</h3>
         </div>
         <div class="card-body">
           <div class="row mb-3">
             <label class="col-sm-4 col-form-label" for="theme">{{.T "preferences.theme"}}</label>
             <div class="col-sm-8">
               <select class="form-select" id="theme" name="theme">
-                <option value="light" {{if eq .Theme "light"}}selected{{end}}>Light</option>
-                <option value="dark" {{if eq .Theme "dark"}}selected{{end}}>Dark</option>
-                <option value="auto" {{if eq .Theme "auto"}}selected{{end}}>Follow the system</option>
+                <option value="light" {{if eq .Theme "light"}}selected{{end}}>{{.T "preferences.themeLight"}}</option>
+                <option value="dark" {{if eq .Theme "dark"}}selected{{end}}>{{.T "preferences.themeDark"}}</option>
+                <option value="auto" {{if eq .Theme "auto"}}selected{{end}}>{{.T "preferences.themeAuto"}}</option>
               </select>
             </div>
           </div>
@@ -51,7 +51,7 @@
               <div class="form-check form-switch">
                 <input type="checkbox" class="form-check-input" id="sidebarCollapsed"
                        name="sidebarCollapsed" {{if .SidebarCollapsed}}checked{{end}}>
-                <label class="form-check-label" for="sidebarCollapsed">Start with the sidebar collapsed</label>
+                <label class="form-check-label" for="sidebarCollapsed">{{.T "preferences.sidebarCollapsed"}}</label>
               </div>
             </div>
           </div>
@@ -60,18 +60,18 @@
 
       <div class="card card-primary card-outline">
         <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-list me-1"></i>Lists</h3>
+          <h3 class="card-title"><i class="fas fa-list me-1"></i>{{.T "common.lists"}}</h3>
         </div>
         <div class="card-body">
           <div class="row mb-3">
-            <label class="col-sm-4 col-form-label" for="pageSize">Rows per page</label>
+            <label class="col-sm-4 col-form-label" for="pageSize">{{.T "preferences.pageSize"}}</label>
             <div class="col-sm-8">
               <select class="form-select" id="pageSize" name="pageSize">
                 {{range .PageSizes}}
                 <option value="{{.}}" {{if eq . $.PageSize}}selected{{end}}>{{.}}</option>
                 {{end}}
               </select>
-              <div class="form-text">Used as the default page size on every list.</div>
+              <div class="form-text">{{.T "preferences.pageSizeNote"}}</div>
             </div>
           </div>
         </div>
@@ -79,7 +79,7 @@
 
       <div class="card card-primary card-outline">
         <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-bell me-1"></i>Notifications</h3>
+          <h3 class="card-title"><i class="fas fa-bell me-1"></i>{{.T "preferences.notifications"}}</h3>
         </div>
         <div class="card-body">
           <div class="row mb-3">
@@ -87,7 +87,7 @@
               <div class="form-check form-switch">
                 <input type="checkbox" class="form-check-input" id="notifyEmail"
                        name="notifyEmail" {{if .NotifyEmail}}checked{{end}}>
-                <label class="form-check-label" for="notifyEmail">Email me about account activity</label>
+                <label class="form-check-label" for="notifyEmail">{{.T "preferences.notifyEmailLabel"}}</label>
               </div>
             </div>
           </div>
@@ -96,18 +96,18 @@
               <div class="form-check form-switch">
                 <input type="checkbox" class="form-check-input" id="notifySms"
                        name="notifySms" {{if .NotifySms}}checked{{end}}>
-                <label class="form-check-label" for="notifySms">Text me about account activity</label>
+                <label class="form-check-label" for="notifySms">{{.T "preferences.notifySmsLabel"}}</label>
               </div>
             </div>
           </div>
           <p class="text-body-secondary small mb-0">
-            These record your intent. No notification transport is wired up yet.
+            {{.T "preferences.notifyNote"}}
           </p>
         </div>
       </div>
 
       <div class="mb-4">
-        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save preferences</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>{{.T "preferences.save"}}</button>
       </div>
     </form>
 
@@ -115,9 +115,9 @@
     <div class="card {{if .MFA.Enabled}}card-success{{else}}card-secondary{{end}} card-outline">
       <div class="card-header">
         <h3 class="card-title">
-          <i class="fas fa-shield-halved me-1"></i>Two-factor authentication
-          {{if .MFA.Enabled}}<span class="badge text-bg-success ms-1">enabled</span>
-          {{else}}<span class="badge text-bg-secondary ms-1">not enabled</span>{{end}}
+          <i class="fas fa-shield-halved me-1"></i>{{.T "auth.twoFactor"}}
+          {{if .MFA.Enabled}}<span class="badge text-bg-success ms-1">{{.T "preferences.mfa.enabled"}}</span>
+          {{else}}<span class="badge text-bg-secondary ms-1">{{.T "preferences.mfa.notEnabled"}}</span>{{end}}
         </h3>
       </div>
       <div class="card-body">
@@ -126,92 +126,90 @@
         {{/* Enrolment in progress: the secret becomes real only once a code from
              it has been confirmed, so a failed scan cannot lock anyone out. */}}
         <p>
-          Add this secret to your authenticator app, then confirm with the six-digit code it shows.
+          {{.T "preferences.mfa.secretIntro"}}
         </p>
         <div class="mb-3">
-          <label class="form-label">Secret (enter it manually if you cannot scan)</label>
+          <label class="form-label">{{.T "preferences.mfa.secretLabel"}}</label>
           <input type="text" class="form-control font-monospace" readonly
                  value="{{.MFA.PendingSecret}}" onclick="this.select()">
         </div>
         <div class="mb-3">
-          <label class="form-label">Provisioning link</label>
+          <label class="form-label">{{.T "preferences.mfa.provisioningLink"}}</label>
           <input type="text" class="form-control font-monospace small" readonly
                  value="{{.MFA.PendingURI}}" onclick="this.select()">
           <div class="form-text">
-            Some apps accept this link directly. A QR code is not shown because rendering
-            one would add a dependency for a convenience that manual entry already covers.
+            {{.T "preferences.mfa.linkNote"}}
           </div>
         </div>
 
         <form method="post" action="/preferences/mfa/enable" class="row g-2 align-items-end">
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
           <div class="col-sm-5">
-            <label class="form-label" for="mfaCode">Code from the app</label>
+            <label class="form-label" for="mfaCode">{{.T "common.codeFromApp"}}</label>
             <input type="text" class="form-control font-monospace" id="mfaCode" name="code"
                    inputmode="numeric" autocomplete="one-time-code" required>
           </div>
           <div class="col-sm-7">
             <button type="submit" class="btn btn-success">
-              <i class="fas fa-check me-1"></i>Confirm and enable
+              <i class="fas fa-check me-1"></i>{{.T "preferences.mfa.confirm"}}
             </button>
           </div>
         </form>
         <form method="post" action="/preferences/mfa/cancel" class="mt-2">
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
-          <button type="submit" class="btn btn-link btn-sm p-0">Cancel enrolment</button>
+          <button type="submit" class="btn btn-link btn-sm p-0">{{.T "preferences.mfa.cancelEnrolment"}}</button>
         </form>
 
         {{else if .MFA.Enabled}}
         <p class="mb-2">
-          Signing in requires a code from your authenticator app.
-          Enrolled {{.MFA.EnrolledAt}}.
+          {{.T "preferences.mfa.signInCode"}}
+          {{.T "preferences.mfa.enrolledAt" .MFA.EnrolledAt}}
         </p>
         <p class="text-body-secondary small">
-          Unused recovery codes: <strong>{{.MFA.RecoveryLeft}}</strong>.
-          {{if eq .MFA.RecoveryLeft 0}}You have none left; regenerate a set.{{end}}
+          {{.T "preferences.mfa.unusedCodes"}} <strong>{{.MFA.RecoveryLeft}}</strong>.
+          {{if eq .MFA.RecoveryLeft 0}}{{.T "preferences.mfa.noneLeft"}}{{end}}
         </p>
 
         <form method="post" action="/preferences/mfa/recovery" class="row g-2 align-items-end mb-3">
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
           <div class="col-sm-5">
-            <label class="form-label" for="regenPw">Regenerate recovery codes</label>
+            <label class="form-label" for="regenPw">{{.T "preferences.mfa.regenerateCodes"}}</label>
             <input type="password" class="form-control" id="regenPw" name="password"
                    autocomplete="current-password">
           </div>
           <div class="col-sm-7">
-            <button type="submit" class="btn btn-secondary">Regenerate</button>
+            <button type="submit" class="btn btn-secondary">{{.T "preferences.mfa.regenerate"}}</button>
           </div>
         </form>
 
         <form method="post" action="/preferences/mfa/disable" class="row g-2 align-items-end border-top pt-3">
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
           <div class="col-sm-5">
-            <label class="form-label" for="disPw">Password</label>
+            <label class="form-label" for="disPw">{{.T "preferences.password"}}</label>
             <input type="password" class="form-control" id="disPw" name="password"
                    autocomplete="current-password" required>
           </div>
           <div class="col-sm-4">
-            <label class="form-label" for="disCode">Current code</label>
+            <label class="form-label" for="disCode">{{.T "preferences.mfa.currentCode"}}</label>
             <input type="text" class="form-control font-monospace" id="disCode" name="code"
                    inputmode="numeric" autocomplete="one-time-code" required>
           </div>
           <div class="col-sm-3">
-            <button type="submit" class="btn btn-outline-danger w-100">Disable</button>
+            <button type="submit" class="btn btn-outline-danger w-100">{{.T "preferences.mfa.disable"}}</button>
           </div>
           <div class="col-12">
-            <div class="form-text">Both are required: neither a borrowed session nor a stolen phone is enough alone.</div>
+            <div class="form-text">{{.T "preferences.mfa.bothRequired"}}</div>
           </div>
         </form>
 
         {{else}}
         <p class="mb-2">
-          Add a second factor so a password alone is not enough to sign in. This uses an
-          authenticator app, which needs no mail or SMS transport.
+          {{.T "preferences.mfa.intro"}}
         </p>
         <form method="post" action="/preferences/mfa/start">
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
           <button type="submit" class="btn btn-primary">
-            <i class="fas fa-shield-halved me-1"></i>Set up two-factor authentication
+            <i class="fas fa-shield-halved me-1"></i>{{.T "preferences.mfa.setUp"}}
           </button>
         </form>
         {{end}}
@@ -225,36 +223,36 @@
       <input type="hidden" name="_csrf" value="{{.CSRF}}">
       <div class="card card-warning card-outline">
         <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-key me-1"></i>Password</h3>
+          <h3 class="card-title"><i class="fas fa-key me-1"></i>{{.T "preferences.password"}}</h3>
         </div>
         <div class="card-body">
           <div class="row mb-3">
-            <label class="col-sm-4 col-form-label" for="curPw">Current password</label>
+            <label class="col-sm-4 col-form-label" for="curPw">{{.T "common.currentPassword"}}</label>
             <div class="col-sm-8">
               <input type="password" class="form-control" id="curPw" name="currentPassword"
                      autocomplete="current-password" required>
             </div>
           </div>
           <div class="row mb-3">
-            <label class="col-sm-4 col-form-label" for="newPw">New password</label>
+            <label class="col-sm-4 col-form-label" for="newPw">{{.T "common.newPassword"}}</label>
             <div class="col-sm-8">
               <input type="password" class="form-control" id="newPw" name="newPassword"
                      autocomplete="new-password" minlength="8" required>
             </div>
           </div>
           <div class="row mb-3">
-            <label class="col-sm-4 col-form-label" for="newPw2">Repeat the new password</label>
+            <label class="col-sm-4 col-form-label" for="newPw2">{{.T "preferences.repeatPassword"}}</label>
             <div class="col-sm-8">
               <input type="password" class="form-control" id="newPw2" name="newPasswordConfirm"
                      autocomplete="new-password" minlength="8" required>
               <div class="form-text">
-                Changing your password signs out your other sessions and keeps this one.
+                {{.T "preferences.passwordNote"}}
               </div>
             </div>
           </div>
         </div>
         <div class="card-footer">
-          <button type="submit" class="btn btn-warning"><i class="fas fa-key me-1"></i>Change password</button>
+          <button type="submit" class="btn btn-warning"><i class="fas fa-key me-1"></i>{{.T "common.changePassword"}}</button>
         </div>
       </div>
     </form>
@@ -262,20 +260,21 @@
 
   <div class="col-lg-4">
     <div class="card card-secondary card-outline">
-      <div class="card-header"><h3 class="card-title"><i class="fas fa-circle-info me-1"></i>Scope</h3></div>
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-circle-info me-1"></i>{{.T "preferences.scope"}}</h3></div>
       <div class="card-body small">
         <p class="mb-2">
-          Preferences are stored per account and per surface, so the back office and a
-          product surface can differ for the same person.
+          {{.T "preferences.scopeNote"}}
         </p>
         {{if .Preferences}}
         <dl class="row mb-0">
-          <dt class="col-6">Context</dt><dd class="col-6"><code>{{.Preferences.GetString "context"}}</code></dd>
-          <dt class="col-6">Updated</dt><dd class="col-6">{{formatTime (.Preferences.GetDateTime "updated")}}</dd>
+          <dt class="col-6">{{.T "common.context"}}</dt><dd class="col-6"><code>{{.Preferences.GetString "context"}}</code></dd>
+          <dt class="col-6">{{.T "common.updated"}}</dt><dd class="col-6">{{formatTime (.Preferences.GetDateTime "updated")}}</dd>
         </dl>
         {{else}}
+        {{/* The surface name is the value the record is filed under, so it is not
+             translated; the tag is passed in so the sentence can be reordered. */}}
         <p class="text-body-secondary mb-0">
-          Nothing is stored yet; saving creates the record for the <code>admin</code> surface.
+          {{safeHTML (.T "preferences.nothingStored" "<code>admin</code>")}}
         </p>
         {{end}}
       </div>

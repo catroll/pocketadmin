@@ -3,15 +3,15 @@
   <div class="card-header">
     <h3 class="card-title">
       <i class="fas fa-table me-1"></i>{{.Collection.Name}}
-      {{if eq .Collection.Type "auth"}}<span class="badge text-bg-success">auth</span>
-      {{else if eq .Collection.Type "view"}}<span class="badge text-bg-warning">view</span>
-      {{else}}<span class="badge text-bg-info">base</span>{{end}}
-      <small class="text-body-secondary ms-2">{{.Pagination.Total}} record(s)</small>
+      {{if eq .Collection.Type "auth"}}<span class="badge text-bg-success">{{.T "collections.type.auth"}}</span>
+      {{else if eq .Collection.Type "view"}}<span class="badge text-bg-warning">{{.T "collections.type.view"}}</span>
+      {{else}}<span class="badge text-bg-info">{{.T "collections.type.base"}}</span>{{end}}
+      <small class="text-body-secondary ms-2">{{.T "records.count" .Pagination.Total}}</small>
     </h3>
     <div class="card-tools">
       {{if not .Collection.IsView}}
       <a href="/collections/{{.Collection.Name}}/records/new" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i>New record
+        <i class="fas fa-plus me-1"></i>{{.T "records.newRecord"}}
       </a>
       {{end}}
     </div>
@@ -22,13 +22,13 @@
           class="d-flex flex-wrap align-items-center gap-2">
       <div class="input-group input-group-sm flex-grow-1" style="min-width:16rem;max-width:32rem">
         <input type="search" name="q" value="{{.Query}}" class="form-control"
-               placeholder="Search across text fields&hellip;" aria-label="Search records">
-        <button class="btn btn-secondary" type="submit" aria-label="Search">
+               placeholder="{{.T "records.searchPlaceholder"}}" aria-label="{{.T "records.searchRecords"}}">
+        <button class="btn btn-secondary" type="submit" aria-label="{{.T "common.search"}}">
           <i class="fas fa-search"></i>
         </button>
       </div>
 
-      <label class="small text-body-secondary mb-0" for="perPage">Per page</label>
+      <label class="small text-body-secondary mb-0" for="perPage">{{.T "common.perPage"}}</label>
       <select id="perPage" name="perPage" class="form-select form-select-sm" style="width:auto">
         {{$current := .Pagination.PerPage}}
         {{range .PerPageOptions}}
@@ -36,10 +36,10 @@
         {{end}}
       </select>
 
-      <button class="btn btn-secondary btn-sm" type="submit">Apply</button>
+      <button class="btn btn-secondary btn-sm" type="submit">{{.T "common.apply"}}</button>
 
       {{if .Query}}
-      <a href="/collections/{{.Collection.Name}}/records" class="btn btn-link btn-sm">Reset</a>
+      <a href="/collections/{{.Collection.Name}}/records" class="btn btn-link btn-sm">{{.T "common.resetFilters"}}</a>
       {{end}}
     </form>
   </div>
@@ -56,7 +56,7 @@
             </a>
           </th>
           {{end}}
-          <th class="text-end">Actions</th>
+          <th class="text-end">{{.T "common.actions"}}</th>
         </tr>
       </thead>
       <tbody>
@@ -65,7 +65,7 @@
           {{range .Cells}}
           <td>
             {{if eq .Kind "bool"}}
-              {{if .Bool}}<span class="badge text-bg-success">true</span>{{else}}<span class="badge text-bg-secondary">false</span>{{end}}
+              {{if .Bool}}<span class="badge text-bg-success">{{$.T "records.true"}}</span>{{else}}<span class="badge text-bg-secondary">{{$.T "records.false"}}</span>{{end}}
             {{else if eq .Kind "empty"}}
               <span class="text-body-secondary">&mdash;</span>
             {{else if eq .Kind "date"}}
@@ -91,16 +91,16 @@
           {{end}}
           <td class="text-end">
             <a href="/collections/{{$.Collection.Name}}/records/{{.ID}}/edit"
-               class="btn btn-sm btn-secondary" title="Edit" aria-label="Edit record">
+               class="btn btn-sm btn-secondary" title="{{$.T "common.edit"}}" aria-label="{{$.T "records.editRecord"}}">
               <i class="fas fa-pen"></i>
             </a>
 
             {{if not $.Collection.IsView}}
             <form method="post" class="d-inline"
                   action="/collections/{{$.Collection.Name}}/records/{{.ID}}/delete"
-                  onsubmit="return confirm('Delete this record permanently?');">
+                  onsubmit="return confirm('{{$.T "records.deleteConfirm"}}');">
               <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-              <button type="submit" class="btn btn-sm btn-danger" title="Delete" aria-label="Delete record">
+              <button type="submit" class="btn btn-sm btn-danger" title="{{$.T "common.delete"}}" aria-label="{{$.T "records.deleteRecord"}}">
                 <i class="fas fa-trash"></i>
               </button>
             </form>
@@ -110,7 +110,7 @@
         {{else}}
         <tr>
           <td colspan="{{len .Columns | add 1}}" class="text-center text-body-secondary py-4">
-            No records found{{if .Query}} for &ldquo;{{.Query}}&rdquo;{{end}}.
+            {{if .Query}}{{.T "records.noneFoundFor" .Query}}{{else}}{{.T "records.noneFound"}}{{end}}
           </td>
         </tr>
         {{end}}
@@ -121,7 +121,7 @@
   {{if .Pagination.TotalPages}}
   <div class="card-footer clearfix">
     <div class="float-start text-body-secondary small pt-2">
-      Showing {{.Pagination.From}}&ndash;{{.Pagination.To}} of {{.Pagination.Total}}
+      {{.T "records.showing" .Pagination.From .Pagination.To .Pagination.Total}}
     </div>
     <ul class="pagination pagination-sm m-0 float-end">
       <li class="page-item {{if not .Pagination.HasPrev}}disabled{{end}}">

@@ -5,7 +5,7 @@
   <div class="col-md-6 col-lg-5">
     <div class="card card-warning card-outline">
       <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-shield-halved me-1"></i>Two-factor authentication</h3>
+        <h3 class="card-title"><i class="fas fa-shield-halved me-1"></i>{{.T "auth.twoFactor"}}</h3>
       </div>
 
       <form method="post" action="/login/mfa">
@@ -23,7 +23,7 @@
           {{end}}
 
           <div class="mb-3">
-            <label class="form-label" for="code">Code</label>
+            <label class="form-label" for="code">{{.T "auth.code"}}</label>
             <input type="text" class="form-control form-control-lg text-center font-monospace"
                    id="code" name="code" inputmode="text" autocomplete="one-time-code"
                    autofocus required
@@ -34,9 +34,9 @@
           </div>
         </div>
         <div class="card-footer d-flex justify-content-between">
-          <a href="/login" class="btn btn-secondary">Back to sign in</a>
+          <a href="/login" class="btn btn-secondary">{{.T "auth.backToSignIn"}}</a>
           <button type="submit" class="btn btn-warning">
-            <i class="fas fa-right-to-bracket me-1"></i>Verify
+            <i class="fas fa-right-to-bracket me-1"></i>{{.T "auth.verify"}}
           </button>
         </div>
       </form>

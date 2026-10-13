@@ -4,24 +4,24 @@
     <form method="get" action="/announcements" class="row g-2">
       <div class="col-auto">
         <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}"
-               placeholder="Search title or body">
+               placeholder="{{.T "announcements.filter.search"}}">
       </div>
       <div class="col-auto">
         <select class="form-select form-select-sm" name="status">
-          <option value="">Any state</option>
+          <option value="">{{.T "announcements.filter.anyStatus"}}</option>
           {{$s := .Status}}
           {{range .Statuses}}
-          <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>
+          <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "announcements.status.%s" .)}}</option>
           {{end}}
         </select>
       </div>
-      <div class="col-auto"><button class="btn btn-sm btn-secondary">Filter</button></div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.filter"}}</button></div>
     </form>
   </div>
   <div class="col-lg-4 text-lg-end">
     {{if .CanCreate}}
     <a href="/announcements/new" class="btn btn-primary btn-sm">
-      <i class="fas fa-plus me-1"></i>New announcement
+      <i class="fas fa-plus me-1"></i>{{.T "announcements.new"}}
     </a>
     {{end}}
   </div>
@@ -33,41 +33,41 @@
     <div class="card card-outline {{if eq .Level "urgent"}}card-danger{{else if eq .Level "important"}}card-warning{{else}}card-primary{{end}}">
       <div class="card-header">
         <h3 class="card-title">
-          {{if .Pinned}}<i class="fas fa-thumbtack text-warning me-1" title="Pinned"></i>{{end}}
+          {{if .Pinned}}<i class="fas fa-thumbtack text-warning me-1" title="{{$.T "announcements.pinned"}}"></i>{{end}}
           <a href="/announcements/{{.Record.Id}}" class="text-decoration-none">{{.Title}}</a>
         </h3>
         <div class="card-tools">
-          {{if not .IsRead}}<span class="badge text-bg-info me-1">unread</span>{{end}}
-          <span class="badge text-bg-secondary">{{.Type}}</span>
-          {{if eq .Level "urgent"}}<span class="badge text-bg-danger">urgent</span>
-          {{else if eq .Level "important"}}<span class="badge text-bg-warning">important</span>{{end}}
-          {{if eq .Status "published"}}<span class="badge text-bg-success">published</span>
-          {{else if eq .Status "scheduled"}}<span class="badge text-bg-info">scheduled</span>
-          {{else if eq .Status "expired"}}<span class="badge text-bg-dark">expired</span>
-          {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+          {{if not .IsRead}}<span class="badge text-bg-info me-1">{{$.T "announcements.unread"}}</span>{{end}}
+          <span class="badge text-bg-secondary">{{$.T (printf "announcements.type.%s" .Type)}}</span>
+          {{if eq .Level "urgent"}}<span class="badge text-bg-danger">{{$.T "announcements.level.urgent"}}</span>
+          {{else if eq .Level "important"}}<span class="badge text-bg-warning">{{$.T "announcements.level.important"}}</span>{{end}}
+          {{if eq .Status "published"}}<span class="badge text-bg-success">{{$.T "announcements.status.published"}}</span>
+          {{else if eq .Status "scheduled"}}<span class="badge text-bg-info">{{$.T "announcements.status.scheduled"}}</span>
+          {{else if eq .Status "expired"}}<span class="badge text-bg-dark">{{$.T "announcements.status.expired"}}</span>
+          {{else}}<span class="badge text-bg-secondary">{{$.T (printf "announcements.status.%s" .Status)}}</span>{{end}}
         </div>
       </div>
       <div class="card-body py-2">
         <p class="mb-2 text-body-secondary">{{truncate .Preview 200}}</p>
         <div class="small text-body-secondary">
-          <i class="far fa-eye me-1"></i>{{.Reads}} read
-          {{with .Record.GetDateTime "publishAt"}}&middot; published {{formatTime .}}{{end}}
-          {{with .Record.GetDateTime "expireAt"}}&middot; expires {{formatTime .}}{{end}}
+          <i class="far fa-eye me-1"></i>{{$.T "announcements.reads" .Reads}}
+          {{with .Record.GetDateTime "publishAt"}}&middot; {{$.T "announcements.publishedOn" (formatTime .)}}{{end}}
+          {{with .Record.GetDateTime "expireAt"}}&middot; {{$.T "announcements.expiresOn" (formatTime .)}}{{end}}
         </div>
       </div>
       {{if or $.CanPublish $.CanDelete}}
       <div class="card-footer py-2 text-end">
-        <a href="/announcements/{{.Record.Id}}" class="btn btn-sm btn-outline-secondary">Read</a>
+        <a href="/announcements/{{.Record.Id}}" class="btn btn-sm btn-outline-secondary">{{$.T "announcements.read"}}</a>
         {{if $.CanPublish}}
         {{if eq .Status "published"}}
         <form method="post" class="d-inline" action="/announcements/{{.Record.Id}}/archive">
           <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-          <button class="btn btn-sm btn-outline-warning">Archive</button>
+          <button class="btn btn-sm btn-outline-warning">{{$.T "common.archive"}}</button>
         </form>
         {{else}}
         <form method="post" class="d-inline" action="/announcements/{{.Record.Id}}/publish">
           <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-          <button class="btn btn-sm btn-outline-success">Publish now</button>
+          <button class="btn btn-sm btn-outline-success">{{$.T "announcements.publishNow"}}</button>
         </form>
         {{end}}
         {{end}}
@@ -78,7 +78,7 @@
   {{else}}
   <div class="col-12">
     <div class="card"><div class="card-body text-center text-body-secondary py-5">
-      Nothing to read. Announcements you are not the audience for are not shown here.
+      {{.T "announcements.empty"}}
     </div></div>
   </div>
   {{end}}

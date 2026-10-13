@@ -1,15 +1,15 @@
 {{define "content"}}
 {{if not .OrderID}}
 <div class="card">
-  <div class="card-header"><h3 class="card-title">Which order?</h3></div>
+  <div class="card-header"><h3 class="card-title">{{.T "refunds.whichOrder"}}</h3></div>
   <div class="card-body">
     <form method="get" action="/refunds/new" class="row g-2 align-items-end">
       <div class="col-sm-6">
-        <label class="form-label small" for="order">Order number</label>
+        <label class="form-label small" for="order">{{.T "common.orderNumber"}}</label>
         <input type="text" class="form-control form-control-sm font-monospace" id="order" name="order" required
                placeholder="ORD-202610-00001">
       </div>
-      <div class="col-sm-3"><button class="btn btn-primary btn-sm">Open</button></div>
+      <div class="col-sm-3"><button class="btn btn-primary btn-sm">{{.T "common.open"}}</button></div>
     </form>
   </div>
 </div>
@@ -18,7 +18,7 @@
   <div class="col-lg-8">
     <h4 class="mb-0 font-monospace">{{.OrderNo}}</h4>
     <div class="small text-body-secondary">
-      paid {{.Paid}} &middot; refunded {{.Refunded}} &middot; <strong>{{.Remaining}} left to refund</strong>
+      {{.T "refunds.summaryPaid" .Paid}} &middot; {{.T "refunds.summaryRefunded" .Refunded}} &middot; <strong>{{.T "refunds.summaryLeft" .Remaining}}</strong>
     </div>
   </div>
 </div>
@@ -29,29 +29,28 @@
   <div class="row">
     <div class="col-lg-7">
       <div class="card card-primary card-outline">
-        <div class="card-header"><h3 class="card-title">What kind of refund?</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "refunds.whatKind"}}</h3></div>
         <div class="card-body">
           <div class="mb-3">
-            <label class="form-label small" for="mode">Mode</label>
+            <label class="form-label small" for="mode">{{.T "common.mode"}}</label>
             <select class="form-select form-select-sm" id="mode" name="mode">
-              <option value="full">Everything that is left</option>
-              <option value="partial_amount">A partial amount</option>
-              <option value="partial_items">Particular items</option>
+              <option value="full">{{.T "refunds.modeFull"}}</option>
+              <option value="partial_amount">{{.T "refunds.modePartialAmount"}}</option>
+              <option value="partial_items">{{.T "refunds.modePartialItems"}}</option>
             </select>
             <div class="form-text">
-              "Everything that is left" is what remains, not what was paid: an order already partly refunded
-              cannot be refunded in full a second time.
+              {{.T "refunds.modeNote"}}
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small" for="amount">Amount (for a partial amount)</label>
+            <label class="form-label small" for="amount">{{.T "refunds.partialAmountLabel"}}</label>
             <input type="text" class="form-control form-control-sm" id="amount" name="amount" placeholder="0.00">
           </div>
           {{if .Items}}
           <div class="mb-0">
-            <label class="form-label small">Items (for particular items)</label>
+            <label class="form-label small">{{.T "refunds.itemsLabel"}}</label>
             <table class="table table-sm">
-              <thead><tr><th>Item</th><th class="text-end">Unit</th><th class="text-end">Left</th><th style="width:8rem">Refund</th></tr></thead>
+              <thead><tr><th>{{.T "common.item"}}</th><th class="text-end">{{.T "refunds.unit"}}</th><th class="text-end">{{.T "common.left"}}</th><th style="width:8rem">{{.T "refunds.refund"}}</th></tr></thead>
               <tbody>
                 {{range .Items}}
                 <tr class="small">
@@ -60,7 +59,7 @@
                     <input type="hidden" name="itemId" value="{{.ID}}">
                   </td>
                   <td class="text-end">{{.Unit}}</td>
-                  <td class="text-end">{{if .Left}}{{.Left}}{{else}}<span class="text-body-secondary">none</span>{{end}}</td>
+                  <td class="text-end">{{if .Left}}{{.Left}}{{else}}<span class="text-body-secondary">{{$.T "refunds.noneLeft"}}</span>{{end}}</td>
                   <td>
                     <input type="number" class="form-control form-control-sm" name="itemQuantity"
                            min="0" max="{{.Left}}" value="0" {{if not .Left}}disabled{{end}}>
@@ -70,8 +69,7 @@
               </tbody>
             </table>
             <div class="form-text">
-              Each line's share of any order-level discount is subtracted, so refunding every item of a
-              discounted order does not give back more than was paid for it.
+              {{.T "refunds.itemsNote"}}
             </div>
           </div>
           {{end}}
@@ -81,28 +79,28 @@
 
     <div class="col-lg-5">
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Why</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "refunds.why"}}</h3></div>
         <div class="card-body">
           <div class="mb-2">
-            <label class="form-label small" for="reason">Reason</label>
+            <label class="form-label small" for="reason">{{.T "common.reason"}}</label>
             <select class="form-select form-select-sm" id="reason" name="reason">
               {{range .Reason}}<option value="{{.Code}}">{{.Label}}</option>{{end}}
             </select>
           </div>
           <div class="mb-2">
-            <label class="form-label small" for="reasonDetail">Detail</label>
+            <label class="form-label small" for="reasonDetail">{{.T "common.detail"}}</label>
             <textarea class="form-control form-control-sm" id="reasonDetail" name="reasonDetail" rows="3"></textarea>
           </div>
           <div class="form-check">
             <input type="checkbox" class="form-check-input" id="restock" name="restock" value="1">
-            <label class="form-check-label small" for="restock">Put the goods back in stock when it succeeds</label>
+            <label class="form-check-label small" for="restock">{{.T "refunds.restockLabel"}}</label>
           </div>
           <div class="form-text mt-2">
-            Only applies to a refund by item: a refund by amount says nothing about which goods came back.
+            {{.T "refunds.restockNote"}}
           </div>
         </div>
         <div class="card-footer d-grid">
-          <button class="btn btn-primary">Request the refund</button>
+          <button class="btn btn-primary">{{.T "refunds.requestSubmit"}}</button>
         </div>
       </div>
     </div>

@@ -4,11 +4,11 @@
     <h4 class="mb-0 font-monospace">{{.Record.GetString "refundNo"}}</h4>
     <div class="small text-body-secondary">
       {{if .OrderID}}<a href="/orders/{{.OrderID}}" class="font-monospace">{{.OrderNo}}</a> &middot; {{end}}
-      {{.Record.GetString "mode"}} &middot; {{.Amount}} &middot; requested by {{.RequestedBy}}
+      {{.Record.GetString "mode"}} &middot; {{.Amount}} &middot; {{.T "refunds.requestedByInline" .RequestedBy}}
     </div>
   </div>
   <div class="col-lg-4 text-lg-end">
-    <a href="/refunds" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Refunds</a>
+    <a href="/refunds" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>{{.T "refunds.title"}}</a>
   </div>
 </div>
 
@@ -16,43 +16,43 @@
   <div class="col-lg-7">
     <div class="card card-primary card-outline">
       <div class="card-header">
-        <h3 class="card-title">The request</h3>
+        <h3 class="card-title">{{.T "refunds.requestTitle"}}</h3>
         <div class="card-tools">
           {{$st := .Record.GetString "status"}}
-          {{if eq $st "pending"}}<span class="badge text-bg-warning">pending</span>
-          {{else if eq $st "approved"}}<span class="badge text-bg-info">approved</span>
-          {{else if eq $st "succeeded"}}<span class="badge text-bg-success">refunded</span>
-          {{else if eq $st "failed"}}<span class="badge text-bg-danger">failed</span>
+          {{if eq $st "pending"}}<span class="badge text-bg-warning">{{.T "common.pending"}}</span>
+          {{else if eq $st "approved"}}<span class="badge text-bg-info">{{.T "refunds.status.approved"}}</span>
+          {{else if eq $st "succeeded"}}<span class="badge text-bg-success">{{.T "refunds.status.refunded"}}</span>
+          {{else if eq $st "failed"}}<span class="badge text-bg-danger">{{.T "common.failed"}}</span>
           {{else}}<span class="badge text-bg-secondary">{{$st}}</span>{{end}}
-          {{if .Record.GetBool "autoApproved"}}<span class="badge text-bg-light">approved automatically</span>{{end}}
+          {{if .Record.GetBool "autoApproved"}}<span class="badge text-bg-light">{{.T "refunds.status.approvedAutomatically"}}</span>{{end}}
         </div>
       </div>
       <div class="card-body">
         <dl class="row mb-0 small">
-          <dt class="col-4">Amount</dt><dd class="col-8 fw-semibold">{{.Amount}}</dd>
-          <dt class="col-4">Reason</dt>
+          <dt class="col-4">{{.T "common.amount"}}</dt><dd class="col-8 fw-semibold">{{.Amount}}</dd>
+          <dt class="col-4">{{.T "common.reason"}}</dt>
           <dd class="col-8">{{.Record.GetString "reason"}}{{with .Record.GetString "reasonDetail"}} &mdash; {{.}}{{end}}</dd>
-          <dt class="col-4">Requested by</dt><dd class="col-8">{{.RequestedBy}}</dd>
-          {{if .ReviewedBy}}<dt class="col-4">Decided by</dt><dd class="col-8">{{.ReviewedBy}}</dd>{{end}}
+          <dt class="col-4">{{.T "refunds.requestedBy"}}</dt><dd class="col-8">{{.RequestedBy}}</dd>
+          {{if .ReviewedBy}}<dt class="col-4">{{.T "refunds.decidedBy"}}</dt><dd class="col-8">{{.ReviewedBy}}</dd>{{end}}
           {{if .Record.GetDateTime "reviewedAt"}}
-          <dt class="col-4">Decided</dt><dd class="col-8">{{formatTime (.Record.GetDateTime "reviewedAt")}}</dd>
+          <dt class="col-4">{{.T "common.decided"}}</dt><dd class="col-8">{{formatTime (.Record.GetDateTime "reviewedAt")}}</dd>
           {{end}}
-          {{with .Record.GetString "reviewComment"}}<dt class="col-4">Comment</dt><dd class="col-8">{{.}}</dd>{{end}}
-          <dt class="col-4">Restock</dt>
-          <dd class="col-8">{{if .Record.GetBool "restock"}}yes, on success{{else}}no{{end}}</dd>
+          {{with .Record.GetString "reviewComment"}}<dt class="col-4">{{.T "refunds.comment"}}</dt><dd class="col-8">{{.}}</dd>{{end}}
+          <dt class="col-4">{{.T "refunds.restock"}}</dt>
+          <dd class="col-8">{{if .Record.GetBool "restock"}}{{.T "refunds.restockOnSuccess"}}{{else}}{{.T "refunds.restockNo"}}{{end}}</dd>
           {{if .Record.GetString "providerRefundId"}}
-          <dt class="col-4">Provider reference</dt><dd class="col-8"><code>{{.Record.GetString "providerRefundId"}}</code></dd>
+          <dt class="col-4">{{.T "refunds.providerReference"}}</dt><dd class="col-8"><code>{{.Record.GetString "providerRefundId"}}</code></dd>
           {{end}}
           {{if gt (.Record.GetInt "attempts") 0}}
-          <dt class="col-4">Attempts</dt><dd class="col-8">{{.Record.GetInt "attempts"}}</dd>
+          <dt class="col-4">{{.T "common.attempts"}}</dt><dd class="col-8">{{.Record.GetInt "attempts"}}</dd>
           {{end}}
-          {{with .Record.GetString "lastError"}}<dt class="col-4">Last error</dt><dd class="col-8 text-danger">{{.}}</dd>{{end}}
+          {{with .Record.GetString "lastError"}}<dt class="col-4">{{.T "common.lastError"}}</dt><dd class="col-8 text-danger">{{.}}</dd>{{end}}
         </dl>
       </div>
       {{if .Items}}
       <div class="card-footer p-0">
         <table class="table table-sm mb-0">
-          <thead><tr><th>Item</th><th class="text-end">Quantity</th><th class="text-end">Unit</th></tr></thead>
+          <thead><tr><th>{{.T "common.item"}}</th><th class="text-end">{{.T "refunds.quantity"}}</th><th class="text-end">{{.T "refunds.unit"}}</th></tr></thead>
           <tbody>
             {{range .Items}}
             <tr class="small">
@@ -68,17 +68,16 @@
     </div>
 
     <div class="card">
-      <div class="card-header"><h3 class="card-title">The order</h3></div>
+      <div class="card-header"><h3 class="card-title">{{.T "refunds.orderTitle"}}</h3></div>
       <div class="card-body">
         <dl class="row mb-0 small">
-          <dt class="col-4">Paid</dt><dd class="col-8">{{.OrderPaid}}</dd>
-          <dt class="col-4">Refunded so far</dt><dd class="col-8">{{.OrderRefunded}}</dd>
-          <dt class="col-4">Order status</dt><dd class="col-8">{{.OrderStatus}}</dd>
+          <dt class="col-4">{{.T "refunds.paid"}}</dt><dd class="col-8">{{.OrderPaid}}</dd>
+          <dt class="col-4">{{.T "refunds.refundedSoFar"}}</dt><dd class="col-8">{{.OrderRefunded}}</dd>
+          <dt class="col-4">{{.T "refunds.orderStatus"}}</dt><dd class="col-8">{{.OrderStatus}}</dd>
         </dl>
       </div>
       <div class="card-footer small text-body-secondary">
-        The cap is whatever the order actually received, and it is enforced again when a refund is approved --
-        two approvals that each look fine on their own are an overpayment when they happen at the same moment.
+        {{.T "refunds.capNote"}}
       </div>
     </div>
   </div>
@@ -89,32 +88,32 @@
       {{if .IsOwnRequest}}
       <div class="alert alert-info">
         <i class="fas fa-circle-info me-1"></i>
-        You requested this refund, so somebody else has to decide it. That is the point of the two permissions.
+        {{.T "refunds.ownRequestAlert"}}
       </div>
       {{else}}
         {{if .CanApprove}}
         <div class="card">
-          <div class="card-header"><h3 class="card-title">Approve</h3></div>
+          <div class="card-header"><h3 class="card-title">{{.T "common.approve"}}</h3></div>
           <div class="card-body">
             <form method="post" action="/refunds/{{.Record.Id}}/approve">
               <input type="hidden" name="_csrf" value="{{.CSRF}}">
-              <label class="form-label small" for="approveComment">Comment</label>
+              <label class="form-label small" for="approveComment">{{.T "refunds.comment"}}</label>
               <input type="text" class="form-control form-control-sm" id="approveComment" name="comment">
-              <button class="btn btn-success btn-sm mt-2 w-100">Approve the refund</button>
+              <button class="btn btn-success btn-sm mt-2 w-100">{{.T "refunds.approveAction"}}</button>
             </form>
           </div>
         </div>
         {{end}}
         {{if .CanReject}}
         <div class="card">
-          <div class="card-header"><h3 class="card-title">Reject</h3></div>
+          <div class="card-header"><h3 class="card-title">{{.T "refunds.reject"}}</h3></div>
           <div class="card-body">
             <form method="post" action="/refunds/{{.Record.Id}}/reject">
               <input type="hidden" name="_csrf" value="{{.CSRF}}">
-              <label class="form-label small" for="rejectComment">Reason</label>
+              <label class="form-label small" for="rejectComment">{{.T "common.reason"}}</label>
               <input type="text" class="form-control form-control-sm" id="rejectComment" name="comment" required>
-              <div class="form-text">Required: a refusal with no reason is a dead end for the customer.</div>
-              <button class="btn btn-outline-secondary btn-sm mt-2 w-100">Reject</button>
+              <div class="form-text">{{.T "refunds.rejectNote"}}</div>
+              <button class="btn btn-outline-secondary btn-sm mt-2 w-100">{{.T "refunds.reject"}}</button>
             </form>
           </div>
         </div>
@@ -123,28 +122,27 @@
     {{else if eq $status "approved"}}
       {{if .CanExecute}}
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Send it</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "refunds.send"}}</h3></div>
         <div class="card-body">
           <form method="post" action="/refunds/{{.Record.Id}}/execute">
             <input type="hidden" name="_csrf" value="{{.CSRF}}">
-            <button class="btn btn-primary btn-sm w-100">Send the refund</button>
+            <button class="btn btn-primary btn-sm w-100">{{.T "refunds.sendAction"}}</button>
           </form>
-          <div class="form-text mt-2">The order's refunded total and status follow on success only.</div>
+          <div class="form-text mt-2">{{.T "refunds.sendNote"}}</div>
         </div>
       </div>
       {{end}}
     {{else if eq $status "failed"}}
       {{if .CanExecute}}
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Try again</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "refunds.retry"}}</h3></div>
         <div class="card-body">
           <form method="post" action="/refunds/{{.Record.Id}}/execute">
             <input type="hidden" name="_csrf" value="{{.CSRF}}">
-            <button class="btn btn-warning btn-sm w-100">Send it again</button>
+            <button class="btn btn-warning btn-sm w-100">{{.T "refunds.retryAction"}}</button>
           </form>
           <div class="form-text mt-2">
-            A failure that was not classified should be looked at rather than retried blindly: sending the same
-            refund twice to a provider that is about to accept it is worse than waiting.
+            {{.T "refunds.retryNote"}}
           </div>
         </div>
       </div>
@@ -153,13 +151,13 @@
 
     {{if and .CanExecute (ne $status "succeeded") (ne $status "rejected") (ne $status "cancelled")}}
     <div class="card">
-      <div class="card-header"><h3 class="card-title">Withdraw</h3></div>
+      <div class="card-header"><h3 class="card-title">{{.T "refunds.withdraw"}}</h3></div>
       <div class="card-body">
         <form method="post" action="/refunds/{{.Record.Id}}/cancel">
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
-          <input type="text" class="form-control form-control-sm" name="reason" placeholder="why">
-          <div class="form-text">Releases the capacity it was holding.</div>
-          <button class="btn btn-outline-danger btn-sm mt-2 w-100">Withdraw the refund</button>
+          <input type="text" class="form-control form-control-sm" name="reason" placeholder="{{.T "refunds.withdrawReasonPlaceholder"}}">
+          <div class="form-text">{{.T "refunds.withdrawNote"}}</div>
+          <button class="btn btn-outline-danger btn-sm mt-2 w-100">{{.T "refunds.withdrawAction"}}</button>
         </form>
       </div>
     </div>

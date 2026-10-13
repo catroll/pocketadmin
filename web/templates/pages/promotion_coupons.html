@@ -3,58 +3,58 @@
   <div class="col-lg-9">
     <form method="get" action="/promotions/coupons" class="row g-2">
       <div class="col-auto">
-        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="Name or code">
+        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="{{.T "promotions.coupons.searchPlaceholder"}}">
       </div>
       <div class="col-auto">
         <select class="form-select form-select-sm" name="status">
-          <option value="">Any status</option>
+          <option value="">{{.T "promotions.filter.anyStatus"}}</option>
           {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
         </select>
       </div>
-      <div class="col-auto"><button class="btn btn-sm btn-secondary">Filter</button></div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.filter"}}</button></div>
     </form>
   </div>
   <div class="col-lg-3 text-lg-end">
-    <a href="/promotions/grants" class="btn btn-outline-secondary btn-sm">Issued</a>
-    {{if .CanManage}}<a href="/promotions/coupons/new" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New coupon</a>{{end}}
+    <a href="/promotions/grants" class="btn btn-outline-secondary btn-sm">{{.T "common.issued"}}</a>
+    {{if .CanManage}}<a href="/promotions/coupons/new" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>{{.T "promotions.coupons.new"}}</a>{{end}}
   </div>
 </div>
 
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-ticket me-1"></i>Coupons</h3>
+    <h3 class="card-title"><i class="fas fa-ticket me-1"></i>{{.T "promotions.coupons.title"}}</h3>
     <div class="card-tools small text-body-secondary">
-      A percentage is stored in basis points, so 12.5% is representable in an integer column.
+      {{.T "promotions.coupons.note"}}
     </div>
   </div>
   <div class="card-body table-responsive p-0">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Coupon</th><th>Discount</th><th>Conditions</th><th>Issued</th><th>Stacking</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>{{.T "promotions.coupon"}}</th><th>{{.T "common.discount"}}</th><th>{{.T "common.conditions"}}</th><th>{{.T "common.issued"}}</th><th>{{.T "promotions.stacking"}}</th><th>{{.T "common.status"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Rows}}
         <tr>
           <td>
             <div>{{.Name}}</div>
             {{if .Code}}<code class="small text-body-secondary">{{.Code}}</code>
-            {{else}}<span class="badge text-bg-light">auto-issued</span>{{end}}
+            {{else}}<span class="badge text-bg-light">{{$.T "promotions.coupons.autoIssued"}}</span>{{end}}
           </td>
           <td class="small">
             <span class="badge text-bg-success">{{.Value}}</span>
-            {{if .Cap}}<div class="text-body-secondary">up to {{.Cap}}</div>{{end}}
+            {{if .Cap}}<div class="text-body-secondary">{{$.T "promotions.coupons.upTo" .Cap}}</div>{{end}}
           </td>
           <td class="small text-body-secondary">
-            {{if .Minimum}}min {{.Minimum}}<br>{{end}}
-            {{if eq .Validity "relative"}}<span class="badge text-bg-light">relative</span>{{end}}
+            {{if .Minimum}}{{$.T "promotions.coupons.min" .Minimum}}<br>{{end}}
+            {{if eq .Validity "relative"}}<span class="badge text-bg-light">{{$.T "promotions.coupons.relative"}}</span>{{end}}
           </td>
-          <td class="small">{{.Issued}} held, {{.Used}} used <span class="text-body-secondary">/ {{.Quantity}}</span></td>
+          <td class="small">{{$.T "promotions.coupons.holdings" .Issued .Used}} <span class="text-body-secondary">/ {{.Quantity}}</span></td>
           <td class="small">
-            {{if .Stackable}}<span class="badge text-bg-info">stacks</span>{{else}}<span class="text-body-secondary">alone</span>{{end}}
-            {{if .WithMember}}<span class="badge text-bg-light">with member discount</span>{{end}}
+            {{if .Stackable}}<span class="badge text-bg-info">{{$.T "promotions.coupons.stacks"}}</span>{{else}}<span class="text-body-secondary">{{$.T "promotions.coupons.alone"}}</span>{{end}}
+            {{if .WithMember}}<span class="badge text-bg-light">{{$.T "promotions.coupons.withMemberDiscount"}}</span>{{end}}
           </td>
           <td>
-            {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
-            {{else if eq .Status "draft"}}<span class="badge text-bg-secondary">draft</span>
-            {{else if eq .Status "paused"}}<span class="badge text-bg-warning">paused</span>
+            {{if eq .Status "active"}}<span class="badge text-bg-success">{{$.T "promotions.coupons.status.active"}}</span>
+            {{else if eq .Status "draft"}}<span class="badge text-bg-secondary">{{$.T "promotions.coupons.status.draft"}}</span>
+            {{else if eq .Status "paused"}}<span class="badge text-bg-warning">{{$.T "promotions.coupons.status.paused"}}</span>
             {{else}}<span class="badge text-bg-dark">{{.Status}}</span>{{end}}
           </td>
           <td class="text-end">
@@ -62,13 +62,13 @@
           </td>
         </tr>
         {{else}}
-        <tr><td colspan="7" class="text-center text-body-secondary py-4">No coupons.</td></tr>
+        <tr><td colspan="7" class="text-center text-body-secondary py-4">{{.T "promotions.coupons.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>
   </div>
   <div class="card-footer small text-body-secondary">
-    A coupon that has been issued is expired rather than deleted: the codes people are holding would otherwise stop meaning anything.
+    {{.T "promotions.coupons.footer"}}
   </div>
 </div>
 {{end}}

@@ -2,18 +2,18 @@
 <div class="card card-primary card-outline">
   <div class="card-header">
     <h3 class="card-title">
-      <i class="fas fa-inbox me-1"></i>Inbox
-      {{if .Unread}}<span class="badge text-bg-danger ms-1">{{.Unread}} unread</span>{{end}}
+      <i class="fas fa-inbox me-1"></i>{{.T "common.inbox"}}
+      {{if .Unread}}<span class="badge text-bg-danger ms-1">{{.T "workbench.unreadCount" .Unread}}</span>{{end}}
     </h3>
     <div class="card-tools">
       {{if .ShowAll}}
-      <a href="/workbench/inbox" class="btn btn-sm btn-secondary">Unread only</a>
+      <a href="/workbench/inbox" class="btn btn-sm btn-secondary">{{.T "workbench.unreadOnly"}}</a>
       {{else}}
-      <a href="/workbench/inbox?show=all" class="btn btn-sm btn-secondary">All</a>
+      <a href="/workbench/inbox?show=all" class="btn btn-sm btn-secondary">{{.T "common.all"}}</a>
       {{end}}
       <form method="post" action="/workbench/inbox/read-all" class="d-inline">
         <input type="hidden" name="_csrf" value="{{.CSRF}}">
-        <button class="btn btn-sm btn-outline-primary">Mark all read</button>
+        <button class="btn btn-sm btn-outline-primary">{{.T "workbench.markAllRead"}}</button>
       </form>
     </div>
   </div>
@@ -22,9 +22,9 @@
     <form method="get" action="/workbench/inbox" class="row g-2">
       {{if .ShowAll}}<input type="hidden" name="show" value="all">{{end}}
       <div class="col-auto">
-        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="Search subject">
+        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="{{.T "workbench.searchSubject"}}">
       </div>
-      <div class="col-auto"><button class="btn btn-sm btn-secondary">Search</button></div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.search"}}</button></div>
     </form>
   </div>
 
@@ -45,24 +45,24 @@
           {{if .Unread}}
           <form method="post" class="d-inline" action="/workbench/inbox/{{.Delivery.Id}}/read">
             <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-            <button class="btn btn-sm btn-outline-primary" title="Mark read"><i class="fas fa-check"></i></button>
+            <button class="btn btn-sm btn-outline-primary" title="{{$.T "workbench.markRead"}}"><i class="fas fa-check"></i></button>
           </form>
           {{end}}
           <form method="post" class="d-inline" action="/workbench/inbox/{{.Delivery.Id}}/delete">
             <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-            <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+            <button class="btn btn-sm btn-outline-danger" title="{{$.T "common.delete"}}"><i class="fas fa-trash"></i></button>
           </form>
         </div>
       </div>
       <div class="small mt-1">{{.Preview}}</div>
       <div class="small text-body-secondary">
-        from {{.Sender}}
-        {{if .Link}}&middot; <a href="{{.Link}}">open</a>{{end}}
+        {{$.T "workbench.fromSender" .Sender}}
+        {{if .Link}}&middot; <a href="{{.Link}}">{{$.T "workbench.open"}}</a>{{end}}
       </div>
     </div>
     {{else}}
     <div class="list-group-item text-center text-body-secondary py-5">
-      {{if .ShowAll}}Your inbox is empty.{{else}}Nothing unread.{{end}}
+      {{if .ShowAll}}{{.T "workbench.inboxEmpty"}}{{else}}{{.T "workbench.nothingUnread"}}{{end}}
     </div>
     {{end}}
   </div>

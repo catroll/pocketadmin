@@ -1,20 +1,18 @@
 {{define "content"}}
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-code me-1"></i>Machine API</h3>
+    <h3 class="card-title"><i class="fas fa-code me-1"></i>{{.T "common.machineAPI"}}</h3>
   </div>
   <div class="card-body">
     <p class="text-body-secondary">
-      Authenticate with an API key as a bearer token. Keys carry the intersection of their own
-      scopes and their owner's current permissions, so a key can never exceed the account it
-      belongs to.
+      {{.T "developer.api.intro"}}
     </p>
 
     <pre class="bg-body-secondary p-3 rounded"><code>curl -H "Authorization: Bearer pak_..." \
   {{.BaseURL}}/whoami</code></pre>
 
     <table class="table table-sm table-striped">
-      <thead><tr><th>Method</th><th>Path</th><th>Permission</th><th>Description</th></tr></thead>
+      <thead><tr><th>{{.T "common.method"}}</th><th>{{.T "developer.api.col.path"}}</th><th>{{.T "developer.api.col.permission"}}</th><th>{{.T "common.description"}}</th></tr></thead>
       <tbody>
         {{range .Endpoint}}
         <tr>
@@ -27,21 +25,20 @@
       </tbody>
     </table>
 
-    <h5 class="mt-4">Responses</h5>
+    <h5 class="mt-4">{{.T "developer.api.responses"}}</h5>
     <p class="text-body-secondary small mb-2">
-      Failures are JSON with a stable code, never a redirect to a sign-in page: a client following
-      that redirect reports a parse error instead of an authentication failure.
+      {{.T "developer.api.failureNote"}}
     </p>
     <table class="table table-sm">
-      <thead><tr><th>Status</th><th>Code</th><th>Meaning</th></tr></thead>
+      <thead><tr><th>{{.T "common.status"}}</th><th>{{.T "common.code"}}</th><th>{{.T "common.meaning"}}</th></tr></thead>
       <tbody>
-        <tr><td>401</td><td><code>missing_credentials</code></td><td>No bearer token was supplied.</td></tr>
-        <tr><td>401</td><td><code>invalid_key</code></td><td>The key is malformed, unknown or does not match.</td></tr>
-        <tr><td>401</td><td><code>key_unusable</code></td><td>The key was revoked or has expired.</td></tr>
-        <tr><td>403</td><td><code>address_not_allowed</code></td><td>The request did not come from an allowed address.</td></tr>
-        <tr><td>403</td><td><code>owner_unavailable</code></td><td>The owning account no longer has an active profile.</td></tr>
-        <tr><td>403</td><td><code>insufficient_scope</code></td><td>The effective authority lacks the required permission.</td></tr>
-        <tr><td>429</td><td><code>rate_limited</code></td><td>The key's rate limit was reached. See <code>Retry-After</code>.</td></tr>
+        <tr><td>401</td><td><code>missing_credentials</code></td><td>{{.T "developer.api.error.missingCredentials"}}</td></tr>
+        <tr><td>401</td><td><code>invalid_key</code></td><td>{{.T "developer.api.error.invalidKey"}}</td></tr>
+        <tr><td>401</td><td><code>key_unusable</code></td><td>{{.T "developer.api.error.keyUnusable"}}</td></tr>
+        <tr><td>403</td><td><code>address_not_allowed</code></td><td>{{.T "developer.api.error.addressNotAllowed"}}</td></tr>
+        <tr><td>403</td><td><code>owner_unavailable</code></td><td>{{.T "developer.api.error.ownerUnavailable"}}</td></tr>
+        <tr><td>403</td><td><code>insufficient_scope</code></td><td>{{.T "developer.api.error.insufficientScope"}}</td></tr>
+        <tr><td>429</td><td><code>rate_limited</code></td><td>{{.T "developer.api.error.rateLimited"}} {{.T "developer.api.see"}} <code>Retry-After</code>.</td></tr>
       </tbody>
     </table>
   </div>

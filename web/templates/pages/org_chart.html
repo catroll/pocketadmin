@@ -1,23 +1,27 @@
 {{define "orgBranch"}}
+{{/* The page is passed in explicitly: inside a sub-template the dollar sign
+     refers to that template's own argument, not to the page, so the translator
+     is reached through it. */}}
+{{$page := .page}}
 {{range .nodes}}
 <li class="org-node">
   <div class="org-card">
     <div class="org-name">
-      <i class="fas fa-sitemap me-1 text-body-secondary"></i>{{if .Name}}{{.Name}}{{else}}(unnamed){{end}}
+      <i class="fas fa-sitemap me-1 text-body-secondary"></i>{{if .Name}}{{.Name}}{{else}}{{$page.T "org.unnamed"}}{{end}}
       {{if .Code}}<code class="small ms-1">{{.Code}}</code>{{end}}
     </div>
     <div class="org-meta">
-      <span class="badge text-bg-primary" title="This department and everything beneath it">
-        {{.Members}} member(s)
+      <span class="badge text-bg-primary" title="{{$page.T "org.departmentScope"}}">
+        {{$page.T "org.memberCount" .Members}}
       </span>
     </div>
     <div class="mt-1">
-      <a href="/organization/departments/{{.ID}}/edit" class="small">Edit</a>
-      <a href="/organization/staff" class="small ms-2">Staff</a>
+      <a href="/organization/departments/{{.ID}}/edit" class="small">{{$page.T "common.edit"}}</a>
+      <a href="/organization/staff" class="small ms-2">{{$page.T "org.staff"}}</a>
     </div>
   </div>
   {{if .Children}}
-  <ul class="org-children">{{template "orgBranch" dict "nodes" .Children}}</ul>
+  <ul class="org-children">{{template "orgBranch" dict "nodes" .Children "page" $page}}</ul>
   {{end}}
 </li>
 {{end}}
@@ -30,19 +34,19 @@
 <div class="row mb-3">
   <div class="col-md-4">
     <div class="small-box text-bg-primary">
-      <div class="inner"><h3>{{.TotalStaff}}</h3><p>Staff in total</p></div>
+      <div class="inner"><h3>{{.TotalStaff}}</h3><p>{{.T "org.staffInTotal"}}</p></div>
       <i class="small-box-icon fas fa-users"></i>
     </div>
   </div>
   <div class="col-md-4">
     <div class="small-box text-bg-secondary">
-      <div class="inner"><h3>{{.Unassigned}}</h3><p>Without a department</p></div>
+      <div class="inner"><h3>{{.Unassigned}}</h3><p>{{.T "org.withoutDepartment"}}</p></div>
       <i class="small-box-icon fas fa-user-slash"></i>
     </div>
   </div>
   <div class="col-md-4">
     <div class="small-box text-bg-info">
-      <div class="inner"><h3>{{len .Roots}}</h3><p>Top-level departments</p></div>
+      <div class="inner"><h3>{{len .Roots}}</h3><p>{{.T "org.topLevelDepartments"}}</p></div>
       <i class="small-box-icon fas fa-sitemap"></i>
     </div>
   </div>
@@ -50,24 +54,24 @@
 
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-sitemap me-1"></i>Organisation chart</h3>
+    <h3 class="card-title"><i class="fas fa-sitemap me-1"></i>{{.T "org.chart"}}</h3>
     <div class="card-tools">
       <a href="/organization/departments" class="btn btn-secondary btn-sm">
-        <i class="fas fa-list me-1"></i>Back to the tree list
+        <i class="fas fa-list me-1"></i>{{.T "org.backToTree"}}
       </a>
     </div>
   </div>
   <div class="card-body">
     {{if .Roots}}
-    <ul class="org-tree">{{template "orgBranch" dict "nodes" .Roots}}</ul>
+    <ul class="org-tree">{{template "orgBranch" dict "nodes" .Roots "page" .}}</ul>
     {{else}}
     <p class="text-body-secondary mb-0">
-      No departments yet. <a href="/organization/departments/new">Create the first one.</a>
+      {{.T "org.empty"}} <a href="/organization/departments/new">{{.T "org.createFirst"}}</a>
     </p>
     {{end}}
   </div>
   <div class="card-footer text-body-secondary small">
-    A member count includes everyone in that department and in everything beneath it.
+    {{.T "org.memberCountNote"}}
   </div>
 </div>
 {{end}}

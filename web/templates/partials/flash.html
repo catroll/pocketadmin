@@ -2,7 +2,7 @@
 {{with .Flash}}
 <div class="alert alert-{{.Type}} alert-dismissible fade show" role="alert">
   {{.Message}}
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{$.T "common.close"}}"></button>
 </div>
 {{end}}
 {{end}}

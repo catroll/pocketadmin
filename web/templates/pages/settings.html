@@ -1,19 +1,20 @@
 {{define "settingsField"}}
 {{/* The page-level flags are passed in explicitly: inside a template the
-     dollar sign refers to that template's own argument, not to the page. */}}
-{{$f := .field}}{{$canUpdate := .canUpdate}}
+     dollar sign refers to that template's own argument, not to the page. The
+     page itself comes along for the locale, which the labels need. */}}
+{{$f := .field}}{{$canUpdate := .canUpdate}}{{$page := .page}}
 {{if eq $f.Input "switch"}}
 <div class="form-check form-switch">
   <input type="checkbox" class="form-check-input" id="f-{{$f.Name}}" name="{{$f.Name}}"
          {{if $f.Checked}}checked{{end}} {{if not $canUpdate}}disabled{{end}}>
   <label class="form-check-label" for="f-{{$f.Name}}">{{$f.Label}}</label>
-  {{if $f.Public}}<span class="badge text-bg-info ms-1" title="Readable without signing in">public</span>{{end}}
+  {{if $f.Public}}<span class="badge text-bg-info ms-1" title="{{$page.T "settings.publicHint"}}">{{$page.T "settings.public"}}</span>{{end}}
 </div>
 {{if $f.Help}}<div class="form-text">{{$f.Help}}</div>{{end}}
 
 {{else if eq $f.Input "select"}}
 <select class="form-select" id="f-{{$f.Name}}" name="{{$f.Name}}" {{if not $canUpdate}}disabled{{end}}>
-  <option value="">&mdash; not set &mdash;</option>
+  <option value="">&mdash; {{$page.T "settings.notSet"}} &mdash;</option>
   {{range $f.Options}}
   <option value="{{.}}" {{if eq . $f.Value}}selected{{end}}>{{.}}</option>
   {{end}}
@@ -23,7 +24,7 @@
 {{else if eq $f.Input "json"}}
 <textarea class="form-control font-monospace" id="f-{{$f.Name}}" name="{{$f.Name}}" rows="4"
           spellcheck="false" {{if not $canUpdate}}readonly{{end}}>{{$f.Value}}</textarea>
-{{if $f.Help}}<div class="form-text">{{$f.Help}} Stored as JSON.</div>{{end}}
+{{if $f.Help}}<div class="form-text">{{$f.Help}} {{$page.T "settings.storedAsJson"}}</div>{{end}}
 
 {{else if eq $f.Input "number"}}
 <input type="number" class="form-control" id="f-{{$f.Name}}" name="{{$f.Name}}" value="{{$f.Value}}"
@@ -49,21 +50,20 @@
   <div class="col-lg-8">
     <p class="text-body-secondary mb-0">
       {{if eq .Surface "admin"}}
-      Configuration for this panel: branding, sign-in policy, notifications and the banner.
+      {{.T "settings.adminIntro"}}
       {{else}}
-      Configuration for the customer-facing storefront. Separate from the panel's own settings,
-      with a separate permission, because they are separate concerns.
+      {{.T "settings.productIntro"}}
       {{end}}
     </p>
   </div>
   <div class="col-lg-4 text-lg-end">
     {{if eq .Surface "admin"}}
     <a href="/settings/product" class="btn btn-outline-secondary btn-sm">
-      <i class="fas fa-store me-1"></i>Storefront settings
+      <i class="fas fa-store me-1"></i>{{.T "settings.storefrontLink"}}
     </a>
     {{else}}
     <a href="/settings/admin" class="btn btn-outline-secondary btn-sm">
-      <i class="fas fa-gears me-1"></i>Back-office settings
+      <i class="fas fa-gears me-1"></i>{{.T "settings.backOfficeLink"}}
     </a>
     {{end}}
   </div>
@@ -71,7 +71,7 @@
 
 {{if not .CanUpdate}}
 <div class="alert alert-secondary py-2">
-  <i class="fas fa-lock me-1"></i>You can see these settings but not change them.
+  <i class="fas fa-lock me-1"></i>{{.T "settings.readOnlyNotice"}}
 </div>
 {{end}}
 
@@ -86,7 +86,7 @@
       <div class="card-tools">
         {{if $.CanUpdate}}
         <button type="submit" class="btn btn-primary btn-sm">
-          <i class="fas fa-save me-1"></i>Save
+          <i class="fas fa-save me-1"></i>{{$.T "common.save"}}
         </button>
         {{end}}
       </div>
@@ -99,7 +99,7 @@
           <label class="form-label" for="f-{{.Name}}">{{.Label}}</label>
           <div class="small text-body-secondary"><code>{{.Name}}</code></div>
         </div>
-        <div class="col-sm-8">{{template "settingsField" dict "field" . "canUpdate" $.CanUpdate}}</div>
+        <div class="col-sm-8">{{template "settingsField" dict "field" . "canUpdate" $.CanUpdate "page" $}}</div>
       </div>
       {{end}}
     </div>

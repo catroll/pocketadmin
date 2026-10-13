@@ -3,42 +3,42 @@
   <div class="card-body">
     <form method="get" action="/orders" class="row g-2 align-items-end">
       <div class="col-sm-3">
-        <label class="form-label small" for="q">Search</label>
+        <label class="form-label small" for="q">{{.T "common.search"}}</label>
         <input type="search" class="form-control form-control-sm" id="q" name="q" value="{{.Query}}"
-               placeholder="Order number or account">
+               placeholder="{{.T "orders.filter.searchPlaceholder"}}">
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="status">Status</label>
+        <label class="form-label small" for="status">{{.T "common.status"}}</label>
         <select class="form-select form-select-sm" id="status" name="status">
-          <option value="">Any</option>
+          <option value="">{{.T "common.any"}}</option>
           {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="paymentStatus">Payment</label>
+        <label class="form-label small" for="paymentStatus">{{.T "orders.payment"}}</label>
         <select class="form-select form-select-sm" id="paymentStatus" name="paymentStatus">
-          <option value="">Any</option>
+          <option value="">{{.T "common.any"}}</option>
           {{$p := .Payment}}{{range .Payments}}<option value="{{.}}" {{if eq . $p}}selected{{end}}>{{.}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-1">
-        <label class="form-label small" for="from">From</label>
+        <label class="form-label small" for="from">{{.T "common.from"}}</label>
         <input type="date" class="form-control form-control-sm" id="from" name="from" value="{{.From}}">
       </div>
       <div class="col-sm-1">
-        <label class="form-label small" for="to">To</label>
+        <label class="form-label small" for="to">{{.T "common.to"}}</label>
         <input type="date" class="form-control form-control-sm" id="to" name="to" value="{{.To}}">
       </div>
       <div class="col-sm-1">
-        <label class="form-label small" for="minTotal">Min</label>
+        <label class="form-label small" for="minTotal">{{.T "orders.filter.min"}}</label>
         <input type="text" class="form-control form-control-sm" id="minTotal" name="minTotal" value="{{.MinTotal}}">
       </div>
       <div class="col-sm-1">
-        <label class="form-label small" for="maxTotal">Max</label>
+        <label class="form-label small" for="maxTotal">{{.T "orders.filter.max"}}</label>
         <input type="text" class="form-control form-control-sm" id="maxTotal" name="maxTotal" value="{{.MaxTotal}}">
       </div>
       <div class="col-sm-1">
-        <button class="btn btn-sm btn-secondary w-100">Filter</button>
+        <button class="btn btn-sm btn-secondary w-100">{{.T "common.filter"}}</button>
       </div>
     </form>
   </div>
@@ -47,7 +47,7 @@
 <div class="row mb-3">
   <div class="col-lg-8">
     <div class="btn-group btn-group-sm flex-wrap">
-      <a href="/orders" class="btn btn-outline-secondary {{if not .HasFilter}}active{{end}}">All</a>
+      <a href="/orders" class="btn btn-outline-secondary {{if not .HasFilter}}active{{end}}">{{.T "common.all"}}</a>
       {{range .Statuses}}
       <a href="/orders?status={{.}}" class="btn btn-outline-secondary {{if eq . $.Status}}active{{end}}">
         {{.}}{{with index $.Counts .}} <span class="badge text-bg-light">{{.}}</span>{{end}}
@@ -58,51 +58,51 @@
   <div class="col-lg-4 text-lg-end">
     {{if .CanExport}}
     <a href="/orders/export.csv{{if .RawQuery}}?{{.RawQuery}}{{end}}" class="btn btn-outline-secondary btn-sm">
-      <i class="fas fa-file-csv me-1"></i>Export
+      <i class="fas fa-file-csv me-1"></i>{{.T "common.export"}}
     </a>
     {{end}}
     {{if .CanCreate}}
-    <a href="/orders/new" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New order</a>
+    <a href="/orders/new" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>{{.T "orders.new"}}</a>
     {{end}}
   </div>
 </div>
 
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-receipt me-1"></i>Orders</h3>
+    <h3 class="card-title"><i class="fas fa-receipt me-1"></i>{{.T "orders.title"}}</h3>
     <div class="card-tools small text-body-secondary">
-      The breakdown is stored, not recomputed: a price edited next month must not change what a placed order cost.
+      {{.T "orders.note"}}
     </div>
   </div>
   <div class="card-body table-responsive p-0">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Order</th><th>Account</th><th>Placed</th><th>Total</th><th>Paid</th><th>Status</th><th>Payment</th><th></th></tr></thead>
+      <thead><tr><th>{{.T "orders.col.order"}}</th><th>{{.T "orders.col.account"}}</th><th>{{.T "orders.col.placed"}}</th><th>{{.T "common.total"}}</th><th>{{.T "orders.paid"}}</th><th>{{.T "common.status"}}</th><th>{{.T "orders.payment"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Rows}}
         <tr>
           <td>
             <a href="/orders/{{.Record.Id}}" class="font-monospace">{{.OrderNo}}</a>
-            <div class="small text-body-secondary">{{.ItemCount}} item(s) &middot; {{.Source}}</div>
+            <div class="small text-body-secondary">{{$.T "orders.itemCount" .ItemCount}} &middot; {{.Source}}</div>
           </td>
           <td class="small">{{.Email}}</td>
           <td class="small">
             {{.Created}}
-            {{if .Expires}}<div class="small {{if .Expiring}}text-danger{{end}}">expires {{.Expires}}</div>{{end}}
+            {{if .Expires}}<div class="small {{if .Expiring}}text-danger{{end}}">{{$.T "orders.expires" .Expires}}</div>{{end}}
           </td>
           <td class="small fw-semibold">{{.Total}}</td>
           <td class="small">{{.Paid}}</td>
           <td>
-            {{if eq .Status "pending_payment"}}<span class="badge text-bg-warning">awaiting payment</span>
-            {{else if eq .Status "paid"}}<span class="badge text-bg-info">paid</span>
-            {{else if eq .Status "fulfilling"}}<span class="badge text-bg-primary">fulfilling</span>
-            {{else if eq .Status "completed"}}<span class="badge text-bg-success">completed</span>
-            {{else if eq .Status "refunded"}}<span class="badge text-bg-danger">refunded</span>
+            {{if eq .Status "pending_payment"}}<span class="badge text-bg-warning">{{$.T "orders.badge.awaitingPayment"}}</span>
+            {{else if eq .Status "paid"}}<span class="badge text-bg-info">{{$.T "orders.badge.paid"}}</span>
+            {{else if eq .Status "fulfilling"}}<span class="badge text-bg-primary">{{$.T "orders.badge.fulfilling"}}</span>
+            {{else if eq .Status "completed"}}<span class="badge text-bg-success">{{$.T "orders.badge.completed"}}</span>
+            {{else if eq .Status "refunded"}}<span class="badge text-bg-danger">{{$.T "orders.badge.refunded"}}</span>
             {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
           </td>
           <td class="small">
-            {{if eq .Payment "paid"}}<span class="badge text-bg-success">paid</span>
-            {{else if eq .Payment "unpaid"}}<span class="badge text-bg-secondary">unpaid</span>
-            {{else if eq .Payment "partial"}}<span class="badge text-bg-warning">partial</span>
+            {{if eq .Payment "paid"}}<span class="badge text-bg-success">{{$.T "orders.badge.paid"}}</span>
+            {{else if eq .Payment "unpaid"}}<span class="badge text-bg-secondary">{{$.T "orders.badge.unpaid"}}</span>
+            {{else if eq .Payment "partial"}}<span class="badge text-bg-warning">{{$.T "orders.badge.partial"}}</span>
             {{else}}<span class="badge text-bg-danger">{{.Payment}}</span>{{end}}
           </td>
           <td class="text-end">
@@ -110,7 +110,7 @@
           </td>
         </tr>
         {{else}}
-        <tr><td colspan="8" class="text-center text-body-secondary py-4">No orders match.</td></tr>
+        <tr><td colspan="8" class="text-center text-body-secondary py-4">{{.T "orders.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>

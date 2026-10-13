@@ -25,7 +25,7 @@
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-end">
-              <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+              <li class="breadcrumb-item"><a href="/dashboard">{{.T "chrome.home"}}</a></li>
               <li class="breadcrumb-item active" aria-current="page">{{.Title}}</li>
             </ol>
           </div>
@@ -38,14 +38,13 @@
          role="alert">
       <div>
         <i class="fas fa-user-secret me-2"></i>
-        <strong>Impersonating.</strong>
-        You are viewing the panel as <strong>{{.UserEmail}}</strong>, signed in by
-        <strong>{{.ImpersonatorEmail}}</strong>. Writes are blocked.
+        <strong>{{.T "chrome.impersonatingTitle"}}</strong>
+        {{.T "chrome.impersonatingBody" .UserEmail .ImpersonatorEmail}}
       </div>
       <form method="post" action="/impersonation/stop" class="mb-0">
         <input type="hidden" name="_csrf" value="{{.CSRF}}">
         <button type="submit" class="btn btn-sm btn-dark">
-          <i class="fas fa-right-from-bracket me-1"></i>Stop impersonating
+          <i class="fas fa-right-from-bracket me-1"></i>{{.T "chrome.stopImpersonating"}}
         </button>
       </form>
     </div>

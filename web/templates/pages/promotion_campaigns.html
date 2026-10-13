@@ -1,31 +1,31 @@
 {{define "content"}}
 {{if .CanManage}}
 <div class="card">
-  <div class="card-header"><h3 class="card-title">New campaign</h3></div>
+  <div class="card-header"><h3 class="card-title">{{.T "promotions.campaigns.new"}}</h3></div>
   <div class="card-body">
     <form method="post" action="/promotions/campaigns/save" class="row g-2 align-items-end">
       <input type="hidden" name="_csrf" value="{{.CSRF}}">
       <div class="col-sm-3">
-        <label class="form-label small" for="name">Name</label>
+        <label class="form-label small" for="name">{{.T "common.name"}}</label>
         <input type="text" class="form-control form-control-sm" id="name" name="name" required>
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="code">Code</label>
+        <label class="form-label small" for="code">{{.T "common.code"}}</label>
         <input type="text" class="form-control form-control-sm font-monospace" id="code" name="code" required>
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="startAt">Starts</label>
+        <label class="form-label small" for="startAt">{{.T "promotions.campaigns.starts"}}</label>
         <input type="date" class="form-control form-control-sm" id="startAt" name="startAt">
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="endAt">Ends</label>
+        <label class="form-label small" for="endAt">{{.T "common.ends"}}</label>
         <input type="date" class="form-control form-control-sm" id="endAt" name="endAt">
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="budgetCap">Budget</label>
-        <input type="text" class="form-control form-control-sm" id="budgetCap" name="budgetCap" placeholder="0 = uncapped">
+        <label class="form-label small" for="budgetCap">{{.T "common.budget"}}</label>
+        <input type="text" class="form-control form-control-sm" id="budgetCap" name="budgetCap" placeholder="{{.T "promotions.campaigns.budgetPlaceholder"}}">
       </div>
-      <div class="col-sm-1"><button class="btn btn-primary btn-sm w-100">Add</button></div>
+      <div class="col-sm-1"><button class="btn btn-primary btn-sm w-100">{{.T "common.add"}}</button></div>
     </form>
   </div>
 </div>
@@ -33,14 +33,14 @@
 
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-bullhorn me-1"></i>Campaigns</h3>
+    <h3 class="card-title"><i class="fas fa-bullhorn me-1"></i>{{.T "promotions.campaigns.title"}}</h3>
     <div class="card-tools small text-body-secondary">
-      Spend is recomputed from the coupons used, because a budget cap is enforced against this number.
+      {{.T "promotions.campaigns.note"}}
     </div>
   </div>
   <div class="card-body table-responsive p-0">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Campaign</th><th>Window</th><th>Coupons</th><th>Spent</th><th>Status</th></tr></thead>
+      <thead><tr><th>{{.T "common.campaign"}}</th><th>{{.T "promotions.campaigns.col.window"}}</th><th>{{.T "promotions.campaigns.col.coupons"}}</th><th>{{.T "promotions.campaigns.col.spent"}}</th><th>{{.T "common.status"}}</th></tr></thead>
       <tbody>
         {{range .Rows}}
         <tr>
@@ -48,13 +48,13 @@
           <td class="small {{if .Ended}}text-body-secondary{{end}}">{{.Starts}} &rarr; {{.Ends}}</td>
           <td class="small">{{.Coupons}}</td>
           <td class="small {{if .OverBudget}}text-danger fw-semibold{{end}}">
-            {{.Spent}}{{if .BudgetCap}} of {{.BudgetCap}}{{end}}
-            {{if .OverBudget}}<span class="badge text-bg-danger">at or over budget</span>{{end}}
+            {{if .BudgetCap}}{{$.T "promotions.campaigns.spentOf" .Spent .BudgetCap}}{{else}}{{.Spent}}{{end}}
+            {{if .OverBudget}}<span class="badge text-bg-danger">{{$.T "promotions.campaigns.overBudget"}}</span>{{end}}
           </td>
           <td class="small">{{.Status}}</td>
         </tr>
         {{else}}
-        <tr><td colspan="5" class="text-center text-body-secondary py-4">No campaigns.</td></tr>
+        <tr><td colspan="5" class="text-center text-body-secondary py-4">{{.T "promotions.campaigns.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>

@@ -3,23 +3,23 @@
   <div class="col-lg-8">
     <h4 class="mb-0">{{.Record.GetString "name"}}</h4>
     <div class="small text-body-secondary">
-      <code>{{.Record.GetString "code"}}</code> &middot; level {{.Record.GetInt "level"}} &middot;
+      <code>{{.Record.GetString "code"}}</code> &middot; {{.T "membership.tier.level"}} {{.Record.GetInt "level"}} &middot;
       {{.Record.GetString "status"}}
-      {{if .Record.GetBool "isDefault"}}&middot; <span class="badge text-bg-info">default</span>{{end}}
+      {{if .Record.GetBool "isDefault"}}&middot; <span class="badge text-bg-info">{{.T "membership.tier.default"}}</span>{{end}}
     </div>
   </div>
   <div class="col-lg-4 text-lg-end">
-    <a href="/membership/tiers" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Tiers</a>
+    <a href="/membership/tiers" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>{{.T "membership.tiers.title"}}</a>
   </div>
 </div>
 
 <div class="row">
   <div class="col-lg-7">
     <div class="card card-primary card-outline">
-      <div class="card-header"><h3 class="card-title">Benefits</h3></div>
+      <div class="card-header"><h3 class="card-title">{{.T "common.benefits"}}</h3></div>
       <div class="card-body table-responsive p-0">
         <table class="table table-sm mb-0">
-          <thead><tr><th>Kind</th><th>Label</th><th>Payload</th></tr></thead>
+          <thead><tr><th>{{.T "common.kind"}}</th><th>{{.T "common.label"}}</th><th>{{.T "membership.tier.payload"}}</th></tr></thead>
           <tbody>
             {{range .Benefits}}
             <tr class="small">
@@ -28,7 +28,7 @@
               <td><code class="small">{{json (.Get "value")}}</code></td>
             </tr>
             {{else}}
-            <tr><td colspan="3" class="text-center text-body-secondary py-3">No benefits.</td></tr>
+            <tr><td colspan="3" class="text-center text-body-secondary py-3">{{.T "membership.tier.noBenefits"}}</td></tr>
             {{end}}
           </tbody>
         </table>
@@ -37,43 +37,43 @@
 
     {{if .CanManage}}
     <div class="card">
-      <div class="card-header"><h3 class="card-title">Add a benefit</h3></div>
+      <div class="card-header"><h3 class="card-title">{{.T "common.addBenefit"}}</h3></div>
       <div class="card-body">
         <form method="post" action="/membership/tiers/{{.Record.Id}}/benefits">
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
           <div class="row g-2 mb-2">
             <div class="col-sm-4">
-              <label class="form-label small" for="kind">Kind</label>
+              <label class="form-label small" for="kind">{{.T "common.kind"}}</label>
               <select class="form-select form-select-sm" id="kind" name="kind">
                 {{range .Kinds}}<option value="{{.}}">{{.}}</option>{{end}}
               </select>
             </div>
             <div class="col-sm-4">
-              <label class="form-label small" for="percent">Percent (discount)</label>
+              <label class="form-label small" for="percent">{{.T "membership.tier.benefit.percent"}}</label>
               <input type="text" class="form-control form-control-sm" id="percent" name="percent" placeholder="10">
-              <div class="form-text">Stored as a fraction: 10 becomes 0.9.</div>
+              <div class="form-text">{{.T "membership.tier.benefit.percentNote"}}</div>
             </div>
             <div class="col-sm-4">
-              <label class="form-label small" for="multiplier">Multiplier (points)</label>
+              <label class="form-label small" for="multiplier">{{.T "membership.tier.benefit.multiplier"}}</label>
               <input type="text" class="form-control form-control-sm" id="multiplier" name="multiplier" placeholder="2">
             </div>
           </div>
           <div class="mb-2">
-            <label class="form-label small" for="access">Content keys (one per line or comma separated)</label>
+            <label class="form-label small" for="access">{{.T "common.contentKeys"}}</label>
             <input type="text" class="form-control form-control-sm font-monospace" id="access" name="access" placeholder="vip, archive">
           </div>
           <div class="row g-2 mb-2">
             <div class="col-sm-8">
-              <label class="form-label small" for="label">Label</label>
+              <label class="form-label small" for="label">{{.T "common.label"}}</label>
               <input type="text" class="form-control form-control-sm" id="label" name="label"
-                     placeholder="Leave empty to generate one">
+                     placeholder="{{.T "membership.tier.benefit.labelPlaceholder"}}">
             </div>
             <div class="col-sm-4">
-              <label class="form-label small" for="sortOrder">Order</label>
+              <label class="form-label small" for="sortOrder">{{.T "membership.tier.benefit.order"}}</label>
               <input type="number" class="form-control form-control-sm" id="sortOrder" name="sortOrder">
             </div>
           </div>
-          <button class="btn btn-primary btn-sm">Add</button>
+          <button class="btn btn-primary btn-sm">{{.T "common.add"}}</button>
         </form>
       </div>
     </div>
@@ -82,25 +82,24 @@
 
   <div class="col-lg-5">
     <div class="card">
-      <div class="card-header"><h3 class="card-title">Resolved</h3></div>
+      <div class="card-header"><h3 class="card-title">{{.T "membership.tier.resolved.title"}}</h3></div>
       <div class="card-body">
         <p class="small text-body-secondary">
-          What pricing and checkout read from this tier. This is the shape a benefit has to
-          arrive in; it is not derived from the labels.
+          {{.T "membership.tier.resolved.note"}}
         </p>
         <dl class="row mb-0 small">
-          <dt class="col-7">Discount rate</dt>
+          <dt class="col-7">{{.T "common.discountRate"}}</dt>
           <dd class="col-5">
-            {{if .Resolved.HasDiscount}}{{.Resolved.DiscountRate}}{{else}}<span class="text-body-secondary">none</span>{{end}}
+            {{if .Resolved.HasDiscount}}{{.Resolved.DiscountRate}}{{else}}<span class="text-body-secondary">{{.T "membership.none"}}</span>{{end}}
           </dd>
-          <dt class="col-7">Free shipping</dt>
-          <dd class="col-5">{{if .Resolved.FreeShipping}}yes{{else}}<span class="text-body-secondary">no</span>{{end}}</dd>
-          <dt class="col-7">Points multiplier</dt>
-          <dd class="col-5">{{if .Resolved.PointsMultiplier}}{{.Resolved.PointsMultiplier}}{{else}}<span class="text-body-secondary">none</span>{{end}}</dd>
-          <dt class="col-7">Content access</dt>
-          <dd class="col-5">{{if .Resolved.ContentAccess}}{{range .Resolved.ContentAccess}}<span class="badge text-bg-light">{{.}}</span>{{end}}{{else}}<span class="text-body-secondary">none</span>{{end}}</dd>
-          <dt class="col-7">Priority support</dt>
-          <dd class="col-5">{{if .Resolved.PrioritySupport}}yes{{else}}<span class="text-body-secondary">no</span>{{end}}</dd>
+          <dt class="col-7">{{.T "common.freeShipping"}}</dt>
+          <dd class="col-5">{{if .Resolved.FreeShipping}}{{.T "membership.yes"}}{{else}}<span class="text-body-secondary">{{.T "membership.no"}}</span>{{end}}</dd>
+          <dt class="col-7">{{.T "membership.tier.resolved.pointsMultiplier"}}</dt>
+          <dd class="col-5">{{if .Resolved.PointsMultiplier}}{{.Resolved.PointsMultiplier}}{{else}}<span class="text-body-secondary">{{.T "membership.none"}}</span>{{end}}</dd>
+          <dt class="col-7">{{.T "membership.tier.resolved.contentAccess"}}</dt>
+          <dd class="col-5">{{if .Resolved.ContentAccess}}{{range .Resolved.ContentAccess}}<span class="badge text-bg-light">{{.}}</span>{{end}}{{else}}<span class="text-body-secondary">{{.T "membership.none"}}</span>{{end}}</dd>
+          <dt class="col-7">{{.T "membership.tier.resolved.prioritySupport"}}</dt>
+          <dd class="col-5">{{if .Resolved.PrioritySupport}}{{.T "membership.yes"}}{{else}}<span class="text-body-secondary">{{.T "membership.no"}}</span>{{end}}</dd>
         </dl>
       </div>
     </div>

@@ -2,18 +2,17 @@
 <div class="row mb-3">
   <div class="col-lg-8">
     <p class="text-body-secondary mb-0">
-      What this process is doing right now. The traffic figures cover the last minute;
-      the runtime and database figures are read when this page is opened.
+      {{.T "monitoring.intro"}}
     </p>
   </div>
   <div class="col-lg-4 text-lg-end">
     <a href="/monitoring/system" class="btn btn-outline-secondary btn-sm">
-      <i class="fas fa-circle-info me-1"></i>System
+      <i class="fas fa-circle-info me-1"></i>{{.T "nav.system"}}
     </a>
     {{if .CanSnapshot}}
     <form method="post" action="/monitoring/snapshot" class="d-inline">
       <input type="hidden" name="_csrf" value="{{.CSRF}}">
-      <button class="btn btn-primary btn-sm"><i class="fas fa-camera me-1"></i>Snapshot</button>
+      <button class="btn btn-primary btn-sm"><i class="fas fa-camera me-1"></i>{{.T "monitoring.snapshot"}}</button>
     </form>
     {{end}}
   </div>
@@ -24,13 +23,13 @@
 <div class="card card-outline {{if eq .Health.Status "ok"}}card-success{{else if eq .Health.Status "degraded"}}card-warning{{else}}card-danger{{end}}">
   <div class="card-header">
     <h3 class="card-title">
-      <i class="fas fa-heart-pulse me-1"></i>Health
+      <i class="fas fa-heart-pulse me-1"></i>{{.T "monitoring.health"}}
       <span class="badge {{if eq .Health.Status "ok"}}text-bg-success{{else if eq .Health.Status "degraded"}}text-bg-warning{{else}}text-bg-danger{{end}} ms-1">
         {{.Health.Status}}
       </span>
     </h3>
     <div class="card-tools">
-      <span class="small text-body-secondary">checked in {{.Health.Duration}}</span>
+      <span class="small text-body-secondary">{{.T "monitoring.checkedIn" .Health.Duration}}</span>
     </div>
   </div>
   <div class="card-body table-responsive p-0">
@@ -56,19 +55,19 @@
 <div class="row">
   <div class="col-lg-6">
     <div class="card">
-      <div class="card-header"><h3 class="card-title"><i class="fas fa-microchip me-1"></i>Runtime</h3></div>
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-microchip me-1"></i>{{.T "monitoring.runtime"}}</h3></div>
       <div class="card-body">
         <dl class="row mb-0 small">
-          <dt class="col-6">Uptime</dt><dd class="col-6">{{.Runtime.Uptime}}</dd>
-          <dt class="col-6">Goroutines</dt><dd class="col-6">{{.Runtime.Goroutines}}</dd>
-          <dt class="col-6">Heap</dt><dd class="col-6">{{bytes .Runtime.HeapBytes}}</dd>
-          <dt class="col-6">Heap in use</dt><dd class="col-6">{{bytes .Runtime.HeapInUse}}</dd>
-          <dt class="col-6">Stacks</dt><dd class="col-6">{{bytes .Runtime.StackBytes}}</dd>
-          <dt class="col-6">Total allocated</dt><dd class="col-6">{{bytes .Runtime.TotalAlloc}}</dd>
-          <dt class="col-6">Reserved</dt><dd class="col-6">{{bytes .Runtime.SysBytes}}</dd>
-          <dt class="col-6">GC runs</dt><dd class="col-6">{{.Runtime.GCCount}}</dd>
-          <dt class="col-6">Longest GC pause</dt><dd class="col-6">{{.Runtime.GCPauseMaxMs}} ms</dd>
-          <dt class="col-6">Last GC</dt><dd class="col-6">{{.LastGCAgo}}</dd>
+          <dt class="col-6">{{.T "monitoring.uptime"}}</dt><dd class="col-6">{{.Runtime.Uptime}}</dd>
+          <dt class="col-6">{{.T "common.goroutines"}}</dt><dd class="col-6">{{.Runtime.Goroutines}}</dd>
+          <dt class="col-6">{{.T "common.heap"}}</dt><dd class="col-6">{{bytes .Runtime.HeapBytes}}</dd>
+          <dt class="col-6">{{.T "common.heapInUse"}}</dt><dd class="col-6">{{bytes .Runtime.HeapInUse}}</dd>
+          <dt class="col-6">{{.T "monitoring.stacks"}}</dt><dd class="col-6">{{bytes .Runtime.StackBytes}}</dd>
+          <dt class="col-6">{{.T "monitoring.totalAllocated"}}</dt><dd class="col-6">{{bytes .Runtime.TotalAlloc}}</dd>
+          <dt class="col-6">{{.T "monitoring.reserved"}}</dt><dd class="col-6">{{bytes .Runtime.SysBytes}}</dd>
+          <dt class="col-6">{{.T "common.gcRuns"}}</dt><dd class="col-6">{{.Runtime.GCCount}}</dd>
+          <dt class="col-6">{{.T "common.longestGCPause"}}</dt><dd class="col-6">{{.Runtime.GCPauseMaxMs}} ms</dd>
+          <dt class="col-6">{{.T "common.lastGC"}}</dt><dd class="col-6">{{.LastGCAgo}}</dd>
         </dl>
       </div>
     </div>
@@ -76,25 +75,25 @@
 
   <div class="col-lg-6">
     <div class="card">
-      <div class="card-header"><h3 class="card-title"><i class="fas fa-database me-1"></i>Database</h3></div>
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-database me-1"></i>{{.T "common.database"}}</h3></div>
       <div class="card-body">
         <dl class="row mb-0 small">
-          <dt class="col-6">Main file</dt><dd class="col-6">{{bytes .Database.MainBytes}}</dd>
-          <dt class="col-6">Auxiliary</dt><dd class="col-6">{{bytes .Database.AuxBytes}}</dd>
-          <dt class="col-6">Write-ahead log</dt><dd class="col-6">{{bytes .Database.WALBytes}}</dd>
-          <dt class="col-6">Tables</dt><dd class="col-6">{{.Database.TableCount}}</dd>
-          <dt class="col-6">Disk free</dt>
+          <dt class="col-6">{{.T "common.mainFile"}}</dt><dd class="col-6">{{bytes .Database.MainBytes}}</dd>
+          <dt class="col-6">{{.T "common.auxiliary"}}</dt><dd class="col-6">{{bytes .Database.AuxBytes}}</dd>
+          <dt class="col-6">{{.T "monitoring.wal"}}</dt><dd class="col-6">{{bytes .Database.WALBytes}}</dd>
+          <dt class="col-6">{{.T "monitoring.tables"}}</dt><dd class="col-6">{{.Database.TableCount}}</dd>
+          <dt class="col-6">{{.T "monitoring.diskFree"}}</dt>
           <dd class="col-6">
             {{if .Database.TotalBytes}}
-            {{bytes .Database.AvailableBytes}} of {{bytes .Database.TotalBytes}}
-            {{else}}<span class="text-body-secondary">unavailable</span>{{end}}
+            {{.T "monitoring.ofTotal" (bytes .Database.AvailableBytes) (bytes .Database.TotalBytes)}}
+            {{else}}<span class="text-body-secondary">{{.T "monitoring.unavailable"}}</span>{{end}}
           </dd>
-          <dt class="col-6">Data directory</dt>
+          <dt class="col-6">{{.T "dashboard.dataDirectory"}}</dt>
           <dd class="col-6 text-break"><code class="small">{{.Database.DataDir}}</code></dd>
         </dl>
       </div>
       <div class="card-footer small text-body-secondary">
-        A write-ahead log that stays large means checkpoints are not completing.
+        {{.T "monitoring.walNote"}}
       </div>
     </div>
   </div>
@@ -103,20 +102,19 @@
 <div class="row">
   <div class="col-lg-6">
     <div class="card">
-      <div class="card-header"><h3 class="card-title"><i class="fas fa-folder-open me-1"></i>File library</h3></div>
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-folder-open me-1"></i>{{.T "monitoring.fileLibrary"}}</h3></div>
       <div class="card-body">
         <dl class="row mb-0 small">
-          <dt class="col-6">Files</dt><dd class="col-6">{{.Storage.FileCount}}</dd>
-          <dt class="col-6">Live bytes</dt><dd class="col-6">{{bytes .Storage.TotalBytes}}</dd>
-          <dt class="col-6">On disk</dt><dd class="col-6">{{bytes .Storage.DirectoryBytes}}</dd>
-          <dt class="col-6">Added in 24h</dt>
-          <dd class="col-6">+{{bytes .Storage.Growth24hBytes}} ({{.Storage.Growth24hCount}} files)</dd>
+          <dt class="col-6">{{.T "monitoring.files"}}</dt><dd class="col-6">{{.Storage.FileCount}}</dd>
+          <dt class="col-6">{{.T "common.liveBytes"}}</dt><dd class="col-6">{{bytes .Storage.TotalBytes}}</dd>
+          <dt class="col-6">{{.T "monitoring.onDisk"}}</dt><dd class="col-6">{{bytes .Storage.DirectoryBytes}}</dd>
+          <dt class="col-6">{{.T "monitoring.addedIn24h"}}</dt>
+          <dd class="col-6">+{{bytes .Storage.Growth24hBytes}} ({{.T "monitoring.fileCount" .Storage.Growth24hCount}})</dd>
         </dl>
       </div>
       {{if gt .Storage.DirectoryBytes .Storage.TotalBytes}}
       <div class="card-footer small text-body-secondary">
-        The directory holds {{bytes .Storage.DirectoryBytes}} but the live files total
-        {{bytes .Storage.TotalBytes}}. The difference is deduplicated or orphaned objects.
+        {{.T "monitoring.storageMismatch" (bytes .Storage.DirectoryBytes) (bytes .Storage.TotalBytes)}}
       </div>
       {{end}}
     </div>
@@ -124,25 +122,23 @@
 
   <div class="col-lg-6">
     <div class="card">
-      <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-line me-1"></i>Traffic, last minute</h3></div>
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-line me-1"></i>{{.T "monitoring.trafficLastMinute"}}</h3></div>
       <div class="card-body">
         <dl class="row mb-0 small">
-          <dt class="col-6">Requests / minute</dt><dd class="col-6">{{printf "%.1f" .Traffic.RequestsPerMinute}}</dd>
-          <dt class="col-6">Error rate</dt>
+          <dt class="col-6">{{.T "monitoring.requestsPerMinute"}}</dt><dd class="col-6">{{printf "%.1f" .Traffic.RequestsPerMinute}}</dd>
+          <dt class="col-6">{{.T "common.errorRate"}}</dt>
           <dd class="col-6">
             {{percentf .Traffic.ErrorRate}}
-            {{if gt .Traffic.TotalErrors 0}}<span class="text-body-secondary">({{.Traffic.TotalErrors}} of {{.Traffic.TotalRequests}})</span>{{end}}
+            {{if gt .Traffic.TotalErrors 0}}<span class="text-body-secondary">({{.T "monitoring.errorRatio" .Traffic.TotalErrors .Traffic.TotalRequests}})</span>{{end}}
           </dd>
           <dt class="col-6">p50</dt><dd class="col-6">{{.Traffic.P50Ms}} ms</dd>
           <dt class="col-6">p95</dt><dd class="col-6">{{.Traffic.P95Ms}} ms</dd>
           <dt class="col-6">p99</dt><dd class="col-6">{{.Traffic.P99Ms}} ms</dd>
-          <dt class="col-6">Mean</dt><dd class="col-6">{{printf "%.2f" .Traffic.MeanMs}} ms</dd>
+          <dt class="col-6">{{.T "common.mean"}}</dt><dd class="col-6">{{printf "%.2f" .Traffic.MeanMs}} ms</dd>
         </dl>
       </div>
       <div class="card-footer small text-body-secondary">
-        Percentiles come from a fixed histogram, so a figure is the upper bound of the
-        bucket it falls in and never an understatement. Only 5xx counts as an error:
-        a 4xx is the caller being wrong.
+        {{.T "monitoring.percentileNote"}}
       </div>
     </div>
   </div>
@@ -151,7 +147,7 @@
 {{if .Recent}}
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-wave-square me-1"></i>Last hour, per minute</h3>
+    <h3 class="card-title"><i class="fas fa-wave-square me-1"></i>{{.T "monitoring.lastHourPerMinute"}}</h3>
   </div>
   <div class="card-body">
     <div class="d-flex align-items-end" style="height:4rem;gap:1px">
@@ -159,12 +155,11 @@
       {{range .Recent}}{{if gt . $max}}{{$max = .}}{{end}}{{end}}
       {{range .Recent}}
       <div class="bg-primary" style="flex:1;min-width:2px;height:{{if gt . 0}}{{percentf (divf . $max)}}{{else}}2%{{end}}"
-           title="{{.}} requests"></div>
+           title="{{$.T "monitoring.requestCount" .}}"></div>
       {{end}}
     </div>
     <div class="small text-body-secondary mt-2">
-      One bar per minute, oldest first. The window is in memory and resets when the
-      process restarts.
+      {{.T "monitoring.barsNote"}}
     </div>
   </div>
 </div>
@@ -174,34 +169,34 @@
      to run a monitoring stack to notice its disk filling up. */}}
 <div class="card card-outline card-info">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-server me-1"></i>Machines</h3>
+    <h3 class="card-title"><i class="fas fa-server me-1"></i>{{.T "monitoring.machines"}}</h3>
     <div class="card-tools small text-body-secondary">
-      {{if .Host.Enabled}}Every {{.Host.Interval}}, kept {{.Host.Retention}}.{{else}}Sampling is off. Nothing is being recorded.{{end}}
-      <a href="{{.HostSettings}}" class="ms-1">Configure</a>
-      <a href="{{.NodesSite}}" class="ms-1">All machines</a>
+      {{if .Host.Enabled}}{{.T "monitoring.every" .Host.Interval .Host.Retention}}{{else}}{{.T "monitoring.samplingOff"}}{{end}}
+      <a href="{{.HostSettings}}" class="ms-1">{{.T "monitoring.configure"}}</a>
+      <a href="{{.NodesSite}}" class="ms-1">{{.T "monitoring.allMachines"}}</a>
     </div>
   </div>
 
   {{if .Nodes}}
   <div class="card-body table-responsive p-0">
     <table class="table table-sm table-hover mb-0">
-      <thead><tr><th>Machine</th><th>Processor</th><th>Memory</th><th>Disk</th><th>Last reported</th><th>Health</th></tr></thead>
+      <thead><tr><th>{{.T "monitoring.machine"}}</th><th>{{.T "monitoring.processor"}}</th><th>{{.T "monitoring.memory"}}</th><th>{{.T "monitoring.disk"}}</th><th>{{.T "monitoring.lastReported"}}</th><th>{{.T "monitoring.health"}}</th></tr></thead>
       <tbody>
         {{range .Nodes}}
         <tr>
           <td class="small">
             <a href="/monitoring/nodes/{{.ID}}">{{.Name}}</a>
-            {{if .IsSelf}}<span class="badge text-bg-info">this one</span>{{end}}
+            {{if .IsSelf}}<span class="badge text-bg-info">{{$.T "monitoring.thisOne"}}</span>{{end}}
             <div class="text-body-secondary"><code>{{.Code}}</code></div>
           </td>
           <td class="small">{{if .CPU}}{{.CPU}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
           <td class="small">{{if .Memory}}{{.Memory}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
           <td class="small">{{if .Disk}}{{.Disk}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
-          <td class="small">{{if .Seen}}{{.Seen}}{{else}}<span class="text-body-secondary">never</span>{{end}}</td>
+          <td class="small">{{if .Seen}}{{.Seen}}{{else}}<span class="text-body-secondary">{{$.T "common.never"}}</span>{{end}}</td>
           <td>
-            {{if eq .State "active"}}<span class="badge text-bg-success">reporting</span>
+            {{if eq .State "active"}}<span class="badge text-bg-success">{{$.T "monitoring.reporting"}}</span>
             {{else if eq .State "stale"}}<span class="badge text-bg-warning">{{.Detail}}</span>
-            {{else if eq .State "off"}}<span class="badge text-bg-secondary">switched off</span>
+            {{else if eq .State "off"}}<span class="badge text-bg-secondary">{{$.T "monitoring.switchedOff"}}</span>
             {{else}}<span class="badge text-bg-danger">{{.Detail}}</span>{{end}}
           </td>
         </tr>
@@ -216,48 +211,47 @@
     {{if not .Host.Fresh}}
     <div class="alert alert-warning py-2 small mb-3">
       <i class="fas fa-triangle-exclamation me-1"></i>
-      The newest reading is from {{.Host.Sampled}}, which is older than the interval allows for.
-      The sampler may have stopped.
+      {{.T "monitoring.staleReading" .Host.Sampled}}
     </div>
     {{end}}
 
     <div class="row text-center">
       <div class="col">
-        <div class="text-body-secondary small">Processor</div>
+        <div class="text-body-secondary small">{{.T "monitoring.processor"}}</div>
         <div class="fs-5">{{.Host.CPU}}</div>
       </div>
       <div class="col">
-        <div class="text-body-secondary small">Load (1m)</div>
+        <div class="text-body-secondary small">{{.T "monitoring.load"}}</div>
         <div class="fs-5">{{.Host.Load}}</div>
       </div>
       <div class="col">
-        <div class="text-body-secondary small">Memory</div>
+        <div class="text-body-secondary small">{{.T "monitoring.memory"}}</div>
         <div class="fs-5">{{.Host.Memory}}</div>
       </div>
       <div class="col">
-        <div class="text-body-secondary small">Disk</div>
+        <div class="text-body-secondary small">{{.T "monitoring.disk"}}</div>
         <div class="fs-5">{{.Host.Disk}}</div>
       </div>
       <div class="col">
-        <div class="text-body-secondary small">In / out</div>
+        <div class="text-body-secondary small">{{.T "monitoring.inOut"}}</div>
         <div class="fs-5">{{.Host.NetRx}} <span class="text-body-secondary">/</span> {{.Host.NetTx}}</div>
       </div>
       <div class="col">
-        <div class="text-body-secondary small">Up for</div>
+        <div class="text-body-secondary small">{{.T "monitoring.upFor"}}</div>
         <div class="fs-5">{{.Host.Uptime}}</div>
       </div>
     </div>
 
     {{if .Host.Unsupported}}
     <div class="small text-body-secondary mt-3">
-      This platform does not report: {{range .Host.Unsupported}}<code>{{.}}</code> {{end}}
+      {{.T "monitoring.unsupported"}} {{range .Host.Unsupported}}<code>{{.}}</code> {{end}}
     </div>
     {{end}}
   </div>
 
   <div class="card-body table-responsive border-top p-0">
     <table class="table table-sm table-striped mb-0">
-      <thead><tr><th>When</th><th>Processor</th><th>Load</th><th>Memory</th><th>Disk</th><th>In</th><th>Out</th></tr></thead>
+      <thead><tr><th>{{.T "monitoring.when"}}</th><th>{{.T "monitoring.processor"}}</th><th>{{.T "monitoring.load"}}</th><th>{{.T "monitoring.memory"}}</th><th>{{.T "monitoring.disk"}}</th><th>{{.T "monitoring.in"}}</th><th>{{.T "monitoring.out"}}</th></tr></thead>
       <tbody>
         {{range .Host.Recent}}
         <tr class="small">
@@ -274,15 +268,14 @@
     </table>
   </div>
   <div class="card-footer small text-body-secondary">
-    Network figures are differences between consecutive readings: the stored counters are
-    cumulative since boot, so one reading cannot say how fast anything moved.
+    {{.T "monitoring.networkNote"}}
   </div>
   {{else}}
   <div class="card-body text-center text-body-secondary py-4">
     {{if .Host.Enabled}}
-      No measurement has been recorded yet. The first one arrives within {{.Host.Interval}}.
+      {{.T "monitoring.noMeasurementYet" .Host.Interval}}
     {{else}}
-      Turn sampling on in <a href="{{.HostSettings}}">the configuration</a> to record this machine's use.
+      {{.T "monitoring.turnSamplingOnIn"}} <a href="{{.HostSettings}}">{{.T "monitoring.theConfiguration"}}</a> {{.T "monitoring.toRecordMachineUse"}}
     {{end}}
   </div>
   {{end}}
@@ -291,10 +284,10 @@
 
 {{if .Snapshots}}
 <div class="card">
-  <div class="card-header"><h3 class="card-title"><i class="fas fa-clock-rotate-left me-1"></i>Recorded snapshots</h3></div>
+  <div class="card-header"><h3 class="card-title"><i class="fas fa-clock-rotate-left me-1"></i>{{.T "monitoring.recordedSnapshots"}}</h3></div>
   <div class="card-body table-responsive p-0">
     <table class="table table-sm table-striped mb-0">
-      <thead><tr><th>When</th><th>Goroutines</th><th>Heap</th><th>Files</th><th>Requests/min</th><th>Error rate</th><th>p95</th></tr></thead>
+      <thead><tr><th>{{.T "monitoring.when"}}</th><th>{{.T "common.goroutines"}}</th><th>{{.T "common.heap"}}</th><th>{{.T "monitoring.files"}}</th><th>{{.T "monitoring.requestsPerMin"}}</th><th>{{.T "common.errorRate"}}</th><th>p95</th></tr></thead>
       <tbody>
         {{range .Snapshots}}
         <tr class="small">

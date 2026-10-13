@@ -12,21 +12,21 @@
            through the sanitiser at the storage boundary. */}}
       <div class="card-body announcement-body">{{safeHTML .Content}}</div>
       <div class="card-footer text-body-secondary small">
-        {{.Record.GetString "type"}} &middot; {{.Record.GetString "level"}} &middot;
-        audience: {{.Record.GetString "audience"}} &middot;
-        {{.Reads}} read
-        {{with .Record.GetDateTime "publishAt"}}&middot; published {{formatTime .}}{{end}}
-        {{with .Record.GetDateTime "expireAt"}}&middot; expires {{formatTime .}}{{end}}
+        {{.T (printf "announcements.type.%s" (.Record.GetString "type"))}} &middot; {{.T (printf "announcements.level.%s" (.Record.GetString "level"))}} &middot;
+        {{.T "announcements.audienceIs" (.T (printf "announcements.audience.%s" (.Record.GetString "audience")))}} &middot;
+        {{.T "announcements.reads" .Reads}}
+        {{with .Record.GetDateTime "publishAt"}}&middot; {{$.T "announcements.publishedOn" (formatTime .)}}{{end}}
+        {{with .Record.GetDateTime "expireAt"}}&middot; {{$.T "announcements.expiresOn" (formatTime .)}}{{end}}
       </div>
     </div>
   </div>
 
   <div class="col-lg-4">
     <div class="card">
-      <div class="card-header"><h3 class="card-title">Actions</h3></div>
+      <div class="card-header"><h3 class="card-title">{{.T "common.actions"}}</h3></div>
       <div class="card-body d-grid gap-2">
         <a href="/announcements/{{.Record.Id}}/edit" class="btn btn-outline-primary btn-sm">
-          <i class="fas fa-pen me-1"></i>Edit
+          <i class="fas fa-pen me-1"></i>{{.T "common.edit"}}
         </a>
       </div>
     </div>
@@ -35,19 +35,19 @@
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">
-          <i class="fas fa-users me-1"></i>Readers
+          <i class="fas fa-users me-1"></i>{{.T "announcements.readers"}}
           <span class="badge text-bg-secondary">{{.ReadByTargets}}/{{.TargetCount}}</span>
         </h3>
       </div>
       <div class="card-body">
         {{if eq .TargetCount 0}}
         <p class="text-body-secondary small mb-0">
-          This announcement has no resolvable audience, so there is nobody to check against.
+          {{.T "announcements.noAudience"}}
         </p>
         {{else if eq .UnreadCount 0}}
-        <p class="text-success small mb-0">Everyone targeted has read this.</p>
+        <p class="text-success small mb-0">{{.T "announcements.allRead"}}</p>
         {{else}}
-        <p class="small mb-2">{{.UnreadCount}} of {{.TargetCount}} have not read it:</p>
+        <p class="small mb-2">{{.T "announcements.unreadOf" .UnreadCount .TargetCount}}</p>
         <ul class="list-unstyled small mb-0">
           {{range .Unread}}<li><i class="far fa-circle me-1"></i>{{.}}</li>{{end}}
         </ul>

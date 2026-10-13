@@ -4,17 +4,16 @@
      gone from the server entirely. */}}
 {{if .Plaintext}}
 <div class="alert alert-warning">
-  <h5 class="alert-heading"><i class="fas fa-key me-1"></i>Copy this key now</h5>
+  <h5 class="alert-heading"><i class="fas fa-key me-1"></i>{{.T "common.copyThisKeyNow"}}</h5>
   <p class="mb-2">
-    It is shown once. Only a hash and the prefix below are stored, so it cannot be
-    recovered or displayed again.
+    {{.T "developer.keys.shownOnce"}}
   </p>
   <div class="input-group">
     <input type="text" class="form-control font-monospace" value="{{.Plaintext}}" readonly
            onclick="this.select()" id="the-key">
     <button class="btn btn-outline-dark" type="button"
             onclick="navigator.clipboard.writeText(document.getElementById('the-key').value)">
-      <i class="fas fa-copy me-1"></i>Copy
+      <i class="fas fa-copy me-1"></i>{{.T "developer.keys.copy"}}
     </button>
   </div>
 </div>
@@ -24,58 +23,57 @@
   <div class="col-lg-8">
     <div class="card card-primary card-outline">
       <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-key me-1"></i>API keys</h3>
+        <h3 class="card-title"><i class="fas fa-key me-1"></i>{{.T "common.apiKeys"}}</h3>
       </div>
       <div class="card-body table-responsive p-0">
         <table class="table table-hover mb-0">
           <thead>
-            <tr><th>Name</th><th>Key</th><th>Owner</th><th>State</th><th>Used</th><th></th></tr>
+            <tr><th>{{.T "common.name"}}</th><th>{{.T "developer.keys.col.key"}}</th><th>{{.T "developer.keys.col.owner"}}</th><th>{{.T "common.state"}}</th><th>{{.T "developer.keys.col.used"}}</th><th></th></tr>
           </thead>
           <tbody>
             {{range .Rows}}
             <tr>
               <td>
                 <div>{{.Name}}</div>
-                <div class="small text-body-secondary">{{.Scopes}} scope(s)
+                <div class="small text-body-secondary">{{$.T "developer.keys.scopeCount" .Scopes}}
                   {{if .RateLimit}}&middot; {{.RateLimit}}/min{{end}}
                   {{if .AllowList}}&middot; <code>{{.AllowList}}</code>{{end}}
-                  {{if .MonitorNode}}&middot; <span class="badge text-bg-info">reports for {{.MonitorNode}}</span>{{end}}
+                  {{if .MonitorNode}}&middot; <span class="badge text-bg-info">{{$.T "developer.keys.reportsFor" .MonitorNode}}</span>{{end}}
                 </div>
               </td>
               <td><code>{{.Prefix}}&hellip;</code></td>
               <td class="small">{{.Owner}}</td>
               <td>
-                {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
-                {{else if eq .Status "revoked"}}<span class="badge text-bg-danger">revoked</span>
+                {{if eq .Status "active"}}<span class="badge text-bg-success">{{$.T "developer.keys.status.active"}}</span>
+                {{else if eq .Status "revoked"}}<span class="badge text-bg-danger">{{$.T "developer.keys.status.revoked"}}</span>
                 {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
-                {{if .Expires}}<div class="small text-body-secondary">expires {{.Expires}}</div>{{end}}
+                {{if .Expires}}<div class="small text-body-secondary">{{$.T "developer.keys.expires" .Expires}}</div>{{end}}
               </td>
               <td class="small">
-                {{if .Usage}}{{.Usage}} request(s)
-                  <div class="text-body-secondary">{{.LastUsed}}{{if .LastUsedIP}} from {{.LastUsedIP}}{{end}}</div>
-                {{else}}<span class="text-body-secondary">never</span>{{end}}
+                {{if .Usage}}{{$.T "developer.keys.requestCount" .Usage}}
+                  <div class="text-body-secondary">{{.LastUsed}}{{if .LastUsedIP}} {{$.T "developer.keys.from"}} {{.LastUsedIP}}{{end}}</div>
+                {{else}}<span class="text-body-secondary">{{$.T "developer.keys.never"}}</span>{{end}}
               </td>
               <td class="text-end">
                 {{if and $.CanRevoke (eq .Status "active")}}
                 <form method="post" action="/developer/keys/{{.Record.Id}}/revoke"
-                      onsubmit="return confirm('Revoke this key? It stops working immediately.')">
+                      onsubmit="return confirm('{{$.T "developer.keys.revokeConfirm"}}')">
                   <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-                  <button class="btn btn-sm btn-outline-danger">Revoke</button>
+                  <button class="btn btn-sm btn-outline-danger">{{$.T "developer.keys.revoke"}}</button>
                 </form>
                 {{else if .Revoked}}
-                <span class="small text-body-secondary">revoked {{.Revoked}}</span>
+                <span class="small text-body-secondary">{{$.T "developer.keys.revokedAt" .Revoked}}</span>
                 {{end}}
               </td>
             </tr>
             {{else}}
-            <tr><td colspan="6" class="text-center text-body-secondary py-4">No keys have been issued.</td></tr>
+            <tr><td colspan="6" class="text-center text-body-secondary py-4">{{.T "developer.keys.empty"}}</td></tr>
             {{end}}
           </tbody>
         </table>
       </div>
       <div class="card-footer small text-body-secondary">
-        A key carries the intersection of its scopes and its owner's current permissions, so removing a
-        permission from the owner narrows every key they issued without editing the keys.
+        {{.T "developer.keys.footer"}}
       </div>
     </div>
   </div>
@@ -83,24 +81,24 @@
   {{if .CanCreate}}
   <div class="col-lg-4">
     <div class="card">
-      <div class="card-header"><h3 class="card-title">Issue a key</h3></div>
+      <div class="card-header"><h3 class="card-title">{{.T "common.issueKey"}}</h3></div>
       <div class="card-body">
         <form method="post" action="/developer/keys">
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
           <div class="mb-2">
-            <label class="form-label small" for="name">Name</label>
+            <label class="form-label small" for="name">{{.T "common.name"}}</label>
             <input type="text" class="form-control form-control-sm" id="name" name="name" required
-                   placeholder="Reporting integration">
+                   placeholder="{{.T "developer.keys.namePlaceholder"}}">
           </div>
           <div class="mb-2">
-            <label class="form-label small" for="owner">Owning account</label>
+            <label class="form-label small" for="owner">{{.T "developer.keys.owningAccount"}}</label>
             <select class="form-select form-select-sm" id="owner" name="owner" required>
               {{range .Users}}<option value="{{.ID}}">{{.Email}}</option>{{end}}
             </select>
-            <div class="form-text">Only accounts the key may act for.</div>
+            <div class="form-text">{{.T "developer.keys.ownerHint"}}</div>
           </div>
           <div class="mb-2">
-            <label class="form-label small">Scopes</label>
+            <label class="form-label small">{{.T "developer.keys.scopes"}}</label>
             <div style="max-height:14rem;overflow-y:auto" class="border rounded p-2">
               {{range .Permissions}}
               <div class="form-check">
@@ -114,34 +112,33 @@
           </div>
           <div class="row g-2 mb-2">
             <div class="col-6">
-              <label class="form-label small" for="rateLimitPerMinute">Rate limit</label>
+              <label class="form-label small" for="rateLimitPerMinute">{{.T "developer.keys.rateLimit"}}</label>
               <input type="number" class="form-control form-control-sm" id="rateLimitPerMinute"
-                     name="rateLimitPerMinute" min="0" placeholder="default">
+                     name="rateLimitPerMinute" min="0" placeholder="{{.T "developer.keys.rateLimitPlaceholder"}}">
             </div>
             <div class="col-6">
-              <label class="form-label small" for="expiresAt">Expires</label>
+              <label class="form-label small" for="expiresAt">{{.T "common.expires"}}</label>
               <input type="date" class="form-control form-control-sm" id="expiresAt" name="expiresAt">
             </div>
           </div>
           <div class="mb-2">
-            <label class="form-label small" for="monitorNode">Reports for a machine</label>
+            <label class="form-label small" for="monitorNode">{{.T "developer.keys.monitorNode"}}</label>
             <select class="form-select form-select-sm" id="monitorNode" name="monitorNode">
-              <option value="">Not a monitoring agent</option>
+              <option value="">{{.T "developer.keys.notMonitoring"}}</option>
               {{range .Nodes}}<option value="{{.ID}}">{{.Name}} ({{.Code}})</option>{{end}}
             </select>
             <div class="form-text">
-              Required to submit measurements. A key bound to a machine reports only for
-              that one, so a compromised agent cannot rewrite another machine's history.
+              {{.T "developer.keys.monitorNodeHint"}}
             </div>
           </div>
 
           <div class="mb-2">
-            <label class="form-label small" for="ipAllowList">IP allow-list</label>
+            <label class="form-label small" for="ipAllowList">{{.T "common.ipAllowList"}}</label>
             <input type="text" class="form-control form-control-sm" id="ipAllowList" name="ipAllowList"
                    placeholder="10.0.0.0/8, 203.0.113.7">
-            <div class="form-text">Empty allows any address.</div>
+            <div class="form-text">{{.T "common.emptyAllowsAnyAddress"}}</div>
           </div>
-          <button class="btn btn-primary btn-sm w-100">Issue key</button>
+          <button class="btn btn-primary btn-sm w-100">{{.T "developer.keys.issue"}}</button>
         </form>
       </div>
     </div>

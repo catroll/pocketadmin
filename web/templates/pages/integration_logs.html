@@ -1,34 +1,34 @@
 {{define "content"}}
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-list me-1"></i>Integration log</h3>
+    <h3 class="card-title"><i class="fas fa-list me-1"></i>{{.T "integrations.log.title"}}</h3>
     <div class="card-tools">
-      <a href="/integrations" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Providers</a>
+      <a href="/integrations" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>{{.T "integrations.providers"}}</a>
     </div>
   </div>
   <div class="card-body border-bottom py-2">
     <form method="get" action="/integrations/logs" class="row g-2">
       <div class="col-auto">
         <select class="form-select form-select-sm" name="channel">
-          <option value="">Any channel</option>
+          <option value="">{{.T "integrations.log.anyChannel"}}</option>
           {{$c := .Channel}}{{range .Channels}}
           <option value="{{.}}" {{if eq . $c}}selected{{end}}>{{.}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
         <select class="form-select form-select-sm" name="status">
-          <option value="">Any outcome</option>
+          <option value="">{{.T "integrations.log.anyOutcome"}}</option>
           {{$s := .Status}}
-          <option value="success" {{if eq $s "success"}}selected{{end}}>success</option>
-          <option value="failure" {{if eq $s "failure"}}selected{{end}}>failure</option>
+          <option value="success" {{if eq $s "success"}}selected{{end}}>{{.T "integrations.outcome.success"}}</option>
+          <option value="failure" {{if eq $s "failure"}}selected{{end}}>{{.T "integrations.outcome.failure"}}</option>
         </select>
       </div>
-      <div class="col-auto"><button class="btn btn-sm btn-secondary">Filter</button></div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.filter"}}</button></div>
     </form>
   </div>
   <div class="card-body table-responsive p-0">
     <table class="table table-sm table-striped mb-0">
-      <thead><tr><th>When</th><th>Channel</th><th>Action</th><th>Target</th><th>Outcome</th><th>Duration</th><th>Detail</th></tr></thead>
+      <thead><tr><th>{{.T "integrations.log.col.when"}}</th><th>{{.T "common.channel"}}</th><th>{{.T "integrations.log.col.action"}}</th><th>{{.T "integrations.log.col.target"}}</th><th>{{.T "integrations.log.col.outcome"}}</th><th>{{.T "common.duration"}}</th><th>{{.T "common.detail"}}</th></tr></thead>
       <tbody>
         {{range .Rows}}
         <tr>
@@ -37,8 +37,8 @@
           <td class="small">{{.GetString "action"}}</td>
           <td class="small">{{truncate (.GetString "target") 40}}</td>
           <td>
-            {{if eq (.GetString "status") "success"}}<span class="badge text-bg-success">success</span>
-            {{else}}<span class="badge text-bg-danger">failure</span>{{end}}
+            {{if eq (.GetString "status") "success"}}<span class="badge text-bg-success">{{$.T "integrations.outcome.success"}}</span>
+            {{else}}<span class="badge text-bg-danger">{{$.T "integrations.outcome.failure"}}</span>{{end}}
           </td>
           <td class="small">{{.GetInt "durationMs"}} ms</td>
           <td class="small">
@@ -47,14 +47,13 @@
           </td>
         </tr>
         {{else}}
-        <tr><td colspan="7" class="text-center text-body-secondary py-4">Nothing has been attempted yet.</td></tr>
+        <tr><td colspan="7" class="text-center text-body-secondary py-4">{{$.T "integrations.log.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>
   </div>
   <div class="card-footer small text-body-secondary">
-    Requests and responses are redacted before they are recorded, with the same rules the audit log
-    uses: an integration payload is where credentials and signatures travel.
+    {{.T "integrations.log.redactionNote"}}
   </div>
 </div>
 {{end}}

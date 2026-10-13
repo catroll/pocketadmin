@@ -5,16 +5,16 @@
     <div class="col-lg-8">
       <div class="card card-primary card-outline">
         <div class="card-header">
-          <h3 class="card-title">Items</h3>
+          <h3 class="card-title">{{.T "common.items"}}</h3>
           <div class="card-tools small text-body-secondary">
-            The name, SKU and price are copied onto the order now, so a later catalogue edit cannot change it.
+            {{.T "orders.form.itemsNote"}}
           </div>
         </div>
         <div class="card-body">
           {{range $i := (loop 5)}}
           <div class="row g-2 mb-2 align-items-end">
             <div class="col-sm-6">
-              <label class="form-label small">Product</label>
+              <label class="form-label small">{{$.T "orders.form.product"}}</label>
               <select class="form-select form-select-sm" name="product">
                 <option value="">&mdash;</option>
                 {{range $.Products}}
@@ -23,16 +23,16 @@
               </select>
             </div>
             <div class="col-sm-4">
-              <label class="form-label small">Variant</label>
+              <label class="form-label small">{{$.T "orders.form.variant"}}</label>
               <select class="form-select form-select-sm" name="variant">
-                <option value="">Default</option>
+                <option value="">{{$.T "common.default"}}</option>
                 {{range $.Products}}{{range .Variants}}
-                <option value="{{.ID}}">{{.Label}}{{if .SKU}} ({{.SKU}}){{end}} &mdash; {{.Stock}} in stock</option>
+                <option value="{{.ID}}">{{.Label}}{{if .SKU}} ({{.SKU}}){{end}} &mdash; {{$.T "orders.form.inStock" .Stock}}</option>
                 {{end}}{{end}}
               </select>
             </div>
             <div class="col-sm-2">
-              <label class="form-label small">Quantity</label>
+              <label class="form-label small">{{$.T "orders.form.quantity"}}</label>
               <input type="number" class="form-control form-control-sm" name="quantity" min="0" value="{{if eq $i 0}}1{{end}}">
             </div>
           </div>
@@ -43,33 +43,32 @@
 
     <div class="col-lg-4">
       <div class="card">
-        <div class="card-header"><h3 class="card-title">The order</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "orders.form.title"}}</h3></div>
         <div class="card-body">
           <div class="mb-2">
-            <label class="form-label small" for="email">Account email</label>
+            <label class="form-label small" for="email">{{.T "orders.form.accountEmail"}}</label>
             <input type="email" class="form-control form-control-sm" id="email" name="email" required>
           </div>
           <div class="row g-2 mb-2">
             <div class="col-6">
-              <label class="form-label small" for="shippingFee">Shipping</label>
+              <label class="form-label small" for="shippingFee">{{.T "orders.shipping"}}</label>
               <input type="text" class="form-control form-control-sm" id="shippingFee" name="shippingFee" placeholder="0.00">
             </div>
             <div class="col-6">
-              <label class="form-label small" for="taxRate">Tax %</label>
+              <label class="form-label small" for="taxRate">{{.T "orders.form.taxPercent"}}</label>
               <input type="text" class="form-control form-control-sm" id="taxRate" name="taxRate" placeholder="0">
             </div>
           </div>
           <div class="mb-2">
-            <label class="form-label small" for="customerNote">Customer note</label>
+            <label class="form-label small" for="customerNote">{{.T "common.customerNote"}}</label>
             <textarea class="form-control form-control-sm" id="customerNote" name="customerNote" rows="2"></textarea>
           </div>
           <div class="form-text">
-            A membership discount is applied automatically from the account's tier, so this order is
-            priced the way a self-service one would be.
+            {{.T "orders.form.pricingNote"}}
           </div>
         </div>
         <div class="card-footer d-grid">
-          <button class="btn btn-primary"><i class="fas fa-save me-1"></i>Create the order</button>
+          <button class="btn btn-primary"><i class="fas fa-save me-1"></i>{{.T "orders.form.create"}}</button>
         </div>
       </div>
     </div>

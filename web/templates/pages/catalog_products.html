@@ -3,45 +3,45 @@
   <div class="col-lg-9">
     <form method="get" action="/catalog/products" class="row g-2">
       <div class="col-auto">
-        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="Name, slug or subtitle">
+        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="{{.T "catalog.products.filter.search"}}">
       </div>
       <div class="col-auto">
         <select class="form-select form-select-sm" name="category">
-          <option value="">Any category</option>
+          <option value="">{{.T "catalog.products.filter.anyCategory"}}</option>
           {{$c := .Category}}{{range .Categories}}
           <option value="{{.ID}}" {{if eq .ID $c}}selected{{end}}>{{safeHTML .Label}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
         <select class="form-select form-select-sm" name="status">
-          <option value="">Any status</option>
+          <option value="">{{.T "catalog.products.filter.anyStatus"}}</option>
           {{$s := .Status}}{{range .Statuses}}
           <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
         <select class="form-select form-select-sm" name="kind">
-          <option value="">Any kind</option>
+          <option value="">{{.T "catalog.products.filter.anyKind"}}</option>
           {{$k := .Kind}}{{range .Kinds}}
           <option value="{{.}}" {{if eq . $k}}selected{{end}}>{{.}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
-        <input type="text" class="form-control form-control-sm" name="brand" value="{{.Brand}}" placeholder="Brand">
+        <input type="text" class="form-control form-control-sm" name="brand" value="{{.Brand}}" placeholder="{{.T "common.brand"}}">
       </div>
       <div class="col-auto">
         <div class="form-check form-check-inline mt-2">
           <input type="checkbox" class="form-check-input" name="lowStock" value="1" id="low"
                  {{if .LowStock}}checked{{end}}>
-          <label class="form-check-label small" for="low">Low stock only</label>
+          <label class="form-check-label small" for="low">{{.T "common.lowStockOnly"}}</label>
         </div>
       </div>
-      <div class="col-auto"><button class="btn btn-sm btn-secondary">Filter</button></div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.filter"}}</button></div>
     </form>
   </div>
   <div class="col-lg-3 text-lg-end">
     {{if .CanCreate}}
-    <a href="/catalog/products/new" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New product</a>
+    <a href="/catalog/products/new" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>{{.T "catalog.products.new"}}</a>
     {{end}}
   </div>
 </div>
@@ -54,9 +54,9 @@
 
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-boxes-stacked me-1"></i>Products</h3>
+    <h3 class="card-title"><i class="fas fa-boxes-stacked me-1"></i>{{.T "catalog.products.title"}}</h3>
     <div class="card-tools small text-body-secondary">
-      Prices are stored as integer minor units, so 19.99 is 1999. {{/* and no decimal ever touches a float */}}
+      {{.T "catalog.products.note.minorUnits"}} {{/* and no decimal ever touches a float */}}
     </div>
   </div>
   <div class="card-body table-responsive p-0">
@@ -64,7 +64,7 @@
       <thead>
         <tr>
           {{if .CanBulk}}<th style="width:1%"></th>{{end}}
-          <th>Product</th><th>Category</th><th>Kind</th><th>Price</th><th>Stock</th><th>Status</th><th></th>
+          <th>{{.T "catalog.products.col.product"}}</th><th>{{.T "common.category"}}</th><th>{{.T "common.kind"}}</th><th>{{.T "common.price"}}</th><th>{{.T "common.stock"}}</th><th>{{.T "common.status"}}</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -76,7 +76,7 @@
           <td>
             <div class="fw-semibold">{{.Name}}</div>
             <code class="small text-body-secondary">{{.Slug}}</code>
-            {{if .SKUs}}<span class="badge text-bg-light ms-1">{{.SKUs}} SKU</span>{{end}}
+            {{if .SKUs}}<span class="badge text-bg-light ms-1">{{$.T "catalog.products.skuCount" .SKUs}}</span>{{end}}
             {{if .Subtitle}}<div class="small text-body-secondary">{{truncate .Subtitle 60}}</div>{{end}}
           </td>
           <td class="small">{{if .Category}}{{.Category}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
@@ -90,28 +90,28 @@
           <td class="small">
             {{if .TrackStock}}
             <span class="{{if .LowStock}}text-danger fw-semibold{{end}}">{{.Stock}}</span>
-            {{if .LowStock}}<span class="badge text-bg-danger">low</span>{{end}}
-            {{else}}<span class="text-body-secondary">{{range .SKUs}}{{end}}per variant{{end}}
+            {{if .LowStock}}<span class="badge text-bg-danger">{{$.T "catalog.products.low"}}</span>{{end}}
+            {{else}}<span class="text-body-secondary">{{range .SKUs}}{{end}}{{$.T "catalog.products.perVariant"}}{{end}}
           </td>
           <td>
-            {{if eq .Status "on_sale"}}<span class="badge text-bg-success">on sale</span>
-            {{else if eq .Status "draft"}}<span class="badge text-bg-secondary">draft</span>
-            {{else if eq .Status "off_shelf"}}<span class="badge text-bg-warning">off shelf</span>
-            {{else}}<span class="badge text-bg-dark">archived</span>{{end}}
+            {{if eq .Status "on_sale"}}<span class="badge text-bg-success">{{$.T "catalog.products.status.onSale"}}</span>
+            {{else if eq .Status "draft"}}<span class="badge text-bg-secondary">{{$.T "catalog.products.status.draft"}}</span>
+            {{else if eq .Status "off_shelf"}}<span class="badge text-bg-warning">{{$.T "catalog.products.status.offShelf"}}</span>
+            {{else}}<span class="badge text-bg-dark">{{$.T "catalog.products.status.archived"}}</span>{{end}}
           </td>
           <td class="text-end text-nowrap">
-            <a href="/catalog/products/{{.Record.Id}}/variants" class="btn btn-sm btn-secondary" title="Variants and stock">
+            <a href="/catalog/products/{{.Record.Id}}/variants" class="btn btn-sm btn-secondary" title="{{$.T "catalog.products.openVariants"}}">
               <i class="fas fa-layer-group"></i>
             </a>
             {{if $.CanUpdate}}
-            <a href="/catalog/products/{{.Record.Id}}/edit" class="btn btn-sm btn-secondary" title="Edit">
+            <a href="/catalog/products/{{.Record.Id}}/edit" class="btn btn-sm btn-secondary" title="{{$.T "common.edit"}}">
               <i class="fas fa-pen"></i>
             </a>
             {{end}}
           </td>
         </tr>
         {{else}}
-        <tr><td colspan="8" class="text-center text-body-secondary py-4">No products match.</td></tr>
+        <tr><td colspan="8" class="text-center text-body-secondary py-4">{{.T "catalog.products.noneMatch"}}</td></tr>
         {{end}}
       </tbody>
     </table>
@@ -121,33 +121,33 @@
   <div class="card-footer">
     <div class="row g-2 align-items-end">
       <div class="col-auto">
-        <label class="form-label small mb-1">Bulk change</label>
+        <label class="form-label small mb-1">{{.T "common.bulkChange"}}</label>
         <select class="form-select form-select-sm" name="action" form="bulkForm" id="bulkAction">
-          <option value="on_sale">Put on sale</option>
-          <option value="off_shelf">Take off shelf</option>
-          <option value="archive">Archive</option>
-          <option value="price_change">Adjust price by percent</option>
-          <option value="tag">Add a tag</option>
-          <option value="category">Move to a category</option>
+          <option value="on_sale">{{.T "catalog.products.bulk.putOnSale"}}</option>
+          <option value="off_shelf">{{.T "catalog.products.bulk.takeOffShelf"}}</option>
+          <option value="archive">{{.T "common.archive"}}</option>
+          <option value="price_change">{{.T "common.adjustPricePercent"}}</option>
+          <option value="tag">{{.T "common.addTag"}}</option>
+          <option value="category">{{.T "common.moveToCategory"}}</option>
         </select>
       </div>
       <div class="col-auto">
-        <label class="form-label small mb-1">Value</label>
-        <input type="text" class="form-control form-control-sm" name="percent" form="bulkForm" placeholder="e.g. -10">
+        <label class="form-label small mb-1">{{.T "common.value"}}</label>
+        <input type="text" class="form-control form-control-sm" name="percent" form="bulkForm" placeholder="{{.T "catalog.products.bulk.percentPlaceholder"}}">
       </div>
       <div class="col-auto">
         <label class="form-label small mb-1">&nbsp;</label>
-        <input type="text" class="form-control form-control-sm" name="tag" form="bulkForm" placeholder="tag">
+        <input type="text" class="form-control form-control-sm" name="tag" form="bulkForm" placeholder="{{.T "catalog.products.bulk.tagPlaceholder"}}">
       </div>
       <div class="col-auto">
         <label class="form-label small mb-1">&nbsp;</label>
         <select class="form-select form-select-sm" name="category" form="bulkForm">
-          <option value="">No category</option>
+          <option value="">{{.T "catalog.products.bulk.noCategory"}}</option>
           {{range .Categories}}<option value="{{.ID}}">{{safeHTML .Label}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
-        <button class="btn btn-sm btn-primary" id="bulkSubmit">Apply to selected</button>
+        <button class="btn btn-sm btn-primary" id="bulkSubmit">{{.T "common.applyToSelected"}}</button>
       </div>
     </div>
   </div>
@@ -165,7 +165,7 @@
     // The bulk endpoint is per product, so one of them carries the request and
     // the selection travels with it.
     var checked = document.querySelectorAll('.bulk-check:checked');
-    if (!checked.length) { alert('Select at least one product.'); return; }
+    if (!checked.length) { alert('{{.T "catalog.products.selectOne"}}'); return; }
     form.action = '/catalog/products/' + checked[0].value + '/bulk';
     var actionField = document.createElement('input');
     actionField.type = 'hidden'; actionField.name = 'action'; actionField.value = action;

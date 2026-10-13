@@ -3,39 +3,39 @@
   <div class="col-lg-8">
     <form method="get" action="/subscriptions" class="row g-2">
       <div class="col-auto">
-        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="Account email">
+        <input type="search" class="form-control form-control-sm" name="q" value="{{.Query}}" placeholder="{{.T "subscriptions.filter.email"}}">
       </div>
       <div class="col-auto">
         <select class="form-select form-select-sm" name="status">
-          <option value="">Any status</option>
+          <option value="">{{.T "subscriptions.filter.anyStatus"}}</option>
           {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
         </select>
       </div>
-      <div class="col-auto"><button class="btn btn-sm btn-secondary">Filter</button></div>
+      <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.filter"}}</button></div>
     </form>
   </div>
   <div class="col-lg-4 text-lg-end">
-    <a href="/subscriptions/plans" class="btn btn-outline-secondary btn-sm">Plans</a>
+    <a href="/subscriptions/plans" class="btn btn-outline-secondary btn-sm">{{.T "nav.subscriptions.plans"}}</a>
   </div>
 </div>
 
 {{if .CanManage}}
 <div class="card">
-  <div class="card-header"><h3 class="card-title">Subscribe an account</h3></div>
+  <div class="card-header"><h3 class="card-title">{{.T "subscriptions.subscribe.title"}}</h3></div>
   <div class="card-body">
     <form method="post" action="/subscriptions/subscribe" class="row g-2 align-items-end">
       <input type="hidden" name="_csrf" value="{{.CSRF}}">
       <div class="col-sm-4">
-        <label class="form-label small" for="email">Account email</label>
+        <label class="form-label small" for="email">{{.T "subscriptions.filter.email"}}</label>
         <input type="email" class="form-control form-control-sm" id="email" name="email" required>
       </div>
       <div class="col-sm-4">
-        <label class="form-label small" for="plan">Plan</label>
+        <label class="form-label small" for="plan">{{.T "common.plan"}}</label>
         <select class="form-select form-select-sm" id="plan" name="plan" required>
           {{range .Plans}}<option value="{{.ID}}">{{.Name}} ({{.Interval}})</option>{{end}}
         </select>
       </div>
-      <div class="col-sm-4"><button class="btn btn-primary btn-sm">Subscribe</button></div>
+      <div class="col-sm-4"><button class="btn btn-primary btn-sm">{{.T "subscriptions.subscribe.submit"}}</button></div>
     </form>
   </div>
 </div>
@@ -43,14 +43,14 @@
 
 <div class="card card-primary card-outline">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-rotate me-1"></i>Subscriptions</h3>
+    <h3 class="card-title"><i class="fas fa-rotate me-1"></i>{{.T "subscriptions.title"}}</h3>
     <div class="card-tools small text-body-secondary">
-      A period is materialised rather than computed, because a pause extends it.
+      {{.T "subscriptions.note.period"}}
     </div>
   </div>
   <div class="card-body table-responsive p-0">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Account</th><th>Plan</th><th>Price</th><th>Period ends</th><th>Cycles</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>{{.T "subscriptions.col.account"}}</th><th>{{.T "common.plan"}}</th><th>{{.T "common.price"}}</th><th>{{.T "subscriptions.col.periodEnd"}}</th><th>{{.T "common.cycles"}}</th><th>{{.T "common.status"}}</th><th></th></tr></thead>
       <tbody>
         {{range .Rows}}
         <tr>
@@ -59,25 +59,25 @@
           <td class="small">{{.Price}}</td>
           <td class="small {{if .PeriodOver}}text-danger{{end}}">
             {{.PeriodEnd}}
-            {{if .PausedSince}}<div class="text-body-secondary">paused since {{.PausedSince}}</div>{{end}}
+            {{if .PausedSince}}<div class="text-body-secondary">{{$.T "subscriptions.pausedSince" .PausedSince}}</div>{{end}}
           </td>
           <td class="small">{{.Cycles}}</td>
           <td>
-            {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
-            {{else if eq .Status "trialing"}}<span class="badge text-bg-info">trialing</span>
-            {{else if eq .Status "past_due"}}<span class="badge text-bg-warning">past due</span>
-            {{else if eq .Status "paused"}}<span class="badge text-bg-secondary">paused</span>
-            {{else if eq .Status "cancelled"}}<span class="badge text-bg-dark">cancelled</span>
+            {{if eq .Status "active"}}<span class="badge text-bg-success">{{$.T "subscriptions.status.active"}}</span>
+            {{else if eq .Status "trialing"}}<span class="badge text-bg-info">{{$.T "subscriptions.status.trialing"}}</span>
+            {{else if eq .Status "past_due"}}<span class="badge text-bg-warning">{{$.T "subscriptions.status.pastDue"}}</span>
+            {{else if eq .Status "paused"}}<span class="badge text-bg-secondary">{{$.T "subscriptions.status.paused"}}</span>
+            {{else if eq .Status "cancelled"}}<span class="badge text-bg-dark">{{$.T "subscriptions.status.cancelled"}}</span>
             {{else}}<span class="badge text-bg-dark">{{.Status}}</span>{{end}}
-            {{if .CancelAtEnd}}<span class="badge text-bg-warning" title="Ends at the period end">ending</span>{{end}}
-            {{if .Retries}}<span class="badge text-bg-danger">{{.Retries}} retries</span>{{end}}
+            {{if .CancelAtEnd}}<span class="badge text-bg-warning" title="{{$.T "subscriptions.endsAtPeriodEnd"}}">{{$.T "subscriptions.status.ending"}}</span>{{end}}
+            {{if .Retries}}<span class="badge text-bg-danger">{{$.T "subscriptions.retries" .Retries}}</span>{{end}}
           </td>
           <td class="text-end">
             <a href="/subscriptions/{{.Record.Id}}" class="btn btn-sm btn-secondary"><i class="fas fa-list"></i></a>
           </td>
         </tr>
         {{else}}
-        <tr><td colspan="7" class="text-center text-body-secondary py-4">No subscriptions.</td></tr>
+        <tr><td colspan="7" class="text-center text-body-secondary py-4">{{.T "subscriptions.empty"}}</td></tr>
         {{end}}
       </tbody>
     </table>

@@ -6,49 +6,49 @@
   <div class="row">
     <div class="col-lg-8">
       <div class="card card-primary card-outline">
-        <div class="card-header"><h3 class="card-title">Product</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "catalog.product.form.title"}}</h3></div>
         <div class="card-body">
           <div class="row g-2 mb-2">
             <div class="col-sm-7">
-              <label class="form-label" for="name">Name</label>
+              <label class="form-label" for="name">{{.T "common.name"}}</label>
               <input type="text" class="form-control" id="name" name="name" value="{{.Name}}" required>
             </div>
             <div class="col-sm-5">
-              <label class="form-label" for="slug">Slug</label>
+              <label class="form-label" for="slug">{{.T "catalog.product.form.slug"}}</label>
               <input type="text" class="form-control font-monospace" id="slug" name="slug" value="{{.Slug}}">
-              <div class="form-text">Leave empty to derive it from the name.</div>
+              <div class="form-text">{{.T "common.emptyDeriveFromName"}}</div>
             </div>
           </div>
 
           <div class="mb-2">
-            <label class="form-label" for="subtitle">Subtitle</label>
+            <label class="form-label" for="subtitle">{{.T "catalog.product.form.subtitle"}}</label>
             <input type="text" class="form-control" id="subtitle" name="subtitle" value="{{.Subtitle}}">
           </div>
 
           <div class="mb-2">
-            <label class="form-label" for="description">Description</label>
+            <label class="form-label" for="description">{{.T "common.description"}}</label>
             <textarea class="form-control font-monospace" id="description" name="description" rows="8">{{.Description}}</textarea>
-            <div class="form-text">HTML. Scripts and event handlers are removed when this is saved.</div>
+            <div class="form-text">{{.T "common.scriptsRemoved"}}</div>
           </div>
 
           <div class="row g-2">
             <div class="col-sm-4">
-              <label class="form-label" for="kind">Kind</label>
+              <label class="form-label" for="kind">{{.T "common.kind"}}</label>
               <select class="form-select" id="kind" name="kind">
                 {{$k := .Kind}}{{range .Kinds}}
                 <option value="{{.}}" {{if eq . $k}}selected{{end}}>{{.}}</option>{{end}}
               </select>
             </div>
             <div class="col-sm-4">
-              <label class="form-label" for="category">Category</label>
+              <label class="form-label" for="category">{{.T "common.category"}}</label>
               <select class="form-select" id="category" name="category">
-                <option value="">None</option>
+                <option value="">{{.T "common.none"}}</option>
                 {{$c := .Category}}{{range .Categories}}
                 <option value="{{.ID}}" {{if eq .ID $c}}selected{{end}}>{{safeHTML .Label}}</option>{{end}}
               </select>
             </div>
             <div class="col-sm-4">
-              <label class="form-label" for="brand">Brand</label>
+              <label class="form-label" for="brand">{{.T "common.brand"}}</label>
               <input type="text" class="form-control" id="brand" name="brand" value="{{.Brand}}">
             </div>
           </div>
@@ -56,18 +56,18 @@
       </div>
 
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Search engine listing</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "catalog.product.form.seo"}}</h3></div>
         <div class="card-body">
           <div class="mb-2">
-            <label class="form-label small" for="seoTitle">Title</label>
+            <label class="form-label small" for="seoTitle">{{.T "catalog.product.form.seo.title"}}</label>
             <input type="text" class="form-control form-control-sm" id="seoTitle" name="seoTitle" value="{{.SEOTitle}}">
           </div>
           <div class="mb-2">
-            <label class="form-label small" for="seoKeywords">Keywords</label>
+            <label class="form-label small" for="seoKeywords">{{.T "common.keywords"}}</label>
             <input type="text" class="form-control form-control-sm" id="seoKeywords" name="seoKeywords" value="{{.SEOKeywords}}">
           </div>
           <div class="mb-0">
-            <label class="form-label small" for="seoDescription">Description</label>
+            <label class="form-label small" for="seoDescription">{{.T "common.description"}}</label>
             <textarea class="form-control form-control-sm" id="seoDescription" name="seoDescription" rows="2">{{.SEODescription}}</textarea>
           </div>
         </div>
@@ -76,60 +76,58 @@
 
     <div class="col-lg-4">
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Pricing</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "catalog.product.form.pricing"}}</h3></div>
         <div class="card-body">
           <div class="mb-2">
-            <label class="form-label small" for="currency">Currency</label>
+            <label class="form-label small" for="currency">{{.T "common.currency"}}</label>
             <input type="text" class="form-control form-control-sm font-monospace" id="currency"
                    name="currency" value="{{.Currency}}" maxlength="3" required>
             <div class="form-text">
-              ISO-4217. The number of decimal places follows the currency, so a yen
-              price has none and a dinar has three.
+              {{.T "catalog.product.form.currencyNote"}}
             </div>
           </div>
           <div class="mb-2">
-            <label class="form-label small" for="listPrice">List price</label>
+            <label class="form-label small" for="listPrice">{{.T "common.listPrice"}}</label>
             <input type="text" class="form-control form-control-sm" id="listPrice" name="listPrice" value="{{.ListPrice}}">
           </div>
           <div class="mb-2">
-            <label class="form-label small" for="salePrice">Sale price</label>
+            <label class="form-label small" for="salePrice">{{.T "common.salePrice"}}</label>
             <input type="text" class="form-control form-control-sm" id="salePrice" name="salePrice" value="{{.SalePrice}}">
-            <div class="form-text">Empty for no sale. May not exceed the list price.</div>
+            <div class="form-text">{{.T "common.emptyForNoSale"}}</div>
           </div>
           <div class="mb-0">
-            <label class="form-label small" for="costPrice">Cost price</label>
+            <label class="form-label small" for="costPrice">{{.T "common.costPrice"}}</label>
             <input type="text" class="form-control form-control-sm" id="costPrice" name="costPrice" value="{{.CostPrice}}">
             <div class="form-text">
-              <i class="fas fa-eye-slash me-1"></i>Never shown to a customer.
+              <i class="fas fa-eye-slash me-1"></i>{{.T "catalog.product.form.costPriceNote"}}
             </div>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Stock and status</h3></div>
+        <div class="card-header"><h3 class="card-title">{{.T "catalog.product.form.stock"}}</h3></div>
         <div class="card-body">
           <div class="mb-2">
-            <label class="form-label small" for="stockMode">Stock mode</label>
+            <label class="form-label small" for="stockMode">{{.T "catalog.product.form.stockMode"}}</label>
             <select class="form-select form-select-sm" id="stockMode" name="stockMode">
               {{$m := .StockMode}}{{range .StockModes}}
               <option value="{{.}}" {{if eq . $m}}selected{{end}}>{{.}}</option>{{end}}
             </select>
             <div class="form-text">
-              <code>variant</code> tracks each SKU in the ledger. <code>single</code> tracks
-              the product. <code>unlimited</code> tracks nothing.
+              <code>variant</code> {{.T "catalog.product.form.stockMode.variant"}} <code>single</code> {{.T "catalog.product.form.stockMode.single"}} <code>unlimited</code> {{.T "catalog.product.form.stockMode.unlimited"}}
             </div>
           </div>
 
           {{if .StockSingle}}
           <div class="row g-2 mb-2">
             <div class="col-6">
-              <label class="form-label small" for="stock">Stock</label>
+              <label class="form-label small" for="stock">{{.T "common.stock"}}</label>
               <input type="number" class="form-control form-control-sm" id="stock" name="stock" value="{{.Stock}}">
-              <div class="form-text">Change it from the variant screen so the ledger records it.</div>
+              <div class="form-text">{{.T "catalog.product.form.stockNote"}}</div>
             </div>
             <div class="col-6">
-              <label class="form-label small" for="lowStockThreshold">Low at</label>
+              <label class="form-label small" for="lowStockThreshold">{{.T "common.lowAt"}}</label>
               <input type="number" class="form-control form-control-sm" id="lowStockThreshold"
                      name="lowStockThreshold" value="{{.LowStockThreshold}}">
             </div>
@@ -138,11 +136,11 @@
 
           <div class="row g-2 mb-2">
             <div class="col-6">
-              <label class="form-label small" for="weightGrams">Weight (g)</label>
+              <label class="form-label small" for="weightGrams">{{.T "catalog.product.form.weight"}}</label>
               <input type="number" class="form-control form-control-sm" id="weightGrams" name="weightGrams" value="{{.WeightGrams}}">
             </div>
             <div class="col-6">
-              <label class="form-label small" for="status">Status</label>
+              <label class="form-label small" for="status">{{.T "common.status"}}</label>
               <select class="form-select form-select-sm" id="status" name="status">
                 {{$s := .Status}}{{range .Statuses}}
                 <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
@@ -152,10 +150,10 @@
 
           <div class="form-check form-switch mb-2">
             <input type="checkbox" class="form-check-input" id="taxable" name="taxable" {{if .Taxable}}checked{{end}}>
-            <label class="form-check-label small" for="taxable">Taxable</label>
+            <label class="form-check-label small" for="taxable">{{.T "catalog.product.form.taxable"}}</label>
           </div>
 
-          <label class="form-label small">Tags</label>
+          <label class="form-label small">{{.T "common.tags"}}</label>
           <div>
             {{$sel := .Selected}}{{range .Tags}}
             <div class="form-check form-check-inline">
@@ -167,7 +165,7 @@
           </div>
         </div>
         <div class="card-footer d-grid">
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>{{.T "common.save"}}</button>
         </div>
       </div>
     </div>

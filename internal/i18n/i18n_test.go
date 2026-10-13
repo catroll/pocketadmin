@@ -37,9 +37,15 @@ func TestEveryLocaleIsComplete(t *testing.T) {
 // test names it so somebody can decide which.
 func TestNoMessageIsLeftInEnglish(t *testing.T) {
 	// Words that are the same in both languages, or are names.
+	//
+	// Every entry is a decision that the English *is* the translation. Adding one to
+	// silence a failure without that being true is how a half-translated catalogue gets
+	// through.
 	allowed := map[string]bool{
-		"nav.developer.api":  true, // "API" is "API"
-		"nav.developer.keys": true,
+		"nav.developer.api":    true, // "API" is "API"
+		"nav.developer.keys":   true,
+		"dashboard.pocketbase": true, // the product's name
+		"account.col.ip":       true, // "IP" is "IP"
 	}
 
 	for _, locale := range []i18n.Locale{i18n.SimplifiedChinese, i18n.TraditionalChinese} {
@@ -177,4 +183,44 @@ func firstFew(values []string, n int) []string {
 		return values
 	}
 	return values[:n]
+}
+
+// TestDuplicateEnglishAgreesAcrossLocales.
+//
+// Several keys legitimately share an English string: a page title and the card heading on
+// the page, a column header that appears in two modules, a status word used by two
+// screens. That is fine, and it is why the reverse index -- which lets a Go string be
+// translated without knowing its key -- exists.
+//
+// What is not fine is two keys with the same English and different translations. The
+// reverse index picks whichever the map iteration reaches first, so such a pair renders
+// differently on two screens showing the same word, and differently again between two
+// runs. The failure is intermittent and looks like a caching problem.
+func TestDuplicateEnglishAgreesAcrossLocales(t *testing.T) {
+	// English text -> the first key that claimed it, and that key's translations.
+	claimed := map[string]string{}
+	translations := map[string][2]string{}
+
+	for _, key := range i18n.Keys() {
+		en := i18n.T(i18n.English, key)
+
+		first, seen := claimed[en]
+		if !seen {
+			claimed[en] = key
+			translations[en] = [2]string{
+				i18n.T(i18n.SimplifiedChinese, key),
+				i18n.T(i18n.TraditionalChinese, key),
+			}
+			continue
+		}
+
+		got := [2]string{
+			i18n.T(i18n.SimplifiedChinese, key),
+			i18n.T(i18n.TraditionalChinese, key),
+		}
+		if got != translations[en] {
+			t.Errorf("%q is %q in %s but %v in %s; the reverse index picks arbitrarily",
+				en, translations[en], first, got, key)
+		}
+	}
 }

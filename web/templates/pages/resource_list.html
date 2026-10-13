@@ -6,12 +6,12 @@
     <h3 class="card-title">
       <i class="fas fa-table me-1"></i>{{.Resource.Title}}
       {{if .ParentLabel}}<span class="text-body-secondary">&middot;</span> {{.ParentLabel}}{{end}}
-      <small class="text-body-secondary ms-2">{{.Pagination.Total}} record(s)</small>
+      <small class="text-body-secondary ms-2">{{.T "records.count" .Pagination.Total}}</small>
     </h3>
     <div class="card-tools">
       {{if .CanCreate}}
       <a href="{{.Resource.BasePath}}/new{{if .ParentID}}?parent={{.ParentID}}{{end}}" class="btn btn-primary btn-sm">
-        <i class="fas fa-plus me-1"></i>New {{.Resource.Singular}}
+        <i class="fas fa-plus me-1"></i>{{.T "common.new"}} {{.Resource.Singular}}
       </a>
       {{end}}
     </div>
@@ -22,25 +22,25 @@
       {{if .ParentID}}<input type="hidden" name="parent" value="{{.ParentID}}">{{end}}
       <div class="input-group input-group-sm flex-grow-1" style="min-width:16rem;max-width:32rem">
         <input type="search" name="q" value="{{.Query}}" class="form-control"
-               placeholder="Search&hellip;" aria-label="Search">
-        <button class="btn btn-secondary" type="submit" aria-label="Search"><i class="fas fa-search"></i></button>
+               placeholder="{{.T "resource.searchPlaceholder"}}" aria-label="{{.T "common.search"}}">
+        <button class="btn btn-secondary" type="submit" aria-label="{{.T "common.search"}}"><i class="fas fa-search"></i></button>
       </div>
 
-      <label class="small text-body-secondary mb-0" for="perPage">Per page</label>
+      <label class="small text-body-secondary mb-0" for="perPage">{{.T "common.perPage"}}</label>
       <select id="perPage" name="perPage" class="form-select form-select-sm" style="width:auto">
         {{range .PerPageItems}}
         <option value="{{.}}" {{if eq . $.Pagination.PerPage}}selected{{end}}>{{.}}</option>
         {{end}}
       </select>
 
-      <button class="btn btn-secondary btn-sm" type="submit">Apply</button>
-      {{if .Query}}<a href="{{.ListPath}}" class="btn btn-link btn-sm">Reset</a>{{end}}
+      <button class="btn btn-secondary btn-sm" type="submit">{{.T "common.apply"}}</button>
+      {{if .Query}}<a href="{{.ListPath}}" class="btn btn-link btn-sm">{{.T "common.resetFilters"}}</a>{{end}}
     </form>
   </div>
 
   {{if .ScopeNote}}
   <div class="card-body border-bottom py-2">
-    <span class="badge text-bg-info"><i class="fas fa-filter me-1"></i>Scoped</span>
+    <span class="badge text-bg-info"><i class="fas fa-filter me-1"></i>{{.T "common.scoped"}}</span>
     <span class="text-body-secondary small ms-1">{{.ScopeNote}}</span>
   </div>
   {{end}}
@@ -57,7 +57,7 @@
             </a>
           </th>
           {{end}}
-          <th class="text-end">Actions</th>
+          <th class="text-end">{{.T "common.actions"}}</th>
         </tr>
       </thead>
       <tbody>
@@ -68,7 +68,7 @@
           <td>
             {{if and (eq $i 0) $.TreeView}}{{treeIndent $row.Indent}}{{end}}
             {{if eq .Kind "bool"}}
-              {{if .Bool}}<span class="badge text-bg-success">true</span>{{else}}<span class="badge text-bg-secondary">false</span>{{end}}
+              {{if .Bool}}<span class="badge text-bg-success">{{$.T "records.true"}}</span>{{else}}<span class="badge text-bg-secondary">{{$.T "records.false"}}</span>{{end}}
             {{else if eq .Kind "empty"}}
               <span class="text-body-secondary">&mdash;</span>
             {{else if eq .Kind "date"}}
@@ -97,17 +97,17 @@
             {{end}}
             {{if $.HasDetail}}
             <a href="{{$.Resource.BasePath}}/{{.ID}}" class="btn btn-sm btn-secondary"
-               title="View" aria-label="View"><i class="fas fa-eye"></i></a>
+               title="{{$.T "resource.view"}}" aria-label="{{$.T "resource.view"}}"><i class="fas fa-eye"></i></a>
             {{end}}
             {{if $.CanUpdate}}
             <a href="{{$.Resource.BasePath}}/{{.ID}}/edit{{if $.ParentID}}?parent={{$.ParentID}}{{end}}" class="btn btn-sm btn-secondary"
-               title="Edit" aria-label="Edit"><i class="fas fa-pen"></i></a>
+               title="{{$.T "common.edit"}}" aria-label="{{$.T "common.edit"}}"><i class="fas fa-pen"></i></a>
             {{end}}
             {{if $.CanDelete}}
             <form method="post" class="d-inline" action="{{$.Resource.BasePath}}/{{.ID}}/delete{{if $.ParentID}}?parent={{$.ParentID}}{{end}}"
-                  onsubmit="return confirm('Delete this {{$.Resource.Singular}} permanently?');">
+                  onsubmit="return confirm('{{$.T "resource.deleteConfirmPermanent" $.Resource.Singular}}');">
               <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-              <button type="submit" class="btn btn-sm btn-danger" title="Delete" aria-label="Delete">
+              <button type="submit" class="btn btn-sm btn-danger" title="{{$.T "common.delete"}}" aria-label="{{$.T "common.delete"}}">
                 <i class="fas fa-trash"></i>
               </button>
             </form>
@@ -117,7 +117,7 @@
         {{else}}
         <tr>
           <td colspan="{{len .Columns | add 1}}" class="text-center text-body-secondary py-4">
-            No records found{{if .Query}} for &ldquo;{{.Query}}&rdquo;{{end}}.
+            {{if .Query}}{{.T "records.noneFoundFor" .Query}}{{else}}{{.T "records.noneFound"}}{{end}}
           </td>
         </tr>
         {{end}}
@@ -128,7 +128,7 @@
   {{if .Pagination.TotalPages}}
   <div class="card-footer clearfix">
     <div class="float-start text-body-secondary small pt-2">
-      Showing {{.Pagination.From}}&ndash;{{.Pagination.To}} of {{.Pagination.Total}}
+      {{.T "records.showing" .Pagination.From .Pagination.To .Pagination.Total}}
     </div>
     <ul class="pagination pagination-sm m-0 float-end">
       <li class="page-item {{if not .Pagination.HasPrev}}disabled{{end}}">

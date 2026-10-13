@@ -2,56 +2,54 @@
 <div class="row mb-3">
   <div class="col-lg-9">
     <p class="text-body-secondary mb-0">
-      A plan grants a tier for a duration, and it is bought through an ordinary catalogue
-      product. That is what lets a membership be discounted and refunded through the same
-      order pipeline as anything else.
+      {{.T "membership.plans.intro"}}
     </p>
   </div>
 </div>
 
 {{if .CanManage}}
 <div class="card">
-  <div class="card-header"><h3 class="card-title">New plan</h3></div>
+  <div class="card-header"><h3 class="card-title">{{.T "membership.plans.new"}}</h3></div>
   <div class="card-body">
     <form method="post" action="/membership/plans" class="row g-2 align-items-end">
       <input type="hidden" name="_csrf" value="{{.CSRF}}">
       <div class="col-sm-3">
-        <label class="form-label small" for="name">Name</label>
+        <label class="form-label small" for="name">{{.T "common.name"}}</label>
         <input type="text" class="form-control form-control-sm" id="name" name="name" required>
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="code">Code</label>
+        <label class="form-label small" for="code">{{.T "common.code"}}</label>
         <input type="text" class="form-control form-control-sm font-monospace" id="code" name="code" required>
       </div>
       <div class="col-sm-3">
-        <label class="form-label small" for="product">Product</label>
+        <label class="form-label small" for="product">{{.T "membership.plans.product"}}</label>
         <select class="form-select form-select-sm" id="product" name="product">
-          <option value="">Choose a membership product</option>
+          <option value="">{{.T "membership.plans.form.chooseProduct"}}</option>
           {{range .Products}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
         </select>
-        <div class="form-text">Only membership-kind products not already used by a plan.</div>
+        <div class="form-text">{{.T "membership.plans.form.productNote"}}</div>
       </div>
       <div class="col-sm-2">
-        <label class="form-label small" for="tier">Grants tier</label>
+        <label class="form-label small" for="tier">{{.T "membership.plans.form.grantsTier"}}</label>
         <select class="form-select form-select-sm" id="tier" name="tier" required>
           {{range .Tiers}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-1">
-        <label class="form-label small" for="durationDays">Days</label>
+        <label class="form-label small" for="durationDays">{{.T "common.days"}}</label>
         <input type="number" class="form-control form-control-sm" id="durationDays" name="durationDays" placeholder="0">
       </div>
-      <div class="col-sm-1"><button class="btn btn-primary btn-sm w-100">Add</button></div>
+      <div class="col-sm-1"><button class="btn btn-primary btn-sm w-100">{{.T "common.add"}}</button></div>
     </form>
   </div>
 </div>
 {{end}}
 
 <div class="card card-primary card-outline">
-  <div class="card-header"><h3 class="card-title"><i class="fas fa-tags me-1"></i>Plans</h3></div>
+  <div class="card-header"><h3 class="card-title"><i class="fas fa-tags me-1"></i>{{.T "common.plans"}}</h3></div>
   <div class="card-body table-responsive p-0">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Plan</th><th>Product</th><th>Price</th><th>Grants</th><th>Duration</th><th>Status</th></tr></thead>
+      <thead><tr><th>{{.T "common.plan"}}</th><th>{{.T "membership.plans.product"}}</th><th>{{.T "common.price"}}</th><th>{{.T "common.grants"}}</th><th>{{.T "common.duration"}}</th><th>{{.T "common.status"}}</th></tr></thead>
       <tbody>
         {{range .Rows}}
         <tr>
@@ -63,16 +61,16 @@
           <td class="small">{{.Price}}</td>
           <td class="small">{{.Tier}}</td>
           <td class="small">
-            {{if .Duration}}{{.Duration}} days{{else}}<span class="badge text-bg-light">perpetual</span>{{end}}
+            {{if .Duration}}{{$.T "membership.plans.durationDays" .Duration}}{{else}}<span class="badge text-bg-light">{{$.T "membership.perpetual"}}</span>{{end}}
           </td>
           <td>
-            {{if eq .Status "active"}}<span class="badge text-bg-success">active</span>
-            {{else}}<span class="badge text-bg-secondary">disabled</span>{{end}}
+            {{if eq .Status "active"}}<span class="badge text-bg-success">{{$.T "membership.status.active"}}</span>
+            {{else}}<span class="badge text-bg-secondary">{{$.T "membership.status.disabled"}}</span>{{end}}
           </td>
         </tr>
         {{else}}
         <tr><td colspan="6" class="text-center text-body-secondary py-4">
-          No plans. Create a membership-kind product in the catalogue first, then point a plan at it.
+          {{$.T "membership.plans.empty"}}
         </td></tr>
         {{end}}
       </tbody>
