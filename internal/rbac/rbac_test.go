@@ -167,6 +167,66 @@ func TestMenuProjectionDropsEmptyDirectories(t *testing.T) {
 	}
 }
 
+// TestAnEmptyDirectoryIsDroppedAtEveryLevel is a regression test for a real defect.
+//
+// The projector tested whether a directory had children **before** recursing, so a
+// directory whose only children were themselves empty directories survived with an
+// empty projection. The two agree while the tree is shallow enough that directories
+// only ever contain leaves, which is why it held until the navigation grew a third
+// level -- and then the sidebar showed a heading that expanded to nothing.
+func TestAnEmptyDirectoryIsDroppedAtEveryLevel(t *testing.T) {
+	app := newTestApp(t)
+
+	// An actor holding only a leaf permission that lives three levels down.
+	actor := testActor(permission.CatalogProductList)
+	visible := rbac.NewProjector(app).Visible(actor)
+
+	// The whole path down to that leaf is present, and nothing else at the top.
+	var names []string
+	for _, node := range visible {
+		names = append(names, node.Name)
+	}
+
+	if !contains(names, "catalog") && !contains(names, "business") {
+		t.Fatalf("the branch holding the granted leaf is missing: %v", names)
+	}
+
+	// Every directory in the whole tree must have at least one child.
+	var walk func([]rbac.MenuNode)
+	walk = func(nodes []rbac.MenuNode) {
+		for _, node := range nodes {
+			if node.Type == "directory" && len(node.Children) == 0 {
+				t.Errorf("directory %q is visible with no visible children", node.Name)
+			}
+			walk(node.Children)
+		}
+	}
+	walk(visible)
+
+	// And the intermediate directories that hold nothing this actor may see are gone
+	// even though their parent is present.
+	for _, node := range visible {
+		if node.Name != "business" {
+			continue
+		}
+		for _, child := range node.Children {
+			if child.Name == "sales" || child.Name == "members" {
+				t.Errorf("%q survived under business with no visible children", child.Name)
+			}
+		}
+	}
+}
+
+// contains reports whether a slice holds a value.
+func contains(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
 // TestResolverDeniesWithoutAdminProfile covers the default-deny posture: an
 // account with no profile resolves, but may do nothing.
 func TestResolverDeniesWithoutAdminProfile(t *testing.T) {

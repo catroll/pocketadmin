@@ -136,13 +136,6 @@ func buildNodes(rows []menuRow, children map[string][]menuRow, depth int) []Menu
 		kids := children[r.id]
 		sortRows(kids)
 
-		// A directory that has no visible children is itself invisible: rendering
-		// it would show an expandable heading that leads nowhere, for a module
-		// the actor has no access to at all.
-		if r.menuType == "directory" && len(kids) == 0 {
-			continue
-		}
-
 		node := MenuNode{
 			ID:    r.id,
 			Name:  r.name,
@@ -153,6 +146,21 @@ func buildNodes(rows []menuRow, children map[string][]menuRow, depth int) []Menu
 			Sort:  r.sort,
 		}
 		node.Children = buildNodes(kids, children, depth+1)
+
+		// A directory with no visible children is itself invisible: rendering it
+		// would show an expandable heading that leads nowhere, for a module the actor
+		// has no access to at all.
+		//
+		// The decision is made on the children **after** they have been built, not on
+		// the rows that were handed in. A directory whose only children are themselves
+		// empty directories has an empty projection either way, and testing the count
+		// before recursing renders it -- a heading that expands to nothing, at every
+		// level of the tree. The two agree while the tree is shallow enough that
+		// directories only ever contain leaves, which is why this held until the
+		// navigation grew a third level.
+		if r.menuType == "directory" && len(node.Children) == 0 {
+			continue
+		}
 
 		out = append(out, node)
 	}

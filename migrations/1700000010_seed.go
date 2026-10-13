@@ -55,17 +55,98 @@ type menuSeed struct {
 
 // seededMenus is the panel's navigation, mirroring the sidebar an operator sees.
 //
+// It is grouped into four surfaces rather than listed flat. A flat list of thirty
+// entries is a list nobody reads: an operator looking for the refund screen should be
+// able to reason "that is about money, so it is under Business" instead of scanning
+// every row.
+//
+//   - Business is the storefront's own domain: what is sold, what was ordered, what
+//     was paid and what was given away.
+//   - Back office is people and access: who works here, what they may reach, and
+//     what they are told.
+//   - System is the platform itself: how it is configured, what it stores, what it
+//     runs, and what it recorded.
+//
+// Dashboard and Workbench stay at the top level. They are where an operator starts
+// and what they look at first, and burying either one inside a folder would cost a
+// click on every visit.
+//
 // Parents are listed before their children so a single pass can resolve them.
 func seededMenus() []menuSeed {
 	return []menuSeed{
 		{Name: "dashboard", Title: "Dashboard", Type: "menu", Path: "/dashboard",
 			Icon: "fas fa-tachometer-alt", Sort: 10},
+		{Name: "workbench", Title: "Workbench", Type: "menu", Path: "/workbench",
+			Icon: "fas fa-columns", Sort: 20, Permission: permission.WorkbenchTodoList},
 
-		{Name: "identity", Title: "Identity", Type: "directory", Icon: "fas fa-users", Sort: 20},
+		// -- Business ---------------------------------------------------------
+		{Name: "business", Title: "Business", Type: "directory", Icon: "fas fa-store", Sort: 30},
+
+		{Name: "catalog", Title: "Catalog", Parent: "business", Type: "directory",
+			Icon: "fas fa-boxes-stacked", Sort: 10},
+		{Name: "catalog.products", Title: "Products", Parent: "catalog", Type: "menu",
+			Path: "/catalog/products", Icon: "far fa-circle",
+			Permission: permission.CatalogProductList, Sort: 10},
+		{Name: "catalog.categories", Title: "Categories", Parent: "catalog", Type: "menu",
+			Path: "/catalog/categories", Icon: "far fa-circle",
+			Permission: permission.CatalogCategoryList, Sort: 20},
+
+		{Name: "orders", Title: "Orders", Parent: "business", Type: "menu", Path: "/orders",
+			Icon: "fas fa-receipt", Sort: 20, Permission: permission.OrderList},
+
+		{Name: "sales", Title: "Sales", Parent: "business", Type: "directory",
+			Icon: "fas fa-credit-card", Sort: 30},
+		{Name: "payments.transactions", Title: "Payments", Parent: "sales", Type: "menu",
+			Path: "/payments", Icon: "far fa-circle",
+			Permission: permission.PaymentTransactionList, Sort: 10},
+		{Name: "refunds", Title: "Refunds", Parent: "sales", Type: "menu", Path: "/refunds",
+			Icon: "far fa-circle", Sort: 20, Permission: permission.RefundList},
+
+		{Name: "promotions", Title: "Promotions", Parent: "business", Type: "directory",
+			Icon: "fas fa-ticket", Sort: 40},
+		{Name: "promotions.coupons", Title: "Coupons", Parent: "promotions", Type: "menu",
+			Path: "/promotions/coupons", Icon: "far fa-circle",
+			Permission: permission.PromotionCouponList, Sort: 10},
+		{Name: "promotions.campaigns", Title: "Campaigns", Parent: "promotions", Type: "menu",
+			Path: "/promotions/campaigns", Icon: "far fa-circle",
+			Permission: permission.PromotionCampaignList, Sort: 20},
+		{Name: "promotions.grants", Title: "Issued coupons", Parent: "promotions", Type: "menu",
+			Path: "/promotions/grants", Icon: "far fa-circle",
+			Permission: permission.PromotionGrantList, Sort: 30},
+
+		{Name: "members", Title: "Membership", Parent: "business", Type: "directory",
+			Icon: "fas fa-id-card", Sort: 50},
+		{Name: "membership.members", Title: "Members", Parent: "members", Type: "menu",
+			Path: "/membership/members", Icon: "far fa-circle",
+			Permission: permission.MembershipMemberList, Sort: 10},
+		{Name: "membership.tiers", Title: "Tiers", Parent: "members", Type: "menu",
+			Path: "/membership/tiers", Icon: "far fa-circle",
+			Permission: permission.MembershipTierList, Sort: 20},
+		{Name: "membership.plans", Title: "Plans", Parent: "members", Type: "menu",
+			Path: "/membership/plans", Icon: "far fa-circle",
+			Permission: permission.MembershipPlanList, Sort: 30},
+
+		{Name: "subscriptions", Title: "Subscriptions", Parent: "business", Type: "directory",
+			Icon: "fas fa-rotate", Sort: 60},
+		{Name: "subscriptions.list", Title: "Subscribers", Parent: "subscriptions", Type: "menu",
+			Path: "/subscriptions", Icon: "far fa-circle",
+			Permission: permission.SubscriptionList, Sort: 10},
+		{Name: "subscriptions.plans", Title: "Plans", Parent: "subscriptions", Type: "menu",
+			Path: "/subscriptions/plans", Icon: "far fa-circle",
+			Permission: permission.SubscriptionPlanList, Sort: 20},
+
+		// -- Back office ------------------------------------------------------
+		{Name: "backoffice", Title: "Back office", Type: "directory", Icon: "fas fa-briefcase",
+			Sort: 40},
+
+		{Name: "identity", Title: "Identity", Parent: "backoffice", Type: "directory",
+			Icon: "fas fa-users", Sort: 10},
 		{Name: "identity.accounts", Title: "Accounts", Parent: "identity", Type: "menu",
-			Path: "/identity/accounts", Icon: "fas fa-user", Permission: permission.IdentityAccountList, Sort: 10},
+			Path: "/identity/accounts", Icon: "far fa-circle",
+			Permission: permission.IdentityAccountList, Sort: 10},
 
-		{Name: "organization", Title: "Organization", Type: "directory", Icon: "fas fa-sitemap", Sort: 30},
+		{Name: "organization", Title: "Organization", Parent: "backoffice", Type: "directory",
+			Icon: "fas fa-sitemap", Sort: 20},
 		{Name: "organization.departments", Title: "Departments", Parent: "organization", Type: "menu",
 			Path: "/organization/departments", Icon: "far fa-circle",
 			Permission: permission.OrganizationDepartmentList, Sort: 10},
@@ -76,17 +157,37 @@ func seededMenus() []menuSeed {
 			Path: "/organization/staff", Icon: "far fa-circle",
 			Permission: permission.OrganizationEmployeeList, Sort: 30},
 
-		{Name: "rbac", Title: "Access control", Type: "directory", Icon: "fas fa-user-shield", Sort: 40},
+		{Name: "rbac", Title: "Access control", Parent: "backoffice", Type: "directory",
+			Icon: "fas fa-user-shield", Sort: 30},
 		{Name: "rbac.roles", Title: "Roles", Parent: "rbac", Type: "menu",
 			Path: "/rbac/roles", Icon: "far fa-circle", Permission: permission.RBACRoleList, Sort: 10},
 		{Name: "rbac.permissions", Title: "Permissions", Parent: "rbac", Type: "menu",
-			Path: "/rbac/permissions", Icon: "far fa-circle", Permission: permission.RBACPermissionList, Sort: 20},
+			Path: "/rbac/permissions", Icon: "far fa-circle",
+			Permission: permission.RBACPermissionList, Sort: 20},
 		{Name: "rbac.menus", Title: "Menus", Parent: "rbac", Type: "menu",
 			Path: "/rbac/menus", Icon: "far fa-circle", Permission: permission.RBACMenuList, Sort: 30},
 		{Name: "rbac.dictionaries", Title: "Dictionaries", Parent: "rbac", Type: "menu",
-			Path: "/rbac/dictionaries", Icon: "far fa-circle", Permission: permission.RBACDictionaryList, Sort: 40},
+			Path: "/rbac/dictionaries", Icon: "far fa-circle",
+			Permission: permission.RBACDictionaryList, Sort: 40},
 
-		{Name: "storage", Title: "Files", Type: "directory", Icon: "fas fa-folder-open", Sort: 50},
+		{Name: "announcement", Title: "Announcements", Parent: "backoffice", Type: "menu",
+			Path: "/announcements", Icon: "fas fa-bullhorn", Sort: 40,
+			Permission: permission.AnnouncementList},
+
+		// -- System -----------------------------------------------------------
+		{Name: "system", Title: "System", Type: "directory", Icon: "fas fa-server", Sort: 50},
+
+		{Name: "settings", Title: "Settings", Parent: "system", Type: "directory",
+			Icon: "fas fa-gears", Sort: 10},
+		{Name: "settings.admin", Title: "Back office", Parent: "settings", Type: "menu",
+			Path: "/settings/admin", Icon: "far fa-circle",
+			Permission: permission.SettingsAdminView, Sort: 10},
+		{Name: "settings.product", Title: "Storefront", Parent: "settings", Type: "menu",
+			Path: "/settings/product", Icon: "far fa-circle",
+			Permission: permission.SettingsProductView, Sort: 20},
+
+		{Name: "storage", Title: "Files", Parent: "system", Type: "directory",
+			Icon: "fas fa-folder-open", Sort: 20},
 		{Name: "storage.files", Title: "Library", Parent: "storage", Type: "menu",
 			Path: "/storage/files", Icon: "far fa-circle",
 			Permission: permission.StorageFileList, Sort: 10},
@@ -94,7 +195,33 @@ func seededMenus() []menuSeed {
 			Path: "/storage/folders", Icon: "far fa-circle",
 			Permission: permission.StorageFolderList, Sort: 20},
 
-		{Name: "audit", Title: "Audit", Type: "directory", Icon: "fas fa-clipboard-list", Sort: 60},
+		{Name: "jobs", Title: "Scheduled tasks", Parent: "system", Type: "menu", Path: "/jobs",
+			Icon: "fas fa-clock", Sort: 30, Permission: permission.JobsJobList},
+
+		{Name: "integrations", Title: "Integrations", Parent: "system", Type: "menu",
+			Path: "/integrations", Icon: "fas fa-plug", Sort: 40,
+			Permission: permission.IntegrationProviderList},
+
+		{Name: "monitoring", Title: "Monitoring", Parent: "system", Type: "directory",
+			Icon: "fas fa-gauge-high", Sort: 50},
+		{Name: "monitoring.dashboard", Title: "Dashboard", Parent: "monitoring", Type: "menu",
+			Path: "/monitoring", Icon: "far fa-circle",
+			Permission: permission.MonitoringDashboard, Sort: 10},
+		{Name: "monitoring.system", Title: "System information", Parent: "monitoring", Type: "menu",
+			Path: "/monitoring/system", Icon: "far fa-circle",
+			Permission: permission.MonitoringSystemInfo, Sort: 20},
+
+		{Name: "developer", Title: "Developer", Parent: "system", Type: "directory",
+			Icon: "fas fa-code", Sort: 60},
+		{Name: "developer.keys", Title: "API keys", Parent: "developer", Type: "menu",
+			Path: "/developer/keys", Icon: "far fa-circle",
+			Permission: permission.DeveloperKeyList, Sort: 10},
+		{Name: "developer.api", Title: "API reference", Parent: "developer", Type: "menu",
+			Path: "/developer/api", Icon: "far fa-circle",
+			Permission: permission.DeveloperAPIView, Sort: 20},
+
+		{Name: "audit", Title: "Audit", Parent: "system", Type: "directory",
+			Icon: "fas fa-clipboard-list", Sort: 70},
 		{Name: "audit.operations", Title: "Operations", Parent: "audit", Type: "menu",
 			Path: "/audit/operations", Icon: "far fa-circle",
 			Permission: permission.AuditOperationList, Sort: 10},
@@ -108,80 +235,11 @@ func seededMenus() []menuSeed {
 			Path: "/audit/exceptions", Icon: "far fa-circle",
 			Permission: permission.AuditExceptionList, Sort: 40},
 
-		{Name: "developer", Title: "Developer", Type: "menu", Path: "/developer/keys",
-			Icon: "fas fa-code", Sort: 90, Permission: permission.DeveloperKeyList},
-		{Name: "developer.api", Title: "API reference", Parent: "developer", Type: "menu",
-			Path: "/developer/api", Icon: "far fa-circle",
-			Permission: permission.DeveloperAPIView, Sort: 20},
-
-		{Name: "settings", Title: "Settings", Type: "directory", Icon: "fas fa-gears", Sort: 70},
-		{Name: "settings.admin", Title: "Back office", Parent: "settings", Type: "menu",
-			Path: "/settings/admin", Icon: "far fa-circle",
-			Permission: permission.SettingsAdminView, Sort: 10},
-		{Name: "settings.product", Title: "Storefront", Parent: "settings", Type: "menu",
-			Path: "/settings/product", Icon: "far fa-circle",
-			Permission: permission.SettingsProductView, Sort: 20},
-
-		{Name: "workbench", Title: "Workbench", Type: "menu", Path: "/workbench",
-			Icon: "fas fa-columns", Sort: 20, Permission: permission.WorkbenchTodoList},
-
-		{Name: "announcement", Title: "Announcements", Type: "menu", Path: "/announcements",
-			Icon: "fas fa-bullhorn", Sort: 75, Permission: permission.AnnouncementList},
-
-		{Name: "payments", Title: "Payments", Type: "directory", Icon: "fas fa-credit-card", Sort: 55},
-		{Name: "refunds", Title: "Refunds", Type: "menu", Path: "/refunds",
-			Icon: "fas fa-rotate-left", Sort: 60, Permission: permission.RefundList},
-		{Name: "payments.transactions", Title: "Transactions", Parent: "payments", Type: "menu",
-			Path: "/payments", Icon: "far fa-circle",
-			Permission: permission.PaymentTransactionList, Sort: 10},
-
-		{Name: "orders", Title: "Orders", Type: "menu", Path: "/orders",
-			Icon: "fas fa-receipt", Sort: 50, Permission: permission.OrderList},
-
-		{Name: "subscriptions", Title: "Subscriptions", Type: "directory", Icon: "fas fa-rotate", Sort: 45},
-		{Name: "subscriptions.list", Title: "Subscribers", Parent: "subscriptions", Type: "menu",
-			Path: "/subscriptions", Icon: "far fa-circle",
-			Permission: permission.SubscriptionList, Sort: 10},
-		{Name: "subscriptions.plans", Title: "Plans", Parent: "subscriptions", Type: "menu",
-			Path: "/subscriptions/plans", Icon: "far fa-circle",
-			Permission: permission.SubscriptionPlanList, Sort: 20},
-
-		{Name: "promotions", Title: "Promotions", Type: "directory", Icon: "fas fa-ticket", Sort: 40},
-		{Name: "promotions.coupons", Title: "Coupons", Parent: "promotions", Type: "menu",
-			Path: "/promotions/coupons", Icon: "far fa-circle",
-			Permission: permission.PromotionCouponList, Sort: 10},
-		{Name: "promotions.campaigns", Title: "Campaigns", Parent: "promotions", Type: "menu",
-			Path: "/promotions/campaigns", Icon: "far fa-circle",
-			Permission: permission.PromotionCampaignList, Sort: 20},
-		{Name: "promotions.grants", Title: "Issued", Parent: "promotions", Type: "menu",
-			Path: "/promotions/grants", Icon: "far fa-circle",
-			Permission: permission.PromotionGrantList, Sort: 30},
-
-		{Name: "catalog", Title: "Catalog", Type: "directory", Icon: "fas fa-boxes-stacked", Sort: 30},
-		{Name: "catalog.products", Title: "Products", Parent: "catalog", Type: "menu",
-			Path: "/catalog/products", Icon: "far fa-circle",
-			Permission: permission.CatalogProductList, Sort: 10},
-		{Name: "catalog.categories", Title: "Categories", Parent: "catalog", Type: "menu",
-			Path: "/catalog/categories", Icon: "far fa-circle",
-			Permission: permission.CatalogCategoryList, Sort: 20},
-
-		{Name: "monitoring", Title: "Monitoring", Type: "menu", Path: "/monitoring",
-			Icon: "fas fa-gauge-high", Sort: 88, Permission: permission.MonitoringDashboard},
-		{Name: "monitoring.system", Title: "System", Parent: "monitoring", Type: "menu",
-			Path: "/monitoring/system", Icon: "far fa-circle",
-			Permission: permission.MonitoringSystemInfo, Sort: 20},
-
-		{Name: "integrations", Title: "Integrations", Type: "menu", Path: "/integrations",
-			Icon: "fas fa-plug", Sort: 85, Permission: permission.IntegrationProviderList},
-
-		{Name: "jobs", Title: "Scheduled tasks", Type: "menu", Path: "/jobs",
-			Icon: "fas fa-clock", Sort: 80, Permission: permission.JobsJobList},
-
 		// The raw data browser is not delegated to roles, so it is flagged rather
 		// than permission-gated. Without a code an unflagged node would be visible
 		// to everyone.
-		{Name: "collections", Title: "Collections", Type: "menu", Path: "/collections",
-			Icon: "fas fa-database", Sort: 90, SuperuserOnly: true},
+		{Name: "collections", Title: "Collections", Parent: "system", Type: "menu",
+			Path: "/collections", Icon: "fas fa-database", Sort: 80, SuperuserOnly: true},
 	}
 }
 
@@ -220,6 +278,24 @@ func seedMenus(app core.App) error {
 			return err
 		}
 		ids[m.Name] = rec.Id
+	}
+
+	// A system menu that is no longer in the seed is removed. The seed claims to be
+	// the navigation, and a restructure that leaves the old rows behind produces a
+	// sidebar containing both the new tree and the old flat list. Only system menus
+	// are pruned: a menu an operator added by hand is theirs to keep.
+	existing, err := app.FindRecordsByFilter("menus", "isSystem = true", "", 0, 0)
+	if err != nil {
+		return err
+	}
+
+	for _, rec := range existing {
+		if _, ok := ids[rec.GetString("name")]; ok {
+			continue
+		}
+		if err := app.Delete(rec); err != nil {
+			return err
+		}
 	}
 
 	return nil
