@@ -249,5 +249,59 @@ func containsStringValue(values []string, want string) bool {
 // hostSettingsSite is where an operator changes the sampling configuration.
 func hostSettingsSite() string { return "/settings/admin" }
 
+// nodesSite is where the machines are managed.
+func nodesSite() string { return "/monitoring/nodes" }
+
+// nodeOverviewRow is one machine on the monitoring overview.
+type nodeOverviewRow struct {
+	ID     string
+	Name   string
+	Code   string
+	IsSelf bool
+	State  string
+	Detail string
+	CPU    string
+	Memory string
+	Disk   string
+	Seen   string
+}
+
+// nodeOverview summarises every machine for the overview page.
+//
+// It is a list rather than one machine's figures because the overview answers "is
+// anything wrong anywhere", and a page that showed only the machine the process happens
+// to run on would answer a question nobody asked.
+func (s *Server) nodeOverview(now time.Time) []nodeOverviewRow {
+	nodes, err := monitoring.AllNodes(s.app)
+	if err != nil {
+		return nil
+	}
+
+	policy := s.hostSamplePolicy()
+	rows := make([]nodeOverviewRow, 0, len(nodes))
+
+	for _, node := range nodes {
+		health := monitoring.NodeStatusFor(node, policy.Interval, now)
+		summary := monitoring.Describe(s.app, node.Id)
+
+		row := nodeOverviewRow{
+			ID:     node.Id,
+			Name:   node.GetString("name"),
+			Code:   node.GetString("code"),
+			IsSelf: node.GetBool("isSelf"),
+			State:  health.State,
+			Detail: health.Detail,
+			CPU:    summary.CPU,
+			Memory: summary.Memory,
+			Disk:   summary.Disk,
+		}
+		if seen := node.GetDateTime("lastSeenAt"); !seen.IsZero() {
+			row.Seen = sinceLabel(seen.Time(), now)
+		}
+		rows = append(rows, row)
+	}
+	return rows
+}
+
 // ensure the settings package is referenced even when the policy is the default.
 var _ = settings.Admin

@@ -116,6 +116,8 @@ func (s *Server) handleMonitoring(c *gin.Context) {
 		Snapshots:    s.recentSnapshots(),
 		Host:         s.hostMonitor(now),
 		HostSettings: hostSettingsSite(),
+		Nodes:        s.nodeOverview(now),
+		NodesSite:    nodesSite(),
 	})
 }
 
@@ -301,10 +303,15 @@ type monitoringPage struct {
 	LastGCAgo    string
 	DatabaseLast time.Time
 
-	// Host is the lightweight machine monitor: the figures the process can read about
-	// the machine it is running on.
+	// Host is the lightweight machine monitor: the readings this process takes of the
+	// machine it runs on.
 	Host         hostMonitorView
 	HostSettings string
+
+	// Nodes is every registered machine, so the overview answers "is anything wrong
+	// anywhere" rather than "is anything wrong here".
+	Nodes     []nodeOverviewRow
+	NodesSite string
 }
 
 // gcAgo renders when the last collection ran.

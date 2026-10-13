@@ -174,12 +174,42 @@
      to run a monitoring stack to notice its disk filling up. */}}
 <div class="card card-outline card-info">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-server me-1"></i>This machine</h3>
+    <h3 class="card-title"><i class="fas fa-server me-1"></i>Machines</h3>
     <div class="card-tools small text-body-secondary">
       {{if .Host.Enabled}}Every {{.Host.Interval}}, kept {{.Host.Retention}}.{{else}}Sampling is off. Nothing is being recorded.{{end}}
       <a href="{{.HostSettings}}" class="ms-1">Configure</a>
+      <a href="{{.NodesSite}}" class="ms-1">All machines</a>
     </div>
   </div>
+
+  {{if .Nodes}}
+  <div class="card-body table-responsive p-0">
+    <table class="table table-sm table-hover mb-0">
+      <thead><tr><th>Machine</th><th>Processor</th><th>Memory</th><th>Disk</th><th>Last reported</th><th>Health</th></tr></thead>
+      <tbody>
+        {{range .Nodes}}
+        <tr>
+          <td class="small">
+            <a href="/monitoring/nodes/{{.ID}}">{{.Name}}</a>
+            {{if .IsSelf}}<span class="badge text-bg-info">this one</span>{{end}}
+            <div class="text-body-secondary"><code>{{.Code}}</code></div>
+          </td>
+          <td class="small">{{if .CPU}}{{.CPU}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
+          <td class="small">{{if .Memory}}{{.Memory}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
+          <td class="small">{{if .Disk}}{{.Disk}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
+          <td class="small">{{if .Seen}}{{.Seen}}{{else}}<span class="text-body-secondary">never</span>{{end}}</td>
+          <td>
+            {{if eq .State "active"}}<span class="badge text-bg-success">reporting</span>
+            {{else if eq .State "stale"}}<span class="badge text-bg-warning">{{.Detail}}</span>
+            {{else if eq .State "off"}}<span class="badge text-bg-secondary">switched off</span>
+            {{else}}<span class="badge text-bg-danger">{{.Detail}}</span>{{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
 
   {{if .Host.Sampled}}
   <div class="card-body">
@@ -257,6 +287,7 @@
   </div>
   {{end}}
 </div>
+{{end}}
 
 {{if .Snapshots}}
 <div class="card">
