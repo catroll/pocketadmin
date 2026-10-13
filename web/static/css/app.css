@@ -7,6 +7,94 @@
   opacity: .85;
 }
 
+/* ---------------------------------------------------------------------------
+   Sidebar hierarchy
+   ---------------------------------------------------------------------------
+   AdminLTE 4 distinguishes a submenu only by its background colour: the stock
+   stylesheet contains no depth-based padding at all, so a three-level tree
+   renders every level flush against the same left edge. The rules below add the
+   indentation, a guide line and a weight that falls away with depth, so the
+   shape of the tree is readable without expanding it.
+
+   The indent is expressed as a growing custom property rather than a fixed
+   padding per level, so adding a fourth level is one more step and not a new
+   rule that has to agree with the others. */
+
+.sidebar-menu {
+  --pa-indent-step: .9rem;
+  --pa-indent: 0rem;
+}
+
+/* Each nesting level thickens the indent for everything inside it. */
+.sidebar-menu .nav-treeview {
+  --pa-indent: calc(var(--pa-indent) + var(--pa-indent-step));
+}
+
+/* A guide line down the left of a nested level, drawn on the level rather than
+   on each entry, so it is continuous instead of a row of dashes. */
+.sidebar-menu .nav-treeview {
+  position: relative;
+  margin-left: 1.35rem;
+  padding-left: .1rem;
+  border-left: 1px solid rgba(255, 255, 255, .09);
+}
+
+.sidebar-menu .nav-link {
+  padding-left: calc(.75rem + var(--pa-indent));
+}
+
+/* The arrow belongs at the right edge of the row, not after the label. */
+.sidebar-menu .nav-link > p {
+  padding-left: .55rem;
+}
+
+/* Depth reads as decreasing weight: the top level is the loudest, and by the
+   third the entry is deliberately quiet. */
+.sidebar-menu .nav-treeview .nav-link {
+  font-size: .93em;
+}
+.sidebar-menu .nav-treeview .nav-treeview .nav-link {
+  font-size: .88em;
+  color: var(--lte-sidebar-submenu-color);
+}
+
+/* A leaf marker that does not compete with the label. The stock theme uses
+   `far fa-circle`, which at three levels deep reads as noise. The distinction is
+   carried by a class the template renders rather than by `:has()`, so it does not
+   depend on a selector a browser of a certain age may not implement. */
+.sidebar-menu .nav-treeview .nav-link.nav-leaf .nav-icon {
+  font-size: .5rem;
+  width: 1rem;
+  opacity: .55;
+}
+
+/* A directory keeps its own icon at full size, so a parent is always
+   distinguishable from a leaf at the same depth. */
+.sidebar-menu .nav-treeview .nav-link.nav-parent .nav-icon {
+  font-size: .85rem;
+  opacity: .9;
+}
+
+/* The active leaf is marked on the left edge as well as by colour, which is the
+   cue that survives a colour-blind reader and a low-contrast monitor. */
+.sidebar-menu .nav-treeview .nav-leaf.active {
+  border-left: 2px solid var(--lte-sidebar-submenu-active-color, #fff);
+  margin-left: -2px;
+}
+
+/* An open branch keeps its parents lit, so the path to where you are stays
+   visible after the tree is scrolled. */
+.sidebar-menu .nav-item.menu-open > .nav-link {
+  color: var(--lte-sidebar-menu-active-color, #fff);
+}
+
+/* Collapsed to icons, indentation and guide lines would double up with the
+   sidebar's own padding and push the icons off-centre. */
+.sidebar-collapse .sidebar-menu .nav-treeview {
+  margin-left: 0;
+  border-left: 0;
+}
+
 /* Keep long collection names from stretching the sidebar. */
 .app-sidebar .brand-text {
   overflow: hidden;

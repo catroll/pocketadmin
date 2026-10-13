@@ -28,7 +28,7 @@
 {{range .nodes}}
   {{if .Children}}
   <li class="nav-item {{if hasPrefix $active .Name}}menu-open{{end}}">
-    <a href="#" class="nav-link {{if hasPrefix $active .Name}}active{{end}}">
+    <a href="#" class="nav-link nav-parent {{if hasPrefix $active .Name}}active{{end}}">
       <i class="nav-icon {{.Icon}}"></i>
       <p>{{.Title}}<i class="nav-arrow fas fa-angle-right"></i></p>
     </a>
@@ -38,7 +38,7 @@
   </li>
   {{else}}
   <li class="nav-item">
-    <a href="{{.Path}}" class="nav-link {{if eq $active .Name}}active{{end}}">
+    <a href="{{.Path}}" class="nav-link nav-leaf {{if eq $active .Name}}active{{end}}">
       <i class="nav-icon {{if .Icon}}{{.Icon}}{{else}}far fa-circle{{end}}"></i>
       <p>{{.Title}}</p>
     </a>
