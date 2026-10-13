@@ -1293,6 +1293,121 @@ them costs somebody an afternoon.
 shown and the first row after a restart has none. That is stated in the card's footer
 rather than hidden.
 
+### D-065 — A monitored machine is a row, and an agent's key is bound to one
+
+**Decision.** `monitor_nodes` records each machine. A remote agent authenticates with an
+API key carrying the submission permission **and a `monitorNode` binding**; a key with the
+permission and no binding is refused.
+
+**Why.** The first version recorded one machine, the one the process runs on. An
+installation with a single server needs that; an installation with two needs the opposite,
+because a disk filling up on the machine nobody logs into is exactly what this is for.
+
+The binding is a relation on the key rather than a token of its own so a node inherits the
+key's expiry, revocation, rate limit and audit trail instead of duplicating all four.
+Letting a key report for whichever machine it names would let one compromised agent rewrite
+another machine's history, and the binding is one field.
+
+The machine running the process is marked with a column rather than by comparing host
+names, because "which one is this" is a question the screen asks and the answer must not
+depend on two names agreeing. Its code is fixed at `local`: a machine that renames itself
+would orphan its own history.
+
+Readings are validated rather than stored. A chart is read to answer "is something wrong",
+and a figure that cannot be true makes it lie about the one thing it is for. Every refusal
+names what is wrong, because an agent operator has to fix it from the message.
+
+**Given up.** Registering a machine and issuing its key are two steps. That is one more
+step than a shared token would need, and it is the step that says which machine a reading
+belongs to.
+
+### D-066 — A missing collection in a migration fails loudly
+
+**Decision.** A migration that depends on a collection calls `requireCollection`, which
+errors when it is absent, rather than `findCollection`, which returns nil.
+
+**Why.** A real and silent defect. The migration added the monitoring binding to
+`developer_api_keys`; the collection is called `api_keys` -- the module that owns it is
+called developer and the collection is not. The `if col != nil` guard turned the
+misspelling into a no-op: the field was never created, every binding was discarded on save,
+and nothing failed until a live check asked where the value had gone.
+
+`findCollection` is right for an idempotent migration that may run before its target. It is
+wrong when the collection is the point of the migration, and the difference has to be
+written down at the call site rather than inferred from a nil check.
+
+**Given up.** One more function. The alternative is a class of failure that presents as
+"the field is not there" three steps away from the cause.
+
+### D-067 — Chart bucket boundaries align to the clock, and a percentage is not divided twice
+
+**Decision.** A window's buckets are aligned down to a multiple of their width. A
+percentage series passes the bucket's own ratio; a load average is divided by its sample
+count by the caller.
+
+**Why.** Two defects, both found by writing the test that should have passed.
+
+The boundaries were aligned to the window's start, which is "now minus an hour" at
+whatever second the page was opened. Two reloads a second apart put the same reading in
+different buckets and drew a slightly different chart -- a chart that shifts under a reader
+is a chart nobody can compare with anything.
+
+And a percentage was divided twice. The bucket's processor figure is already
+`sum(used)/sum(total)`, and the averaging helper divided that by the sample count as well,
+so a machine at twenty percent was drawn at six and a half. That is a chart that sends
+somebody looking for a problem that is not there, which is the worst thing a monitoring
+screen can do.
+
+**Given up.** A helper that takes a mean rather than a total is slightly less convenient to
+call, and it makes the arithmetic each caller's responsibility in the open rather than
+hidden in a function that cannot know which kind of figure it was given.
+
+### D-068 — Traditional Chinese is a separate catalogue, not a conversion
+
+**Decision.** `zh-TW` is translated independently of `zh-CN`. No conversion runs between
+them.
+
+**Why.** The two differ in vocabulary as much as in glyphs -- 数据表 and 資料表, 优惠券 and
+優惠券, 视频 and 影片 -- so a mechanical conversion produces characters that are right and
+words that are wrong, in exactly the places a reader would notice most.
+
+The first version of the test guarding this counted messages identical in both catalogues,
+on the theory that a conversion would leave many the same. It found eighteen, and every one
+is a word that genuinely uses the same characters in both scripts: 取消, 全部, 是, 否, 商品,
+角色. **Counting overlap measures the language, not the translation.** The test now looks
+for characters that exist in one script and not the other, which is a signal that means what
+it says.
+
+**Given up.** Twice the translation work, and a third catalogue to keep in step with the
+other two. The coverage test fails on any gap, so the cost is paid at build time rather than
+by a reader.
+
+### D-069 — The catalogue is Go, and the fallback is visible
+
+**Decision.** Messages are Go maps keyed by a dotted name, not files loaded at run time.
+The lookup order is the locale, then English, then the key itself.
+
+**Why.** A catalogue in the binary cannot go missing from a deployment, cannot fail to parse
+at startup, and is checked by the compiler when referenced through a constant -- the same
+reasoning that put the permission codes in Go.
+
+Falling back to the key rather than to a blank is deliberate: a screen showing
+`monitoring.nodes.title` is obviously unfinished and somebody can report it, and a screen
+showing a blank where a label should be is not. English is the middle step so a locale that
+is complete but for one message shows one English word rather than one key.
+
+The language list is derived from the catalogue, so a locale cannot be offered without
+messages behind it. The screen no longer claims that only English ships.
+
+**Given up.** Adding a message means editing three Go files and rebuilding, where a
+translation platform would let somebody else do it without a release. That is a real cost
+and it is the right one at this size; at a hundred locales it would not be.
+
+**What is not translated** is stated rather than left to be discovered: the module screens
+behind the navigation -- tables, forms, field labels and help text -- are still English.
+The catalogue and the two helpers are the whole mechanism, so adding a module is adding
+keys.
+
 ---
 
 ## Pending
