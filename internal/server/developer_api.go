@@ -2,12 +2,14 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/developer"
 	"pocketadmin/internal/jobs"
+	"pocketadmin/internal/monitoring"
 	"pocketadmin/internal/permission"
 )
 
@@ -25,6 +27,11 @@ func (s *Server) registerDeveloperAPIRoutes(r *gin.Engine) {
 	api.GET("/whoami", s.handleAPIWhoami)
 	api.GET("/announcements", s.requireAPIPermission(permission.AnnouncementList), s.handleAPIAnnouncements)
 	api.GET("/jobs", s.requireAPIPermission(permission.JobsJobList), s.handleAPIJobs)
+
+	// A node reports its figures here. The permission is the gate and the key's own
+	// node binding is the identity: a key that carries the permission but is bound to
+	// no machine is refused rather than allowed to report for any of them.
+	s.apiGuarded(api, http.MethodPost, "/metrics", permission.MetricsSubmit, s.handleAPIMetrics)
 }
 
 // requireAPIPermission refuses a caller whose effective authority lacks a point.
@@ -146,3 +153,63 @@ func (s *Server) handleAPIJobs(c *gin.Context) {
 }
 
 var _ = developer.StatusActive
+
+// handleAPIMetrics accepts a host reading from a remote node.
+//
+// The key must be bound to a machine. A key that carries the submission permission but
+// names no machine is refused with a message that says so, because the alternative --
+// letting it report for whichever machine it likes -- would let one compromised agent
+// rewrite another machine's history.
+func (s *Server) handleAPIMetrics(c *gin.Context) {
+	key := s.apiKey(c)
+	if key == nil {
+		abortAPI(c, http.StatusUnauthorized, "unauthenticated", "A key is required.")
+		return
+	}
+
+	nodeID := key.GetString("monitorNode")
+	if nodeID == "" {
+		abortAPI(c, http.StatusForbidden, "no_node",
+			"This key carries the submission permission but is not bound to a machine. "+
+				"Bind it to one so its readings are recorded against the right machine.")
+		return
+	}
+
+	node, err := s.app.FindRecordById(monitoring.CollectionNodes, nodeID)
+	if err != nil || node == nil {
+		abortAPI(c, http.StatusForbidden, "no_node",
+			"This key is bound to a machine that no longer exists.")
+		return
+	}
+
+	var submission monitoring.Submission
+	if err := c.ShouldBindJSON(&submission); err != nil {
+		abortAPI(c, http.StatusBadRequest, "malformed",
+			"The body is not a host reading: "+err.Error())
+		return
+	}
+
+	now := time.Now()
+	if err := submission.Validate(now); err != nil {
+		abortAPI(c, http.StatusUnprocessableEntity, "implausible", err.Error())
+		return
+	}
+
+	stored, err := monitoring.Store(s.app, node, submission, now)
+	if err != nil {
+		abortAPI(c, http.StatusInternalServerError, "store_failed", err.Error())
+		return
+	}
+
+	if !stored {
+		// A machine the operator has stopped recording. The agent is told plainly
+		// rather than having its readings silently dropped.
+		c.JSON(http.StatusAccepted, gin.H{
+			"status": "ignored",
+			"reason": "reporting is switched off for this machine",
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{"status": "recorded", "node": node.GetString("code")})
+}

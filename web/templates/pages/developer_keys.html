@@ -39,6 +39,7 @@
                 <div class="small text-body-secondary">{{.Scopes}} scope(s)
                   {{if .RateLimit}}&middot; {{.RateLimit}}/min{{end}}
                   {{if .AllowList}}&middot; <code>{{.AllowList}}</code>{{end}}
+                  {{if .MonitorNode}}&middot; <span class="badge text-bg-info">reports for {{.MonitorNode}}</span>{{end}}
                 </div>
               </td>
               <td><code>{{.Prefix}}&hellip;</code></td>
@@ -122,6 +123,18 @@
               <input type="date" class="form-control form-control-sm" id="expiresAt" name="expiresAt">
             </div>
           </div>
+          <div class="mb-2">
+            <label class="form-label small" for="monitorNode">Reports for a machine</label>
+            <select class="form-select form-select-sm" id="monitorNode" name="monitorNode">
+              <option value="">Not a monitoring agent</option>
+              {{range .Nodes}}<option value="{{.ID}}">{{.Name}} ({{.Code}})</option>{{end}}
+            </select>
+            <div class="form-text">
+              Required to submit measurements. A key bound to a machine reports only for
+              that one, so a compromised agent cannot rewrite another machine's history.
+            </div>
+          </div>
+
           <div class="mb-2">
             <label class="form-label small" for="ipAllowList">IP allow-list</label>
             <input type="text" class="form-control form-control-sm" id="ipAllowList" name="ipAllowList"

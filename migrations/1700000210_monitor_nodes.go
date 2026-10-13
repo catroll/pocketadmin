@@ -5,6 +5,11 @@ import (
 	"github.com/pocketbase/pocketbase/migrations"
 )
 
+// developerCollectionAPIKeys is the API-key collection's name. It is "api_keys" and not
+// "developer_api_keys": the module that owns it is called developer and the collection is
+// not, which is exactly the near-miss a named constant prevents.
+const developerCollectionAPIKeys = "api_keys"
+
 // monitorNodesMigration turns the host monitor into a multi-machine one.
 //
 // The first version recorded one machine -- the one the process runs on. That is the
@@ -33,7 +38,7 @@ func init() {
 				return err
 			}
 		}
-		if col := findCollection(app, "developer_api_keys"); col != nil && hasField(col, "monitorNode") {
+		if col := findCollection(app, "api_keys"); col != nil && hasField(col, "monitorNode") {
 			col.Fields.RemoveByName("monitorNode")
 			if err := app.Save(col); err != nil {
 				return err
@@ -141,15 +146,20 @@ func attachMetricsToNodes(app core.App) error {
 	// A bound key is how a remote agent authenticates. It is a relation on the key
 	// rather than a token of its own, so a node inherits the key's expiry, revocation,
 	// rate limit and audit trail instead of duplicating all four.
-	keys := findCollection(app, "developer_api_keys")
-	if keys != nil {
-		if !hasField(keys, "monitorNode") {
-			addField(keys, rel(app, "monitorNode", "monitor_nodes", false))
-		}
-		disableCascade(keys, "monitorNode")
-		if err := app.Save(keys); err != nil {
-			return err
-		}
+	// The collection is required rather than optional. This block was first written
+	// against a name that does not exist, and the `if col != nil` guard turned the
+	// mistake into a silent no-op: the field was never created and the binding was
+	// discarded on every save.
+	keys, err := requireCollection(app, developerCollectionAPIKeys)
+	if err != nil {
+		return err
+	}
+	if !hasField(keys, "monitorNode") {
+		addField(keys, rel(app, "monitorNode", "monitor_nodes", false))
+	}
+	disableCascade(keys, "monitorNode")
+	if err := app.Save(keys); err != nil {
+		return err
 	}
 
 	disableCascade(col, "node")

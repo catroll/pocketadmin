@@ -23,6 +23,26 @@ func findCollection(app core.App, name string) *core.Collection {
 	return col
 }
 
+// requireCollection returns a collection that must exist, or an error naming it.
+//
+// findCollection answers nil for a name that does not exist, which is right for an
+// idempotent migration that may run before its target. It is wrong when the collection
+// is the point of the migration: this round added a relation to the API-key collection
+// under the wrong name, findCollection returned nil, and the `if col != nil` guard
+// skipped the whole block. The field was never created, the binding was silently
+// discarded on every save, and nothing failed until a live check asked where the value
+// had gone.
+//
+// A migration that depends on a collection says so here and fails loudly.
+func requireCollection(app core.App, name string) (*core.Collection, error) {
+	col, err := app.FindCollectionByNameOrId(name)
+	if err != nil || col == nil {
+		return nil, fmt.Errorf("migrations: the %q collection does not exist, and this migration "+
+			"cannot do its work without it", name)
+	}
+	return col, nil
+}
+
 // collectionID returns the id of a collection, or "" when it does not exist.
 //
 // Relation fields store the target collection's id, so this is how a migration

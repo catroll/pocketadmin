@@ -29,6 +29,10 @@ const (
 
 	// signatureVerified marks a route whose authority is an HMAC over the request body.
 	signatureVerified = "\x00signature"
+
+	// apiKeyScoped marks a machine-API route whose authority is a bearer key with a
+	// scoped permission.
+	apiKeyScoped = "\x00apikey"
 )
 
 // actor returns the resolved actor for the request, or nil.
@@ -162,6 +166,19 @@ func (s *Server) readGuarded(g *gin.RouterGroup, method, path, code string, hand
 func (s *Server) selfGuarded(g *gin.RouterGroup, method, path string, handlers ...gin.HandlerFunc) {
 	s.registerGuard(method, joinPath(g.BasePath(), path), authenticatedOnly)
 	g.Handle(method, path, handlers...)
+}
+
+// apiGuarded registers a state-changing route on the machine-facing API.
+//
+// The authority is a bearer key plus a scoped permission, checked by requireAPIKey and
+// requireAPIPermission. It is a named helper rather than a bare registration because the
+// startup self-check inspects unsafe methods: the machine API's read routes are GET and
+// pass it unremarked, and the first write route added to that API stopped the process
+// from starting. Naming the authority is the same answer as signatureGuarded's, and it
+// is greppable.
+func (s *Server) apiGuarded(g *gin.RouterGroup, method, path, code string, handlers ...gin.HandlerFunc) {
+	s.registerGuard(method, joinPath(g.BasePath(), path), apiKeyScoped)
+	g.Handle(method, path, append([]gin.HandlerFunc{s.requireAPIPermission(code)}, handlers...)...)
 }
 
 // signatureGuarded registers a state-changing route whose authority is a verified

@@ -10,6 +10,7 @@ import (
 
 	"pocketadmin/internal/audit"
 	"pocketadmin/internal/developer"
+	"pocketadmin/internal/monitoring"
 	"pocketadmin/internal/permission"
 )
 
@@ -53,6 +54,14 @@ func (s *Server) handleAPIKeyList(c *gin.Context) {
 		if at := rec.GetDateTime("lastUsedAt"); !at.IsZero() {
 			row.LastUsed = relativeTime(at)
 		}
+		// A key bound to a machine is how a remote agent reports. The binding is shown
+		// because a key that carries the submission permission without one is refused,
+		// and the operator needs to see which is which.
+		if nodeID := rec.GetString("monitorNode"); nodeID != "" {
+			if node, err := s.app.FindRecordById(monitoring.CollectionNodes, nodeID); err == nil && node != nil {
+				row.MonitorNode = node.GetString("name")
+			}
+		}
 		if at := rec.GetDateTime("expiresAt"); !at.IsZero() {
 			row.Expires = formatDate(at)
 		}
@@ -74,6 +83,7 @@ func (s *Server) handleAPIKeyList(c *gin.Context) {
 		CanRevoke:   s.actor(c).Can(permission.DeveloperKeyRevoke),
 		Permissions: s.permissionOptions(),
 		Users:       s.administratorOptions(),
+		Nodes:       s.monitorNodeOptions(),
 	})
 }
 
@@ -150,6 +160,20 @@ func (s *Server) handleAPIKeyCreate(c *gin.Context) {
 	}
 	rec.Set("ipAllowList", strings.TrimSpace(c.PostForm("ipAllowList")))
 
+	// A key may be bound to a monitoring machine, which is what lets a remote agent
+	// report under its own identity. The binding is set here rather than through a
+	// generic field so that the machine must exist: a key pointing at nothing would be
+	// a credential whose submissions are refused for a reason nobody could see.
+	if nodeID := strings.TrimSpace(c.PostForm("monitorNode")); nodeID != "" {
+		node, err := s.app.FindRecordById(monitoring.CollectionNodes, nodeID)
+		if err != nil || node == nil {
+			s.setFlash(c, "danger", "That machine is not registered.")
+			c.Redirect(http.StatusSeeOther, "/developer/keys")
+			return
+		}
+		rec.Set("monitorNode", nodeID)
+	}
+
 	if raw := strings.TrimSpace(c.PostForm("expiresAt")); raw != "" {
 		at, err := time.ParseInLocation("2006-01-02", raw, time.Local)
 		if err != nil {
@@ -175,7 +199,10 @@ func (s *Server) handleAPIKeyCreate(c *gin.Context) {
 		TargetID:   rec.Id,
 		Severity:   severityWarning,
 		Summary:    "Issued API key \"" + name + "\" with " + itoa(len(scopes)) + " scope(s)",
-		Detail:     map[string]any{"prefix": generated.Prefix, "owner": ownerID, "scopes": scopes},
+		Detail: map[string]any{
+			"prefix": generated.Prefix, "owner": ownerID, "scopes": scopes,
+			"monitorNode": rec.GetString("monitorNode"),
+		},
 	})
 
 	// Held for exactly one render. It is not written to the database, not logged
@@ -343,15 +370,19 @@ func (s *Server) administratorOptions() []accountOption {
 
 // apiKeyRow is one key on the list.
 type apiKeyRow struct {
-	Record     *core.Record
-	Name       string
-	Prefix     string
-	Owner      string
-	Status     string
-	Scopes     int
-	Usage      int
-	RateLimit  int
-	AllowList  string
+	Record    *core.Record
+	Name      string
+	Prefix    string
+	Owner     string
+	Status    string
+	Scopes    int
+	Usage     int
+	RateLimit int
+	AllowList string
+
+	// MonitorNode is the machine this key reports for, empty for an ordinary key.
+	MonitorNode string
+
 	LastUsed   string
 	LastUsedIP string
 	Expires    string
@@ -367,6 +398,16 @@ type apiKeysPage struct {
 	CanRevoke   bool
 	Permissions []permissionOption
 	Users       []accountOption
+
+	// Nodes are the registered machines a key may be bound to.
+	Nodes []nodeOption
+}
+
+// nodeOption is one machine in a picker.
+type nodeOption struct {
+	ID   string
+	Code string
+	Name string
 }
 
 // apiReferencePage is the API reference.
@@ -388,4 +429,22 @@ type permissionOption struct {
 type accountOption struct {
 	ID    string
 	Email string
+}
+
+// monitorNodeOptions lists the registered machines for the key form.
+func (s *Server) monitorNodeOptions() []nodeOption {
+	nodes, err := monitoring.AllNodes(s.app)
+	if err != nil {
+		return nil
+	}
+
+	out := make([]nodeOption, 0, len(nodes))
+	for _, node := range nodes {
+		out = append(out, nodeOption{
+			ID:   node.Id,
+			Code: node.GetString("code"),
+			Name: node.GetString("name"),
+		})
+	}
+	return out
 }

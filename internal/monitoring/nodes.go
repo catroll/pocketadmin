@@ -69,7 +69,7 @@ func NodeByCode(app core.App, code string) (*core.Record, error) {
 
 // AllNodes lists the machines.
 func AllNodes(app core.App) ([]*core.Record, error) {
-	return app.FindRecordsByFilter(CollectionNodes, "", "isSelf desc,name", 0, 0)
+	return app.FindRecordsByFilter(CollectionNodes, "", "-isSelf,name", 0, 0)
 }
 
 // RecordSample updates a node's liveness counters.
