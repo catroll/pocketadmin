@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -204,17 +205,10 @@ func (s *Server) handlePreferencesSave(c *gin.Context) {
 		return
 	}
 
-	col, err := s.app.FindCollectionByNameOrId("user_preferences")
+	rec, err := ensurePreferenceRecord(s.app, actor)
 	if err != nil {
 		s.renderErrorPage(c, http.StatusInternalServerError, "Schema missing", err.Error())
 		return
-	}
-
-	rec := s.preferencesFor(c)
-	if rec == nil {
-		rec = core.NewRecord(col)
-		rec.Set("user", actor.UserID)
-		rec.Set("context", prefContextAdmin)
 	}
 
 	rec.Set("theme", firstOrEmpty([]string{c.PostForm("theme")}))
@@ -254,23 +248,73 @@ func (s *Server) ownAccountQuiet(c *gin.Context) *core.Record {
 	return rec
 }
 
-// preferencesFor loads the signed-in account's admin-context preferences.
+// preferencesFor loads the signed-in principal's admin-context preferences.
 //
-// A break-glass superuser has no `users` record, so it has none; the screen then
-// shows defaults rather than failing.
+// Two kinds of principal reach this screen and they are stored separately. An
+// administrator has a `users` record; a break-glass superuser does not, and its id
+// belongs to `_superusers`. Storing one in the other's relation is what produced
+// "Failed to find all relation records with the provided ids" on every save.
 func (s *Server) preferencesFor(c *gin.Context) *core.Record {
-	actor := s.actor(c)
-	if actor == nil || actor.IsSuperuser {
+	return preferenceRecord(s.app, s.actor(c))
+}
+
+// preferenceRecord finds the principal's admin-context preferences.
+//
+// It is separated from the request so the two-principal rule can be tested without a
+// router, a session or a cookie: which column a principal belongs in is the whole of
+// the logic here and the part that was wrong.
+func preferenceRecord(app core.App, actor *rbac.Actor) *core.Record {
+	if actor == nil {
 		return nil
 	}
 
-	rec, err := s.app.FindFirstRecordByFilter("user_preferences",
-		"user = {:u} && context = {:c}",
-		map[string]any{"u": actor.UserID, "c": prefContextAdmin})
+	column, value := preferencePrincipal(actor)
+	rec, err := app.FindFirstRecordByFilter("user_preferences",
+		column+" = {:"+column+"} && context = {:c}",
+		map[string]any{column: value, "c": prefContextAdmin})
 	if err != nil || rec == nil {
 		return nil
 	}
 	return rec
+}
+
+// ensurePreferenceRecord returns the principal's preferences, creating an empty row
+// when there is none.
+func ensurePreferenceRecord(app core.App, actor *rbac.Actor) (*core.Record, error) {
+	if actor == nil {
+		return nil, errors.New("preferences: no principal")
+	}
+
+	if rec := preferenceRecord(app, actor); rec != nil {
+		return rec, nil
+	}
+
+	col, err := app.FindCollectionByNameOrId("user_preferences")
+	if err != nil || col == nil {
+		return nil, errors.New("preferences: the collection is missing")
+	}
+
+	rec := core.NewRecord(col)
+	rec.Set("context", prefContextAdmin)
+
+	column, value := preferencePrincipal(actor)
+	rec.Set(column, value)
+
+	return rec, nil
+}
+
+// preferencePrincipal names the column a principal's id belongs in.
+//
+// Two kinds of principal reach the preferences screen: an administrator with a
+// `users` record, and a break-glass superuser whose id belongs to `_superusers`.
+// Writing one into the other's relation is what produced "Failed to find all relation
+// records with the provided ids" on every save, and the read path had been returning
+// nil for a superuser while the write path tried to create a row for one.
+func preferencePrincipal(actor *rbac.Actor) (column, value string) {
+	if actor.IsSuperuser {
+		return "superuserId", actor.UserID
+	}
+	return "user", actor.UserID
 }
 
 // currentPageSize returns the signed-in account's preferred page size, falling
