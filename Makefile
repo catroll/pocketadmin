@@ -74,6 +74,15 @@ superuser: build ## Create/update a superuser (EMAIL=… PASSWORD=…)
 	@test -n "$(PASSWORD)" || (echo "PASSWORD is required"; exit 1)
 	./$(BINARY) $(FLAGS) superuser upsert "$(EMAIL)" "$(PASSWORD)"
 
+demo: build ## Load the example dataset (ARGS="--reset --yes" to rebuild it)
+	./$(BINARY) $(FLAGS) demo seed $(ARGS)
+
+demo-clear: build ## Remove the example dataset
+	./$(BINARY) $(FLAGS) demo clear --yes
+
+demo-status: build ## Show what the example dataset holds
+	./$(BINARY) $(FLAGS) demo status
+
 .PHONY: clean
 clean: ## Remove build output and disposable caches
 	rm -rf bin .cache/gobuild .cache/testrun

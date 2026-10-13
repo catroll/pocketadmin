@@ -16,6 +16,7 @@ import (
 
 	"pocketadmin/internal/announcement"
 	"pocketadmin/internal/config"
+	"pocketadmin/internal/demo"
 	"pocketadmin/internal/logging"
 	"pocketadmin/internal/organization"
 	"pocketadmin/internal/pbapp"
@@ -67,6 +68,11 @@ func run() error {
 	// before the panel ever needs to serve a login.
 	if len(cfg.Args) > 0 {
 		app.RootCmd.AddCommand(pbcmd.NewSuperuserCommand(app))
+
+		// The example dataset is a subcommand and nothing else. It is never a step of
+		// installation: a fresh install is empty, and stays empty until somebody asks.
+		app.RootCmd.AddCommand(demo.Command(app))
+
 		return app.Execute()
 	}
 

@@ -56,6 +56,8 @@ The session signing key is **never** a hard-coded default: set
 on first run and persist it as `pb_data/admin_session.key` (mode `0600`).
 
 Any first positional argument is forwarded to PocketBase's own CLI, so
+See [demo-data.md](demo-data.md) for the example dataset and the `demo` subcommand.
+
 `pocketadmin superuser upsert …`, `pocketadmin superuser otp …` and friends work
 as usual.
 

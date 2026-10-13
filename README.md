@@ -68,6 +68,12 @@ make run         # http://127.0.0.1:8090
 Panel: <http://127.0.0.1:8090/login> · PocketBase dashboard:
 <http://127.0.0.1:8090/_/>
 
+A fresh installation is empty. To fill it with examples for a demonstration:
+
+```bash
+make demo        # about 250 example rows; never run by installation
+```
+
 Requires Go 1.25 or newer. `make help` lists every target.
 
 ## Documentation
@@ -75,6 +81,7 @@ Requires Go 1.25 or newer. `make help` lists every target.
 | Document | Contents |
 | --- | --- |
 | [docs/operations.md](docs/operations.md) | Configuration, logging, endpoints, source layout, security notes |
+| [The example dataset](docs/demo-data.md) | A command that loads ~250 example rows for a demonstration; never run by installation |
 | [CAPABILITY-MAP.md](CAPABILITY-MAP.md) | Module decomposition, dependency direction, build order |
 | [docs/requirements.md](docs/requirements.md) | Numbered functional requirements and open questions |
 | [docs/database-design.md](docs/database-design.md) | Collection schema, indexes and relationships |
