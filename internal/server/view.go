@@ -32,6 +32,12 @@ type base struct {
 	// Active is the menu node name of the page being rendered.
 	Active string
 
+	// CurrentPath is the request path with its query, so a control that changes
+	// something and returns can put the reader back where they were -- including the
+	// filters they had applied. It is never taken from the Referer header, which the
+	// reader's browser supplies and anybody can forge.
+	CurrentPath string
+
 	// ActivePath is the set of node names from a root to Active, so the sidebar can
 	// open the branch the operator is standing in. A string-prefix test cannot do it:
 	// it works only when a child's name begins with its parent's, which is true of

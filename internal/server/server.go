@@ -335,6 +335,7 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 		Title:             s.translate(c, title),
 		Locale:            locale,
 		Active:            active,
+		CurrentPath:       c.Request.URL.RequestURI(),
 		ActivePath:        rbac.ActiveAncestors(menus, active),
 		CSRF:              csrfToken,
 		UserEmail:         email,

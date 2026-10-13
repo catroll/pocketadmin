@@ -205,3 +205,42 @@ func TestEveryOfferedThemeIsAccepted(t *testing.T) {
 		}
 	}
 }
+
+// TestASmallControlReturnsTheReaderToAPageOnThisSite.
+//
+// The path arrives in the form, so it is attacker-controlled in exactly the way an open
+// redirect is. Two shapes matter and neither looks hostile at a glance:
+//
+//	//evil.example.com   is a protocol-relative URL, which a browser follows off-site
+//	/\evil.example.com   is read as the same thing by several browsers
+//
+// A control that changes the theme is a small thing to hang a phishing redirect on, and
+// it is the kind of thing that gets added once and never looked at again.
+func TestASmallControlReturnsTheReaderToAPageOnThisSite(t *testing.T) {
+	const fallback = "/dashboard"
+
+	cases := map[string]string{
+		// Accepted: a path on this site, with or without its query.
+		"/orders":             "/orders",
+		"/orders?status=paid": "/orders?status=paid",
+		"/audit/logins":       "/audit/logins",
+		"  /orders  ":         "/orders",
+
+		// Refused: off-site, protocol-relative, backslash-disguised, or not a path.
+		"":                         fallback,
+		"//evil.example.com":       fallback,
+		"/\\evil.example.com":      fallback,
+		"\\\\evil.example.com":     fallback,
+		"https://evil.example.com": fallback,
+		"http://evil.example.com":  fallback,
+		"javascript:alert(1)":      fallback,
+		"orders":                   fallback,
+		"/orders\r\nLocation: /x":  fallback,
+	}
+
+	for input, want := range cases {
+		if got := returnPath(input, ""); got != want {
+			t.Errorf("returnPath(%q) = %q, want %q", input, got, want)
+		}
+	}
+}

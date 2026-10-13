@@ -61,6 +61,7 @@ func (s *Server) registerPreferenceRoutes(panel *gin.RouterGroup) {
 	s.safe(panel, http.MethodGet, "/preferences", s.handlePreferencesForm)
 	s.selfGuarded(panel, http.MethodPost, "/preferences", s.handlePreferencesSave)
 	s.selfGuarded(panel, http.MethodPost, "/preferences/password", s.handlePasswordChange)
+	s.selfGuarded(panel, http.MethodPost, "/preferences/theme", s.handleThemeSwitch)
 }
 
 // handlePasswordChange lets an account change its own password.
@@ -428,4 +429,59 @@ func normaliseTheme(raw string) string {
 func (s *Server) preferenceSidebarCollapsed(c *gin.Context) bool {
 	rec := s.preferencesFor(c)
 	return rec != nil && rec.GetBool("sidebarCollapsed")
+}
+
+// handleThemeSwitch changes the interface theme and nothing else.
+//
+// The preferences screen saves the whole form at once, which is right there and wrong
+// here: a control in the navigation bar would send only a theme, and every other field
+// would be written back empty. This handler touches one column.
+func (s *Server) handleThemeSwitch(c *gin.Context) {
+	actor := s.actor(c)
+	if actor == nil {
+		s.redirectToLogin(c)
+		return
+	}
+
+	rec, err := ensurePreferenceRecord(s.app, actor)
+	if err != nil {
+		s.renderErrorPage(c, http.StatusInternalServerError, "Schema missing", err.Error())
+		return
+	}
+
+	theme := normaliseTheme(c.PostForm("theme"))
+	rec.Set("theme", theme)
+
+	if err := s.app.Save(rec); err != nil {
+		s.setFlash(c, "danger", "Could not save: "+err.Error())
+		c.Redirect(http.StatusSeeOther, returnPath(c.PostForm("next"), ""))
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, returnPath(c.PostForm("next"), ""))
+}
+
+// returnPath decides where a small control sends the reader afterwards.
+//
+// The path arrives in the form, so it is attacker-controlled in exactly the way an open
+// redirect is: `//example.com` is a protocol-relative URL that a browser follows off-site,
+// and `/\example.com` is treated as `//example.com` by several of them. Only a path that
+// begins with a single slash and contains no backslash is accepted, and anything else
+// falls back to the page the control is normally used from.
+func returnPath(raw, fallback string) string {
+	if fallback == "" {
+		fallback = "/dashboard"
+	}
+
+	path := strings.TrimSpace(raw)
+	if path == "" || !strings.HasPrefix(path, "/") {
+		return fallback
+	}
+	if strings.HasPrefix(path, "//") || strings.HasPrefix(path, "/\\") {
+		return fallback
+	}
+	if strings.ContainsAny(path, "\\\r\n") {
+		return fallback
+	}
+	return path
 }

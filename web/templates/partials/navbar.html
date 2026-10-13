@@ -21,6 +21,42 @@
           <i class="fas fa-toolbox"></i>
         </a>
       </li>
+      {{/* The theme, changed from anywhere.
+
+           It is a plain form with three submit buttons rather than a script: the panel
+           works with JavaScript disabled, and each button carries its own value so no
+           JavaScript is needed to say which one was pressed. The page reloads, which is
+           what applying a theme costs.
+
+           The icon shows the current choice, so the state is readable without opening the
+           menu. */}}
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
+           aria-haspopup="true" aria-expanded="false" title="{{.T "chrome.theme"}}"
+           aria-label="{{.T "chrome.theme"}}">
+          <i class="fas {{if eq .Theme "dark"}}fa-moon{{else if eq .Theme "auto"}}fa-circle-half-stroke{{else}}fa-sun{{end}}"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end">
+          <h6 class="dropdown-header">{{.T "chrome.theme"}}</h6>
+          <form method="post" action="/preferences/theme">
+            <input type="hidden" name="_csrf" value="{{.CSRF}}">
+            <input type="hidden" name="next" value="{{.CurrentPath}}">
+            <button type="submit" name="theme" value="light"
+                    class="dropdown-item{{if eq .Theme "light"}} active{{end}}">
+              <i class="fas fa-sun fa-fw me-2"></i>{{.T "preferences.themeLight"}}
+            </button>
+            <button type="submit" name="theme" value="dark"
+                    class="dropdown-item{{if eq .Theme "dark"}} active{{end}}">
+              <i class="fas fa-moon fa-fw me-2"></i>{{.T "preferences.themeDark"}}
+            </button>
+            <button type="submit" name="theme" value="auto"
+                    class="dropdown-item{{if eq .Theme "auto"}} active{{end}}">
+              <i class="fas fa-circle-half-stroke fa-fw me-2"></i>{{.T "preferences.themeAuto"}}
+            </button>
+          </form>
+        </div>
+      </li>
+
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
            aria-haspopup="true" aria-expanded="false">
