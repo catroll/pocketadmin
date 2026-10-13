@@ -4,6 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{.Title}} &middot; {{.AppName}}</title>
+
+    {{/* Bootstrap reads this attribute and recognises exactly "light" and "dark". An
+         account may also choose "auto", meaning follow the operating system, and that is
+         resolved here into one of the two values the stylesheet understands.
+
+         It runs before the stylesheets so the page is never painted in one theme and then
+         corrected. This is Bootstrap's own mechanism for following the system rather than
+         a theme of our own: nothing is restyled, the attribute the framework already
+         reads is simply given a value it already accepts. */}}
+    <script>
+      (function () {
+        var root = document.documentElement;
+        if (root.getAttribute('data-bs-theme') !== 'auto') {
+          return;
+        }
+        var system = window.matchMedia('(prefers-color-scheme: dark)');
+        var apply = function () {
+          root.setAttribute('data-bs-theme', system.matches ? 'dark' : 'light');
+        };
+        apply();
+        system.addEventListener('change', apply);
+      })();
+    </script>
+
   <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
   <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="/static/vendor/adminlte/css/adminlte.min.css">

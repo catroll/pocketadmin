@@ -212,7 +212,7 @@ func (s *Server) handlePreferencesSave(c *gin.Context) {
 		return
 	}
 
-	rec.Set("theme", firstOrEmpty([]string{c.PostForm("theme")}))
+	rec.Set("theme", normaliseTheme(c.PostForm("theme")))
 	rec.Set("language", strings.TrimSpace(c.PostForm("language")))
 	rec.Set("timezone", strings.TrimSpace(c.PostForm("timezone")))
 	rec.Set("sidebarCollapsed", c.PostForm("sidebarCollapsed") != "")
@@ -388,7 +388,39 @@ func (s *Server) preferenceTheme(c *gin.Context) string {
 			return theme
 		}
 	}
-	return "light"
+	return ThemeLight
+}
+
+// preferenceThemes lists the values an account may store.
+//
+// The set is closed because the value becomes the `data-bs-theme` attribute, which
+// Bootstrap matches against exactly. Anything else -- a typo, a value from an older
+// release, whatever a hand-made request carries -- matches no rule and silently renders
+// as the default, so a stored choice that is not one of these is worse than no choice.
+func preferenceThemes() []string {
+	return []string{ThemeLight, ThemeDark, ThemeAuto}
+}
+
+// The theme values, as Bootstrap spells them, plus our own "auto".
+const (
+	ThemeLight = "light"
+	ThemeDark  = "dark"
+
+	// ThemeAuto means follow the operating system. It is ours rather than Bootstrap's:
+	// the stylesheet only recognises the two above, and the layout resolves this one
+	// into whichever applies at the moment the page loads.
+	ThemeAuto = "auto"
+)
+
+// normaliseTheme maps what a request carried onto one of the accepted values.
+func normaliseTheme(raw string) string {
+	value := strings.TrimSpace(raw)
+	for _, allowed := range preferenceThemes() {
+		if value == allowed {
+			return value
+		}
+	}
+	return ThemeLight
 }
 
 // preferenceSidebarCollapsed reports whether the account asked for a collapsed

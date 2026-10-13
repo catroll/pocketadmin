@@ -143,3 +143,65 @@ func TestNoPrincipalIsNotAnErrorWorthSaving(t *testing.T) {
 		t.Error("a nil actor was given a preferences row to save")
 	}
 }
+
+// TestTheStoredThemeIsOneTheStylesheetUnderstands.
+//
+// The value becomes the `data-bs-theme` attribute, which Bootstrap and AdminLTE match
+// against exactly: both stylesheets contain rules for `light` and `dark` and no rule for
+// anything else, including `auto`. A value outside that set therefore matches nothing and
+// renders as the default, so a stored choice that is not recognised is worse than no
+// choice -- the account believes it set something.
+//
+// `auto` is ours rather than Bootstrap's. It is accepted because it means something to a
+// reader, and the layout resolves it into one of the two values the framework accepts.
+func TestTheStoredThemeIsOneTheStylesheetUnderstands(t *testing.T) {
+	cases := map[string]string{
+		"light":          "light",
+		"dark":           "dark",
+		"auto":           "auto",
+		"":               "light",
+		"  dark  ":       "dark",
+		"Dark":           "light", // the stylesheet matches case-sensitively
+		"garbage":        "light",
+		"light\" onload": "light",
+	}
+
+	for input, want := range cases {
+		if got := normaliseTheme(input); got != want {
+			t.Errorf("normaliseTheme(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+// TestEveryOfferedThemeIsAccepted keeps the picker and the validator in step.
+//
+// The two are written in different languages in different files, so a fourth option added
+// to the form and not to the validator would store the default instead of the choice --
+// silently, and only for the people who picked it.
+func TestEveryOfferedThemeIsAccepted(t *testing.T) {
+	offered := []string{
+		"light", // preferences.html
+		"dark",
+		"auto",
+	}
+
+	for _, value := range offered {
+		if got := normaliseTheme(value); got != value {
+			t.Errorf("the form offers %q but it is stored as %q", value, got)
+		}
+	}
+
+	// And the reverse: a value the validator accepts that the form does not offer is
+	// unreachable, which is dead code rather than a bug, but it should be deliberate.
+	for _, allowed := range preferenceThemes() {
+		found := false
+		for _, value := range offered {
+			if value == allowed {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("%q is accepted but the form does not offer it", allowed)
+		}
+	}
+}
