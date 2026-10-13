@@ -170,6 +170,94 @@
 </div>
 {{end}}
 
+{{/* The machine the process runs on. It exists so a small installation does not have
+     to run a monitoring stack to notice its disk filling up. */}}
+<div class="card card-outline card-info">
+  <div class="card-header">
+    <h3 class="card-title"><i class="fas fa-server me-1"></i>This machine</h3>
+    <div class="card-tools small text-body-secondary">
+      {{if .Host.Enabled}}Every {{.Host.Interval}}, kept {{.Host.Retention}}.{{else}}Sampling is off. Nothing is being recorded.{{end}}
+      <a href="{{.HostSettings}}" class="ms-1">Configure</a>
+    </div>
+  </div>
+
+  {{if .Host.Sampled}}
+  <div class="card-body">
+    {{if not .Host.Fresh}}
+    <div class="alert alert-warning py-2 small mb-3">
+      <i class="fas fa-triangle-exclamation me-1"></i>
+      The newest reading is from {{.Host.Sampled}}, which is older than the interval allows for.
+      The sampler may have stopped.
+    </div>
+    {{end}}
+
+    <div class="row text-center">
+      <div class="col">
+        <div class="text-body-secondary small">Processor</div>
+        <div class="fs-5">{{.Host.CPU}}</div>
+      </div>
+      <div class="col">
+        <div class="text-body-secondary small">Load (1m)</div>
+        <div class="fs-5">{{.Host.Load}}</div>
+      </div>
+      <div class="col">
+        <div class="text-body-secondary small">Memory</div>
+        <div class="fs-5">{{.Host.Memory}}</div>
+      </div>
+      <div class="col">
+        <div class="text-body-secondary small">Disk</div>
+        <div class="fs-5">{{.Host.Disk}}</div>
+      </div>
+      <div class="col">
+        <div class="text-body-secondary small">In / out</div>
+        <div class="fs-5">{{.Host.NetRx}} <span class="text-body-secondary">/</span> {{.Host.NetTx}}</div>
+      </div>
+      <div class="col">
+        <div class="text-body-secondary small">Up for</div>
+        <div class="fs-5">{{.Host.Uptime}}</div>
+      </div>
+    </div>
+
+    {{if .Host.Unsupported}}
+    <div class="small text-body-secondary mt-3">
+      This platform does not report: {{range .Host.Unsupported}}<code>{{.}}</code> {{end}}
+    </div>
+    {{end}}
+  </div>
+
+  <div class="card-body table-responsive border-top p-0">
+    <table class="table table-sm table-striped mb-0">
+      <thead><tr><th>When</th><th>Processor</th><th>Load</th><th>Memory</th><th>Disk</th><th>In</th><th>Out</th></tr></thead>
+      <tbody>
+        {{range .Host.Recent}}
+        <tr class="small">
+          <td class="font-monospace">{{.At}}</td>
+          <td>{{.CPU}}</td>
+          <td>{{.Load}}</td>
+          <td>{{.Memory}}</td>
+          <td>{{.Disk}}</td>
+          <td>{{.NetRx}}</td>
+          <td>{{.NetTx}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer small text-body-secondary">
+    Network figures are differences between consecutive readings: the stored counters are
+    cumulative since boot, so one reading cannot say how fast anything moved.
+  </div>
+  {{else}}
+  <div class="card-body text-center text-body-secondary py-4">
+    {{if .Host.Enabled}}
+      No measurement has been recorded yet. The first one arrives within {{.Host.Interval}}.
+    {{else}}
+      Turn sampling on in <a href="{{.HostSettings}}">the configuration</a> to record this machine's use.
+    {{end}}
+  </div>
+  {{end}}
+</div>
+
 {{if .Snapshots}}
 <div class="card">
   <div class="card-header"><h3 class="card-title"><i class="fas fa-clock-rotate-left me-1"></i>Recorded snapshots</h3></div>

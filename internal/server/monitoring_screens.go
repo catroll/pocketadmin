@@ -114,6 +114,8 @@ func (s *Server) handleMonitoring(c *gin.Context) {
 		CanSeeHealth: actor.Can(permission.MonitoringHealth),
 		CanSnapshot:  actor.Can(permission.MonitoringSnapshotRun),
 		Snapshots:    s.recentSnapshots(),
+		Host:         s.hostMonitor(now),
+		HostSettings: hostSettingsSite(),
 	})
 }
 
@@ -298,6 +300,11 @@ type monitoringPage struct {
 	// converting at the edge is clearer than teaching the helpers a second type.
 	LastGCAgo    string
 	DatabaseLast time.Time
+
+	// Host is the lightweight machine monitor: the figures the process can read about
+	// the machine it is running on.
+	Host         hostMonitorView
+	HostSettings string
 }
 
 // gcAgo renders when the last collection ran.

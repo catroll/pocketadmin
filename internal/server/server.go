@@ -73,6 +73,10 @@ type Server struct {
 	// scheduler runs due tasks, or nil when it has not been started.
 	scheduler *jobs.Scheduler
 
+	// sampler records this machine's own resource use, or nil when it has not been
+	// started.
+	sampler *monitoring.Sampler
+
 	// announcements answers audience questions for the announcement module.
 	announcements *announcement.Engine
 

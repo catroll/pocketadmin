@@ -124,6 +124,16 @@ func adminKeys() []Key {
 		{Category: "banner", Key: "dismissible", Type: TypeBool, Default: true,
 			Description: "Whether a reader may hide the banner."},
 
+		// monitoring ---------------------------------------------------------
+		{Category: "monitoring", Key: "hostEnabled", Type: TypeBool, Default: true,
+			Description: "Record this machine's processor, memory, disk and network use on a schedule. " +
+				"Off means nothing is written; nothing already recorded is deleted."},
+		{Category: "monitoring", Key: "hostIntervalSeconds", Type: TypeNumber, Default: float64(60),
+			Description: "How often a host measurement is taken, in seconds. A minute is often enough to see a " +
+				"machine fill up and rare enough to be free."},
+		{Category: "monitoring", Key: "hostRetentionDays", Type: TypeNumber, Default: float64(7),
+			Description: "How long host measurements are kept, in days. Zero keeps them for ever."},
+
 		// refunds ------------------------------------------------------------
 		{Category: "refund", Key: "autoApproveThreshold", Type: TypeNumber, Default: float64(0),
 			Description: "A refund at or below this amount, in minor units, is approved as soon as it is requested. " +

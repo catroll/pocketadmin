@@ -110,6 +110,12 @@ func run() error {
 	stopScheduler := panel.StartScheduler()
 	defer stopScheduler()
 
+	// The host sampler records this machine's own resource use. It is a goroutine
+	// rather than a scheduled task: a task would write a run row every time it fired,
+	// and the interval would be limited to what a cron expression can say.
+	stopSampler := panel.StartHostSampler()
+	defer stopSampler()
+
 	// One port, two routers: PocketBase owns its API and bundled dashboard
 	// prefixes, Gin serves everything else. Dispatching with a stdlib mux keeps
 	// PocketBase requests out of Gin's response writer entirely.

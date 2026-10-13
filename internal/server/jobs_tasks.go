@@ -14,6 +14,7 @@ import (
 	"pocketadmin/internal/developer"
 	"pocketadmin/internal/jobs"
 	"pocketadmin/internal/membership"
+	"pocketadmin/internal/monitoring"
 	"pocketadmin/internal/order"
 	"pocketadmin/internal/subscription"
 	"pocketadmin/internal/workbench"
@@ -39,6 +40,7 @@ func (s *Server) RegisterJobHandlers() {
 		s.registerMembershipJob()
 		s.registerSubscriptionJob()
 		s.registerOrderJob()
+		s.registerHostMetricsRetentionJob()
 	})
 }
 
@@ -440,6 +442,36 @@ func (s *Server) registerOrderJob() {
 				return "no order had expired", nil
 			}
 			return fmt.Sprintf("closed %d unpaid order(s)", closed), nil
+		},
+	})
+}
+
+// registerHostMetricsRetentionJob prunes the host samples.
+//
+// The sampler writes a row a minute, which is small but unbounded. This is the same
+// shape as the audit retention: a daily sweep against a configured window, so the
+// table has a size somebody chose rather than one it grew into.
+func (s *Server) registerHostMetricsRetentionJob() {
+	jobs.Register(jobs.Handler{
+		Code:        "monitoring.host_retention",
+		Name:        "Host measurement retention",
+		Description: "Deletes host measurements older than the configured window.",
+		DefaultCron: "25 3 * * *",
+		Run: func(ctx context.Context, _ map[string]any) (string, error) {
+			policy := s.hostSamplePolicy()
+			if policy.RetentionDays <= 0 {
+				return "retention is off, so nothing was deleted", nil
+			}
+
+			deleted, err := monitoring.PruneHostMetrics(s.app, policy.RetentionDays, time.Now())
+			if err != nil {
+				return "", err
+			}
+			if deleted == 0 {
+				return "nothing was old enough to delete", nil
+			}
+			return fmt.Sprintf("deleted %d measurement(s) older than %d day(s)",
+				deleted, policy.RetentionDays), nil
 		},
 	})
 }
