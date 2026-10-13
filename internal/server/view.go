@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/pocketbase/pocketbase/core"
 
+	"pocketadmin/internal/i18n"
 	"pocketadmin/internal/permission"
 	"pocketadmin/internal/rbac"
 )
@@ -25,6 +26,9 @@ func (b base) Can(code string) bool {
 // `.CSRF`, `.Nav`, ... directly on the outer struct.
 type base struct {
 	Title string
+	// Locale is the interface language for this request.
+	Locale i18n.Locale
+
 	// Active is the menu node name of the page being rendered.
 	Active string
 
@@ -315,4 +319,17 @@ type errorPage struct {
 	Code    int
 	Message string
 	Detail  string
+}
+
+// T renders a message in the page's locale.
+//
+// It is a method rather than a template function because a function cannot see the data
+// the template was executed with, and the locale is part of that data. A method reads it
+// from the receiver, so `{{.T "common.save"}}` works anywhere the page is in scope -- and
+// in a sub-template, `{{$.T ...}}` does, which is the form the sidebar needs.
+//
+// The fallback is the same as the package's: the locale, then English, then the key. A
+// visible key is a bug somebody can report.
+func (b base) T(key string, args ...any) string {
+	return i18n.T(b.Locale, key, args...)
 }

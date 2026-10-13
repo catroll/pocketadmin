@@ -329,9 +329,11 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 	csrfToken, _ := csrf.(string)
 
 	menus := s.navFromActor(c)
+	locale := s.locale(c)
 
 	return base{
-		Title:             title,
+		Title:             s.translate(c, title),
+		Locale:            locale,
 		Active:            active,
 		ActivePath:        rbac.ActiveAncestors(menus, active),
 		CSRF:              csrfToken,
@@ -344,7 +346,7 @@ func (s *Server) newBase(c *gin.Context, title, active string) base {
 		Actor:             actor,
 		Perms:             actorPermissions(actor),
 		Superuser:         actor != nil && actor.IsSuperuser,
-		Menus:             menus,
+		Menus:             s.translateMenus(menus, locale),
 		Theme:             s.preferenceTheme(c),
 		SidebarCollapsed:  s.preferenceSidebarCollapsed(c),
 		Impersonating:     s.impersonatorID(c) != "",

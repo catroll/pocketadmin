@@ -13,6 +13,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 
 	"pocketadmin/internal/audit"
+	"pocketadmin/internal/i18n"
 	"pocketadmin/internal/rbac"
 )
 
@@ -338,13 +339,30 @@ func prefString(rec *core.Record, field string) string {
 
 // preferenceLanguages lists the offered interface languages.
 //
-// Only English ships today; the list exists so the stored value is a closed set
-// from the start rather than free text that later needs migrating.
+// The list is derived from the translation catalogue rather than written out, so a locale
+// cannot be offered without messages behind it and messages cannot be added without the
+// picker noticing. Each is named in its own language, because a reader who only reads
+// Chinese cannot use a picker that says "Chinese (Simplified)".
 func preferenceLanguages() []formOption {
-	return []formOption{
-		{Value: "en", Label: "English"},
-		{Value: "zh-CN", Label: "简体中文"},
+	out := make([]formOption, 0, len(i18n.Locales()))
+	for _, locale := range i18n.Locales() {
+		out = append(out, formOption{Value: string(locale), Label: locale.Name()})
 	}
+	return out
+}
+
+// locale resolves the interface language for a request.
+//
+// The account's stored preference wins. Nothing else is consulted yet -- a browser's
+// Accept-Language would be a reasonable fallback, and it is deliberately not used: an
+// operator who has chosen a language should not see it overridden by a header they cannot
+// see, and one who has not chosen gets English, which is the language the messages are
+// written in.
+func (s *Server) locale(c *gin.Context) i18n.Locale {
+	if rec := s.preferencesFor(c); rec != nil {
+		return i18n.Normalize(rec.GetString("language"))
+	}
+	return i18n.Default
 }
 
 // preferenceTimezones lists common zones for display purposes.

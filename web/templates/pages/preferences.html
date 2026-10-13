@@ -13,7 +13,7 @@
         </div>
         <div class="card-body">
           <div class="row mb-3">
-            <label class="col-sm-4 col-form-label" for="theme">Theme</label>
+            <label class="col-sm-4 col-form-label" for="theme">{{.T "preferences.theme"}}</label>
             <div class="col-sm-8">
               <select class="form-select" id="theme" name="theme">
                 <option value="light" {{if eq .Theme "light"}}selected{{end}}>Light</option>
@@ -24,19 +24,19 @@
           </div>
 
           <div class="row mb-3">
-            <label class="col-sm-4 col-form-label" for="language">Language</label>
+            <label class="col-sm-4 col-form-label" for="language">{{.T "preferences.language"}}</label>
             <div class="col-sm-8">
               <select class="form-select" id="language" name="language">
                 {{range .Languages}}
                 <option value="{{.Value}}" {{if eq .Value $.Language}}selected{{end}}>{{.Label}}</option>
                 {{end}}
               </select>
-              <div class="form-text">Stored per account. Only English ships today.</div>
+              <div class="form-text">{{.T "preferences.languageNote"}}</div>
             </div>
           </div>
 
           <div class="row mb-3">
-            <label class="col-sm-4 col-form-label" for="timezone">Time zone</label>
+            <label class="col-sm-4 col-form-label" for="timezone">{{.T "preferences.timezone"}}</label>
             <div class="col-sm-8">
               <select class="form-select" id="timezone" name="timezone">
                 {{range .Timezones}}

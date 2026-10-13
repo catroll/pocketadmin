@@ -3,15 +3,15 @@
   <div class="container-fluid">
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button" aria-label="Toggle navigation">
+        <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button" aria-label="{{.T "chrome.toggleNav"}}">
           <i class="fas fa-bars"></i>
         </a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/dashboard" class="nav-link">{{.T "nav.dashboard"}}</a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="/collections" class="nav-link">Collections</a>
+        <a href="/collections" class="nav-link">{{.T "nav.collections"}}</a>
       </li>
     </ul>
 
@@ -36,13 +36,13 @@
           </a>
           <div class="dropdown-divider"></div>
           <a class="dropdown-item" href="/preferences">
-            <i class="fas fa-sliders me-2"></i>Preferences
+            <i class="fas fa-sliders me-2"></i>{{.T "chrome.preferences"}}
           </a>
           <div class="dropdown-divider"></div>
           <form method="post" action="/logout">
             <input type="hidden" name="_csrf" value="{{.CSRF}}">
             <button type="submit" class="dropdown-item text-danger">
-              <i class="fas fa-sign-out-alt me-2"></i>Sign out
+              <i class="fas fa-sign-out-alt me-2"></i>{{.T "chrome.signOut"}}
             </button>
           </form>
         </div>
