@@ -1491,6 +1491,66 @@ constants mirrored by a drift test rather than a document.
 **Given up.** The test reads schemas and is slower and more indirect than asserting a list.
 It is also the only version that can be wrong in a way somebody notices.
 
+### D-074 — A label the server supplies is a label the catalogue must own
+
+**Decision.** Where a screen shows a closed set of values the server chooses from — a
+status, a kind, a source, a channel — the label comes from a message key named after the
+value: `{{$.T (printf "orders.status.%s" .)}}`. No English literal is assigned in Go for a
+template to print.
+
+**Why.** A live browser screenshot showed a Chinese order list reading
+`pending_payment 1 | paid 1 | fulfilling | completed 2` and `1 item(s) · web`. Every test in
+the repository passed. The template contains no English for the coverage test to find, the
+value arrives at render time, and a missing key falls back to the value rather than to a
+blank — so the class is invisible to static analysis from every direction.
+
+A second instance turned up in the same sweep: `promotion_screens.go` assigned
+`row.Quantity = "unlimited"` and the template printed it. That one is worse than a missing
+key, because a missing key shows a key name somebody can report, and an English literal
+shows plausible English nobody questions.
+
+The pattern also fixes a latent one: `{{else}}...{{.Status}}` in a badge chain prints the
+raw value whenever a new status is added and the chain is not extended — which is exactly
+when it matters.
+
+**Given up.** A key per enum value, and the table of values has to be kept in step with the
+server. `TestEveryServerEnumValueHasAMessage` and `TestEveryVocabularyIsUsedByATemplate`
+hold both directions, and were proved red/green rather than assumed.
+
+### D-075 — Static analysis cannot see what the server supplies
+
+**Decision.** A screenshot of a real page, in the reader's language and in each theme, is
+part of verifying an interface. Not a substitute for tests — an addition to them.
+
+**Why.** Everything in D-074 was invisible to 23 passing test packages and to every guard
+written in this project. The guards check the templates; the defect was in the seam between
+the template and the data. Two more of the same shape came out of the same pass:
+`order_detail.html` passed a raw status as an *argument* (`标记为 refunded`), and
+`monitoring_node.html` showed English window buttons because the Go code returned the
+labels literally while unused `monitoring.window.*` keys sat in the catalogue.
+
+The negative result is recorded too: `subscriptions.interval.*` could not be reached by a
+`printf` because the value was already the output of `describeInterval("every month")`, so
+the lookup produced the literal `subscriptions.interval.every month`. That one is fixed in
+Go, not in the template.
+
+**Given up.** A browser in the loop is slower than grepping. It is the only thing that sees
+this class.
+
+### D-076 — Server-side prose is a separate, unfinished pass
+
+**Decision.** Job names and descriptions, `setFlash` messages, `monitoring.Check` prose and
+integration driver labels are **not** translated, and the fact is recorded rather than left
+to be discovered.
+
+**Why.** They are not template-rendered enum values; fixing them means threading the locale
+through the Go call sites that produce them. `i18n.Text` exists for exactly that — it
+translates by English text so the caller needs no key — but doing it to roughly 680 literals
+is its own change and was not this one.
+
+What *was* fixed from that family is what a reader sees on a screen in scope:
+`describeInterval` and the monitoring window labels.
+
 ---
 
 ## Pending

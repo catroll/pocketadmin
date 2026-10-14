@@ -82,12 +82,15 @@ func (s *Server) handleCouponList(c *gin.Context) {
 		if min := int64(rec.GetFloat("minSpend")); min > 0 {
 			row.Minimum = money.Format(money.Amount(min), row.Currency)
 		}
+		// A coupon with no cap says so, and the word comes from the catalogue rather
+		// than from here. An English literal assigned in Go bypasses every check the
+		// translation has: the template holds no English for the coverage test to find,
+		// and there is no key for it to be missing. It reaches a Chinese reader as
+		// English and nothing fails.
 		if total := rec.GetInt("totalQuantity"); total > 0 {
-			issued, _ := promotion.IssuedTo(s.app, rec.Id, "")
-			_ = issued
 			row.Quantity = itoa(total)
 		} else {
-			row.Quantity = "unlimited"
+			row.Unlimited = true
 		}
 
 		// The counters are read from the grants rather than from the denormalised
@@ -748,16 +751,20 @@ func formatBasisPoints(points int) string {
 
 // couponRow is one coupon on the list.
 type couponRow struct {
-	Record     *core.Record
-	Name       string
-	Code       string
-	Type       string
-	Status     string
-	Value      string
-	Currency   string
-	Cap        string
-	Minimum    string
-	Quantity   string
+	Record   *core.Record
+	Name     string
+	Code     string
+	Type     string
+	Status   string
+	Value    string
+	Currency string
+	Cap      string
+	Minimum  string
+	Quantity string
+
+	// Unlimited is true when the coupon has no issue cap, so the screen says so in the
+	// reader's language instead of printing a word chosen here.
+	Unlimited  bool
 	Validity   string
 	Issued     int
 	Used       int

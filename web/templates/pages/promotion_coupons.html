@@ -46,7 +46,7 @@
             {{if .Minimum}}{{$.T "promotions.coupons.min" .Minimum}}<br>{{end}}
             {{if eq .Validity "relative"}}<span class="badge text-bg-light">{{$.T "promotions.coupons.relative"}}</span>{{end}}
           </td>
-          <td class="small">{{$.T "promotions.coupons.holdings" .Issued .Used}} <span class="text-body-secondary">/ {{.Quantity}}</span></td>
+          <td class="small">{{$.T "promotions.coupons.holdings" .Issued .Used}} <span class="text-body-secondary">/ {{if .Unlimited}}{{$.T "promotions.coupons.unlimited"}}{{else}}{{.Quantity}}{{end}}</span></td>
           <td class="small">
             {{if .Stackable}}<span class="badge text-bg-info">{{$.T "promotions.coupons.stacks"}}</span>{{else}}<span class="text-body-secondary">{{$.T "promotions.coupons.alone"}}</span>{{end}}
             {{if .WithMember}}<span class="badge text-bg-light">{{$.T "promotions.coupons.withMemberDiscount"}}</span>{{end}}
