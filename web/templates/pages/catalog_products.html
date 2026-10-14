@@ -16,14 +16,14 @@
         <select class="form-select form-select-sm" name="status">
           <option value="">{{.T "catalog.products.filter.anyStatus"}}</option>
           {{$s := .Status}}{{range .Statuses}}
-          <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "catalog.products.status.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
         <select class="form-select form-select-sm" name="kind">
           <option value="">{{.T "catalog.products.filter.anyKind"}}</option>
           {{$k := .Kind}}{{range .Kinds}}
-          <option value="{{.}}" {{if eq . $k}}selected{{end}}>{{.}}</option>{{end}}
+          <option value="{{.}}" {{if eq . $k}}selected{{end}}>{{$.T (printf "catalog.products.kind.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
@@ -80,7 +80,7 @@
             {{if .Subtitle}}<div class="small text-body-secondary">{{truncate .Subtitle 60}}</div>{{end}}
           </td>
           <td class="small">{{if .Category}}{{.Category}}{{else}}<span class="text-body-secondary">&mdash;</span>{{end}}</td>
-          <td class="small">{{.Kind}}</td>
+          <td class="small">{{$.T (printf "catalog.products.kind.%s" .Kind)}}</td>
           <td class="small text-nowrap">
             {{if .OnSale}}
             <span class="text-decoration-line-through text-body-secondary">{{.List}}</span>
@@ -94,9 +94,9 @@
             {{else}}<span class="text-body-secondary">{{range .SKUs}}{{end}}{{$.T "catalog.products.perVariant"}}{{end}}
           </td>
           <td>
-            {{if eq .Status "on_sale"}}<span class="badge text-bg-success">{{$.T "catalog.products.status.onSale"}}</span>
+            {{if eq .Status "on_sale"}}<span class="badge text-bg-success">{{$.T "catalog.products.status.on_sale"}}</span>
             {{else if eq .Status "draft"}}<span class="badge text-bg-secondary">{{$.T "catalog.products.status.draft"}}</span>
-            {{else if eq .Status "off_shelf"}}<span class="badge text-bg-warning">{{$.T "catalog.products.status.offShelf"}}</span>
+            {{else if eq .Status "off_shelf"}}<span class="badge text-bg-warning">{{$.T "catalog.products.status.off_shelf"}}</span>
             {{else}}<span class="badge text-bg-dark">{{$.T "catalog.products.status.archived"}}</span>{{end}}
           </td>
           <td class="text-end text-nowrap">

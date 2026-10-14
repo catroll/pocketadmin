@@ -10,6 +10,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 
 	"pocketadmin/internal/audit"
+	"pocketadmin/internal/i18n"
 	"pocketadmin/internal/monitoring"
 	"pocketadmin/internal/permission"
 )
@@ -93,6 +94,13 @@ func (s *Server) handleNodeList(c *gin.Context) {
 	})
 }
 
+// nodeWindow is one selectable history range: the label the server matches on, and the
+// same range in the reader's language.
+type nodeWindow struct {
+	Value string
+	Label string
+}
+
 // nodeDetailPage is one machine with its history.
 type nodeDetailPage struct {
 	base
@@ -108,7 +116,7 @@ type nodeDetailPage struct {
 	Samples     int
 	Seen        string
 	Window      string
-	Windows     []string
+	Windows     []nodeWindow
 	Charts      []nodeChart
 	HasData     bool
 	CanManage   bool
@@ -141,6 +149,8 @@ func (s *Server) handleNodeDetail(c *gin.Context) {
 
 	policy := s.hostSamplePolicy()
 
+	locale := s.locale(c)
+
 	view := nodeDetailPage{
 		base:      s.newBase(c, node.GetString("name"), "monitoring.nodes"),
 		Record:    node,
@@ -159,8 +169,14 @@ func (s *Server) handleNodeDetail(c *gin.Context) {
 	if seen := node.GetDateTime("lastSeenAt"); !seen.IsZero() {
 		view.Seen = seen.Time().Local().Format("2 Jan 15:04:05")
 	}
+	// The label is what the server matches on, so it stays in the link; what the reader
+	// sees is the catalogue's message for it. Translating the value itself would break
+	// the picker, because WindowFor compares the query against the English label.
 	for _, preset := range monitoring.PresetWindows(now) {
-		view.Windows = append(view.Windows, preset.Label)
+		view.Windows = append(view.Windows, nodeWindow{
+			Value: preset.Label,
+			Label: i18n.Text(locale, preset.Label),
+		})
 	}
 
 	// Each series becomes its own chart, so a reader can compare a machine's memory

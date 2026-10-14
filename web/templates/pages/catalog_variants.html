@@ -107,7 +107,7 @@
             {{if gt (.GetInt "delta") 0}}+{{end}}{{.GetInt "delta"}}
           </td>
           <td>{{.GetInt "balanceAfter"}}</td>
-          <td>{{.GetString "reason"}}</td>
+          <td>{{$.T (printf "catalog.variants.reason.%s" (.GetString "reason"))}}</td>
           <td>{{.GetString "refType"}} {{.GetString "refId"}}</td>
           <td>{{truncate (.GetString "note") 40}}</td>
         </tr>

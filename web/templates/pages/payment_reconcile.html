@@ -65,10 +65,10 @@
         <tr class="small">
           <td><code>{{.ProviderTxnID}}</code></td>
           <td>
-            {{if eq .Kind "missing_locally"}}<span class="badge text-bg-danger">{{$.T "payments.reconcile.missingLocally"}}</span>
-            {{else if eq .Kind "missing_remotely"}}<span class="badge text-bg-danger">{{$.T "payments.reconcile.missingRemotely"}}</span>
-            {{else if eq .Kind "amount"}}<span class="badge text-bg-warning">{{$.T "payments.reconcile.amount"}}</span>
-            {{else}}<span class="badge text-bg-secondary">{{.Kind}}</span>{{end}}
+            {{if eq .Kind "missing_locally"}}<span class="badge text-bg-danger">{{$.T (printf "payments.reconcile.kind.%s" .Kind)}}</span>
+            {{else if eq .Kind "missing_remotely"}}<span class="badge text-bg-danger">{{$.T (printf "payments.reconcile.kind.%s" .Kind)}}</span>
+            {{else if eq .Kind "amount"}}<span class="badge text-bg-warning">{{$.T (printf "payments.reconcile.kind.%s" .Kind)}}</span>
+            {{else}}<span class="badge text-bg-secondary">{{$.T (printf "payments.reconcile.kind.%s" .Kind)}}</span>{{end}}
           </td>
           <td>{{.Local}}</td>
           <td>{{.Remote}}</td>

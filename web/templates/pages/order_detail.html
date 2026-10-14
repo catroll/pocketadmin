@@ -3,7 +3,7 @@
   <div class="col-lg-8">
     <h4 class="mb-0 font-monospace">{{.Record.GetString "orderNo"}}</h4>
     <div class="small text-body-secondary">
-      {{.Email}} &middot; {{.Record.GetString "source"}} &middot;
+      {{.Email}} &middot; {{$.T (printf "orders.source.%s" (.Record.GetString "source"))}} &middot;
       {{formatTime (.Record.GetDateTime "created")}}
       {{if .MemberTier}} &middot; <span class="badge text-bg-info">{{.MemberTier}}</span>{{end}}
     </div>
@@ -23,7 +23,7 @@
           {{else if eq (.Record.GetString "status") "paid"}}<span class="badge text-bg-info">{{.T "orders.badge.paid"}}</span>
           {{else if eq (.Record.GetString "status") "fulfilling"}}<span class="badge text-bg-primary">{{.T "orders.badge.fulfilling"}}</span>
           {{else if eq (.Record.GetString "status") "completed"}}<span class="badge text-bg-success">{{.T "orders.badge.completed"}}</span>
-          {{else}}<span class="badge text-bg-secondary">{{.Record.GetString "status"}}</span>{{end}}
+          {{else}}<span class="badge text-bg-secondary">{{$.T (printf "orders.status.%s" (.Record.GetString "status"))}}</span>{{end}}
         </div>
       </div>
       <div class="card-body table-responsive p-0">
@@ -106,7 +106,7 @@
           <input type="hidden" name="_csrf" value="{{.CSRF}}">
           <input type="text" class="form-control form-control-sm" name="reason" placeholder="{{.T "orders.reasonOptional"}}">
           {{range .NextStates}}
-          <button name="status" value="{{.}}" class="btn btn-sm btn-outline-primary">{{$.T "orders.markAs" .}}</button>
+          <button name="status" value="{{.}}" class="btn btn-sm btn-outline-primary">{{$.T "orders.markAs" ($.T (printf "orders.status.%s" .))}}</button>
           {{end}}
         </form>
         <div class="form-text mt-2">

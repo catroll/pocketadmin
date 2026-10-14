@@ -39,7 +39,7 @@
               {{range .Tags}}
               <div class="form-check form-check-inline">
                 <input type="checkbox" class="form-check-input" name="tags" value="{{.}}" id="t-{{.}}">
-                <label class="form-check-label small" for="t-{{.}}">{{.}}</label>
+                <label class="form-check-label small" for="t-{{.}}">{{$.T (printf "workbench.tag.%s" .)}}</label>
               </div>
               {{end}}
             </div>

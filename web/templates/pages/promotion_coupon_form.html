@@ -22,7 +22,7 @@
             <div class="col-sm-4">
               <label class="form-label small" for="type">{{.T "promotions.coupon.type"}}</label>
               <select class="form-select form-select-sm" id="type" name="type">
-                {{$t := .Type}}{{range .Types}}<option value="{{.}}" {{if eq . $t}}selected{{end}}>{{.}}</option>{{end}}
+                {{$t := .Type}}{{range .Types}}<option value="{{.}}" {{if eq . $t}}selected{{end}}>{{$.T (printf "promotions.coupon.type.%s" .)}}</option>{{end}}
               </select>
             </div>
             <div class="col-sm-4">
@@ -48,7 +48,7 @@
             <div class="col-sm-4">
               <label class="form-label small" for="status">{{.T "common.status"}}</label>
               <select class="form-select form-select-sm" id="status" name="status">
-                {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+                {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "promotions.coupons.status.%s" .)}}</option>{{end}}
               </select>
             </div>
           </div>
@@ -61,7 +61,7 @@
           <div class="mb-2">
             <label class="form-label small" for="validityMode">{{.T "common.mode"}}</label>
             <select class="form-select form-select-sm" id="validityMode" name="validityMode">
-              {{$v := .Validity}}{{range .Validities}}<option value="{{.}}" {{if eq . $v}}selected{{end}}>{{.}}</option>{{end}}
+              {{$v := .Validity}}{{range .Validities}}<option value="{{.}}" {{if eq . $v}}selected{{end}}>{{$.T (printf "promotions.coupon.validity.%s" .)}}</option>{{end}}
             </select>
             <div class="form-text">
               <code>absolute</code> {{.T "promotions.coupon.validityAbsolute"}}

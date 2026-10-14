@@ -38,7 +38,7 @@
       <div class="col-sm-2">
         <label class="form-label small" for="interval">&nbsp;</label>
         <select class="form-select form-select-sm" id="interval" name="interval">
-          {{range .Intervals}}<option value="{{.}}" {{if eq . "month"}}selected{{end}}>{{.}}</option>{{end}}
+          {{range .Intervals}}<option value="{{.}}" {{if eq . "month"}}selected{{end}}>{{$.T (printf "subscriptions.interval.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-1"><button class="btn btn-primary btn-sm w-100">{{.T "common.add"}}</button></div>

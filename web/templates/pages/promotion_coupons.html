@@ -8,7 +8,7 @@
       <div class="col-auto">
         <select class="form-select form-select-sm" name="status">
           <option value="">{{.T "promotions.filter.anyStatus"}}</option>
-          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "promotions.coupons.status.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.filter"}}</button></div>
@@ -55,7 +55,7 @@
             {{if eq .Status "active"}}<span class="badge text-bg-success">{{$.T "promotions.coupons.status.active"}}</span>
             {{else if eq .Status "draft"}}<span class="badge text-bg-secondary">{{$.T "promotions.coupons.status.draft"}}</span>
             {{else if eq .Status "paused"}}<span class="badge text-bg-warning">{{$.T "promotions.coupons.status.paused"}}</span>
-            {{else}}<span class="badge text-bg-dark">{{.Status}}</span>{{end}}
+            {{else}}<span class="badge text-bg-dark">{{$.T (printf "promotions.coupons.status.%s" .Status)}}</span>{{end}}
           </td>
           <td class="text-end">
             {{if $.CanManage}}<a href="/promotions/coupons/{{.Record.Id}}/edit" class="btn btn-sm btn-secondary"><i class="fas fa-pen"></i></a>{{end}}

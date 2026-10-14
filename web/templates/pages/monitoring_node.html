@@ -25,8 +25,8 @@
     <div class="btn-group btn-group-sm">
       {{$w := .Window}}
       {{range .Windows}}
-      <a href="/monitoring/nodes/{{$.Record.Id}}?window={{.}}"
-         class="btn btn-outline-secondary {{if eq . $w}}active{{end}}">{{.}}</a>
+      <a href="/monitoring/nodes/{{$.Record.Id}}?window={{.Value}}"
+         class="btn btn-outline-secondary {{if eq .Value $w}}active{{end}}">{{.Label}}</a>
       {{end}}
     </div>
   </div>

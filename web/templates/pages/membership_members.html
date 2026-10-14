@@ -6,7 +6,7 @@
         <select class="form-select form-select-sm" name="status">
           <option value="">{{.T "membership.members.filter.anyStatus"}}</option>
           {{$s := .Status}}{{range .Statuses}}
-          <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "membership.status.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
@@ -20,7 +20,7 @@
         <select class="form-select form-select-sm" name="source">
           <option value="">{{.T "membership.members.filter.anySource"}}</option>
           {{$src := .Source}}{{range .Sources}}
-          <option value="{{.}}" {{if eq . $src}}selected{{end}}>{{.}}</option>{{end}}
+          <option value="{{.}}" {{if eq . $src}}selected{{end}}>{{$.T (printf "membership.source.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto">
@@ -78,7 +78,7 @@
         <tr>
           <td class="small">{{.Email}}</td>
           <td class="small">{{.Tier}}</td>
-          <td class="small">{{.Source}}</td>
+          <td class="small">{{$.T (printf "membership.source.%s" .Source)}}</td>
           <td class="small">{{.Start}}</td>
           <td class="small {{if .Expired}}text-danger{{end}}">
             {{.Expires}}{{if .Perpetual}} <span class="badge text-bg-light">{{$.T "membership.perpetual"}}</span>{{end}}
@@ -88,7 +88,7 @@
             {{else if eq .Status "expired"}}<span class="badge text-bg-dark">{{$.T "membership.status.expired"}}</span>
             {{else if eq .Status "cancelled"}}<span class="badge text-bg-warning">{{$.T "membership.status.cancelled"}}</span>
             {{else if eq .Status "refunded"}}<span class="badge text-bg-danger">{{$.T "membership.status.refunded"}}</span>
-            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+            {{else}}<span class="badge text-bg-secondary">{{$.T (printf "membership.status.%s" .Status)}}</span>{{end}}
           </td>
           <td class="small text-body-secondary">{{truncate .Reason 40}}</td>
           <td class="text-end text-nowrap">

@@ -44,7 +44,7 @@
           <td>
             {{if eq .Status "enabled"}}<span class="badge text-bg-success">{{$.T "integrations.status.enabled"}}</span>
             {{else if eq .Status "error"}}<span class="badge text-bg-danger">{{$.T "integrations.status.error"}}</span>
-            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+            {{else}}<span class="badge text-bg-secondary">{{$.T (printf "integrations.status.%s" .Status)}}</span>{{end}}
           </td>
           <td class="small">
             {{if eq .LastTest "success"}}<span class="badge text-bg-success">{{$.T "integrations.outcome.success"}}</span>

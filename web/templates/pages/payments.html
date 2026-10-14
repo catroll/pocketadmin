@@ -15,10 +15,10 @@
         <tr class="small">
           <td>{{if .OrderID}}<a href="/orders/{{.OrderID}}" class="font-monospace">{{.OrderNo}}</a>{{end}}</td>
           <td>{{.Amount}}</td>
-          <td>{{.Method}}</td>
+          <td>{{$.T (printf "payments.method.%s" .Method)}}</td>
           <td>{{.Attempts}}</td>
           <td class="{{if .Expiring}}text-danger{{end}}">{{.Expires}}</td>
-          <td><span class="badge text-bg-warning">{{.Status}}</span></td>
+          <td><span class="badge text-bg-warning">{{$.T (printf "payments.status.%s" .Status)}}</span></td>
         </tr>
         {{end}}
       </tbody>
@@ -39,14 +39,14 @@
         <label class="form-label small" for="status">{{.T "common.status"}}</label>
         <select class="form-select form-select-sm" id="status" name="status">
           <option value="">{{.T "common.any"}}</option>
-          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "payments.status.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-2">
         <label class="form-label small" for="method">{{.T "common.method"}}</label>
         <select class="form-select form-select-sm" id="method" name="method">
           <option value="">{{.T "common.any"}}</option>
-          {{$m := .Method}}{{range .Methods}}<option value="{{.}}" {{if eq . $m}}selected{{end}}>{{.}}</option>{{end}}
+          {{$m := .Method}}{{range .Methods}}<option value="{{.}}" {{if eq . $m}}selected{{end}}>{{$.T (printf "payments.method.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-3">
@@ -84,7 +84,7 @@
             {{if .Manual}}<span class="badge text-bg-info">{{$.T "payments.byHand"}}</span>{{end}}
           </td>
           <td class="small fw-semibold">{{.Amount}}</td>
-          <td class="small">{{.Method}}</td>
+          <td class="small">{{$.T (printf "payments.method.%s" .Method)}}</td>
           <td class="small">{{.Created}}</td>
           <td class="small">
             {{if gt .Callbacks 1}}<span class="badge text-bg-warning">{{.Callbacks}}</span>{{else}}{{.Callbacks}}{{end}}
@@ -94,7 +94,7 @@
             {{else if eq .Status "failed"}}<span class="badge text-bg-danger">{{$.T "common.failed"}}</span>
             {{else if eq .Status "pending"}}<span class="badge text-bg-warning">{{$.T "common.pending"}}</span>
             {{else if eq .Status "processing"}}<span class="badge text-bg-info">{{$.T "payments.status.processing"}}</span>
-            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+            {{else}}<span class="badge text-bg-secondary">{{$.T (printf "payments.status.%s" .Status)}}</span>{{end}}
             {{if .Reconciled}}<span class="badge text-bg-light" title="{{$.T "payments.reconciledTitle"}}">{{$.T "payments.reconciled"}}</span>{{end}}
           </td>
         </tr>
@@ -130,9 +130,9 @@
       <div class="col-sm-2">
         <label class="form-label small" for="method">{{.T "common.method"}}</label>
         <select class="form-select form-select-sm" id="method" name="method">
-          <option value="bank_transfer">{{.T "payments.manual.bankTransfer"}}</option>
-          <option value="cash">{{.T "payments.manual.cash"}}</option>
-          <option value="other">{{.T "payments.manual.other"}}</option>
+          <option value="bank_transfer">{{.T "payments.method.bank_transfer"}}</option>
+          <option value="cash">{{.T "payments.method.cash"}}</option>
+          <option value="other">{{.T "payments.method.other"}}</option>
         </select>
       </div>
       <div class="col-sm-4">

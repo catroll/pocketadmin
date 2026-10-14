@@ -37,8 +37,8 @@
             {{if .Unread}}<i class="fas fa-circle text-primary me-1" style="font-size:.5rem"></i>{{end}}
             {{.Title}}
           </strong>
-          <span class="badge text-bg-{{if eq .Level "error"}}danger{{else if eq .Level "warning"}}warning{{else if eq .Level "success"}}success{{else}}info{{end}} ms-1">{{.Level}}</span>
-          <span class="badge text-bg-secondary">{{.Type}}</span>
+          <span class="badge text-bg-{{if eq .Level "error"}}danger{{else if eq .Level "warning"}}warning{{else if eq .Level "success"}}success{{else}}info{{end}} ms-1">{{$.T (printf "workbench.level.%s" .Level)}}</span>
+          <span class="badge text-bg-secondary">{{$.T (printf "workbench.type.%s" .Type)}}</span>
         </div>
         <div class="text-nowrap">
           <span class="small text-body-secondary me-2">{{.When}}</span>

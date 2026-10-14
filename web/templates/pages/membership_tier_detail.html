@@ -4,7 +4,7 @@
     <h4 class="mb-0">{{.Record.GetString "name"}}</h4>
     <div class="small text-body-secondary">
       <code>{{.Record.GetString "code"}}</code> &middot; {{.T "membership.tier.level"}} {{.Record.GetInt "level"}} &middot;
-      {{.Record.GetString "status"}}
+      {{$.T (printf "membership.status.%s" (.Record.GetString "status"))}}
       {{if .Record.GetBool "isDefault"}}&middot; <span class="badge text-bg-info">{{.T "membership.tier.default"}}</span>{{end}}
     </div>
   </div>
@@ -45,7 +45,7 @@
             <div class="col-sm-4">
               <label class="form-label small" for="kind">{{.T "common.kind"}}</label>
               <select class="form-select form-select-sm" id="kind" name="kind">
-                {{range .Kinds}}<option value="{{.}}">{{.}}</option>{{end}}
+                {{range .Kinds}}<option value="{{.}}">{{$.T (printf "membership.benefitKind.%s" .)}}</option>{{end}}
               </select>
             </div>
             <div class="col-sm-4">

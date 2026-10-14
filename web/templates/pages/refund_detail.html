@@ -4,7 +4,7 @@
     <h4 class="mb-0 font-monospace">{{.Record.GetString "refundNo"}}</h4>
     <div class="small text-body-secondary">
       {{if .OrderID}}<a href="/orders/{{.OrderID}}" class="font-monospace">{{.OrderNo}}</a> &middot; {{end}}
-      {{.Record.GetString "mode"}} &middot; {{.Amount}} &middot; {{.T "refunds.requestedByInline" .RequestedBy}}
+      {{$.T (printf "refunds.mode.%s" (.Record.GetString "mode"))}} &middot; {{.Amount}} &middot; {{.T "refunds.requestedByInline" .RequestedBy}}
     </div>
   </div>
   <div class="col-lg-4 text-lg-end">
@@ -23,7 +23,7 @@
           {{else if eq $st "approved"}}<span class="badge text-bg-info">{{.T "refunds.status.approved"}}</span>
           {{else if eq $st "succeeded"}}<span class="badge text-bg-success">{{.T "refunds.status.refunded"}}</span>
           {{else if eq $st "failed"}}<span class="badge text-bg-danger">{{.T "common.failed"}}</span>
-          {{else}}<span class="badge text-bg-secondary">{{$st}}</span>{{end}}
+          {{else}}<span class="badge text-bg-secondary">{{$.T (printf "refunds.status.%s" $st)}}</span>{{end}}
           {{if .Record.GetBool "autoApproved"}}<span class="badge text-bg-light">{{.T "refunds.status.approvedAutomatically"}}</span>{{end}}
         </div>
       </div>
@@ -73,7 +73,7 @@
         <dl class="row mb-0 small">
           <dt class="col-4">{{.T "refunds.paid"}}</dt><dd class="col-8">{{.OrderPaid}}</dd>
           <dt class="col-4">{{.T "refunds.refundedSoFar"}}</dt><dd class="col-8">{{.OrderRefunded}}</dd>
-          <dt class="col-4">{{.T "refunds.orderStatus"}}</dt><dd class="col-8">{{.OrderStatus}}</dd>
+          <dt class="col-4">{{.T "refunds.orderStatus"}}</dt><dd class="col-8">{{$.T (printf "orders.status.%s" .OrderStatus)}}</dd>
         </dl>
       </div>
       <div class="card-footer small text-body-secondary">

@@ -36,7 +36,7 @@
               <label class="form-label" for="kind">{{.T "common.kind"}}</label>
               <select class="form-select" id="kind" name="kind">
                 {{$k := .Kind}}{{range .Kinds}}
-                <option value="{{.}}" {{if eq . $k}}selected{{end}}>{{.}}</option>{{end}}
+                <option value="{{.}}" {{if eq . $k}}selected{{end}}>{{$.T (printf "catalog.products.kind.%s" .)}}</option>{{end}}
               </select>
             </div>
             <div class="col-sm-4">
@@ -112,7 +112,7 @@
             <label class="form-label small" for="stockMode">{{.T "catalog.product.form.stockMode"}}</label>
             <select class="form-select form-select-sm" id="stockMode" name="stockMode">
               {{$m := .StockMode}}{{range .StockModes}}
-              <option value="{{.}}" {{if eq . $m}}selected{{end}}>{{.}}</option>{{end}}
+              <option value="{{.}}" {{if eq . $m}}selected{{end}}>{{$.T (printf "catalog.products.stockMode.%s" .)}}</option>{{end}}
             </select>
             <div class="form-text">
               <code>variant</code> {{.T "catalog.product.form.stockMode.variant"}} <code>single</code> {{.T "catalog.product.form.stockMode.single"}} <code>unlimited</code> {{.T "catalog.product.form.stockMode.unlimited"}}
@@ -143,7 +143,7 @@
               <label class="form-label small" for="status">{{.T "common.status"}}</label>
               <select class="form-select form-select-sm" id="status" name="status">
                 {{$s := .Status}}{{range .Statuses}}
-                <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+                <option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "catalog.products.status.%s" .)}}</option>{{end}}
               </select>
             </div>
           </div>
@@ -159,7 +159,7 @@
             <div class="form-check form-check-inline">
               <input type="checkbox" class="form-check-input" name="tags" value="{{.}}" id="t-{{.}}"
                      {{if index $sel .}}checked{{end}}>
-              <label class="form-check-label small" for="t-{{.}}">{{.}}</label>
+              <label class="form-check-label small" for="t-{{.}}">{{$.T (printf "catalog.tags.%s" .)}}</label>
             </div>
             {{end}}
           </div>

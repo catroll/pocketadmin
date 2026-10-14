@@ -11,7 +11,7 @@
         <label class="form-label small" for="status">{{.T "common.status"}}</label>
         <select class="form-select form-select-sm" id="status" name="status">
           <option value="">{{.T "common.any"}}</option>
-          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "refunds.status.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-3">
@@ -48,7 +48,7 @@
           </td>
           <td class="small">{{if .OrderID}}<a href="/orders/{{.OrderID}}" class="font-monospace">{{.OrderNo}}</a>{{end}}</td>
           <td class="small fw-semibold">{{.Amount}}</td>
-          <td class="small">{{.Mode}}</td>
+          <td class="small">{{$.T (printf "refunds.mode.%s" .Mode)}}</td>
           <td class="small">
             {{.RequestedBy}}
             {{if .IsOwnRequest}}<span class="badge text-bg-info" title="{{$.T "refunds.yoursTitle"}}">{{$.T "refunds.yours"}}</span>{{end}}
@@ -60,7 +60,7 @@
             {{else if eq .Status "rejected"}}<span class="badge text-bg-secondary">{{$.T "refunds.status.rejected"}}</span>
             {{else if eq .Status "failed"}}<span class="badge text-bg-danger">{{$.T "common.failed"}}</span>
             {{else if eq .Status "processing"}}<span class="badge text-bg-primary">{{$.T "refunds.status.sending"}}</span>
-            {{else}}<span class="badge text-bg-dark">{{.Status}}</span>{{end}}
+            {{else}}<span class="badge text-bg-dark">{{$.T (printf "refunds.status.%s" .Status)}}</span>{{end}}
             {{if .AutoApproved}}<span class="badge text-bg-light">{{$.T "refunds.status.automatic"}}</span>{{end}}
             {{if gt .Attempts 1}}<span class="badge text-bg-warning">{{$.T "refunds.attempts" .Attempts}}</span>{{end}}
           </td>

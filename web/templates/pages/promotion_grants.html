@@ -32,7 +32,7 @@
       <div class="col-auto">
         <select class="form-select form-select-sm" name="status">
           <option value="">{{.T "promotions.filter.anyStatus"}}</option>
-          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "promotions.grants.status.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.filter"}}</button></div>
@@ -52,7 +52,7 @@
             {{if eq .Status "issued"}}<span class="badge text-bg-info">{{$.T "promotions.grants.status.issued"}}</span>
             {{else if eq .Status "used"}}<span class="badge text-bg-success">{{$.T "promotions.grants.status.used"}}</span>
             {{else if eq .Status "voided"}}<span class="badge text-bg-danger">{{$.T "promotions.grants.status.voided"}}</span>
-            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+            {{else}}<span class="badge text-bg-secondary">{{$.T (printf "promotions.grants.status.%s" .Status)}}</span>{{end}}
           </td>
           <td class="small">{{.Applied}}</td>
           <td class="text-end">

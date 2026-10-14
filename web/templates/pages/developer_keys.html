@@ -46,7 +46,7 @@
               <td>
                 {{if eq .Status "active"}}<span class="badge text-bg-success">{{$.T "developer.keys.status.active"}}</span>
                 {{else if eq .Status "revoked"}}<span class="badge text-bg-danger">{{$.T "developer.keys.status.revoked"}}</span>
-                {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+                {{else}}<span class="badge text-bg-secondary">{{$.T (printf "developer.keys.status.%s" .Status)}}</span>{{end}}
                 {{if .Expires}}<div class="small text-body-secondary">{{$.T "developer.keys.expires" .Expires}}</div>{{end}}
               </td>
               <td class="small">

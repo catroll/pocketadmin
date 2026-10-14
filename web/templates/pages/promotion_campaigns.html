@@ -51,7 +51,7 @@
             {{if .BudgetCap}}{{$.T "promotions.campaigns.spentOf" .Spent .BudgetCap}}{{else}}{{.Spent}}{{end}}
             {{if .OverBudget}}<span class="badge text-bg-danger">{{$.T "promotions.campaigns.overBudget"}}</span>{{end}}
           </td>
-          <td class="small">{{.Status}}</td>
+          <td class="small">{{$.T (printf "promotions.campaigns.status.%s" .Status)}}</td>
         </tr>
         {{else}}
         <tr><td colspan="5" class="text-center text-body-secondary py-4">{{.T "promotions.campaigns.empty"}}</td></tr>

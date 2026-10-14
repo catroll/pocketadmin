@@ -9,6 +9,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 
 	"pocketadmin/internal/audit"
+	"pocketadmin/internal/i18n"
 	"pocketadmin/internal/money"
 	"pocketadmin/internal/permission"
 	"pocketadmin/internal/subscription"
@@ -31,6 +32,7 @@ func (s *Server) registerSubscriptionRoutes(panel *gin.RouterGroup) {
 
 // handleSubscriptionList renders the subscriptions.
 func (s *Server) handleSubscriptionList(c *gin.Context) {
+	locale := s.locale(c)
 	filter := ""
 	params := map[string]any{}
 
@@ -68,7 +70,7 @@ func (s *Server) handleSubscriptionList(c *gin.Context) {
 		}
 		if plan, err := s.app.FindRecordById(subscription.CollectionPlans, rec.GetString("plan")); err == nil && plan != nil {
 			row.Plan = plan.GetString("name")
-			row.Interval = describeInterval(plan.GetString("interval"), plan.GetInt("intervalCount"))
+			row.Interval = describeInterval(locale, plan.GetString("interval"), plan.GetInt("intervalCount"))
 			row.Price = money.Format(money.Amount(subscription.PlanPrice(s.app, plan)), "USD")
 		}
 		if end := rec.GetDateTime("currentPeriodEnd"); !end.IsZero() {
@@ -87,7 +89,7 @@ func (s *Server) handleSubscriptionList(c *gin.Context) {
 	for _, rec := range plans {
 		planOptions = append(planOptions, subscriptionPlanOption{
 			ID: rec.Id, Name: rec.GetString("name"),
-			Interval: describeInterval(rec.GetString("interval"), rec.GetInt("intervalCount")),
+			Interval: describeInterval(locale, rec.GetString("interval"), rec.GetInt("intervalCount")),
 		})
 	}
 
@@ -108,6 +110,7 @@ func (s *Server) handleSubscriptionList(c *gin.Context) {
 
 // handleSubscriptionPlans renders the plans.
 func (s *Server) handleSubscriptionPlans(c *gin.Context) {
+	locale := s.locale(c)
 	records, err := s.app.FindRecordsByFilter(subscription.CollectionPlans,
 		"", "sortOrder", 0, 0)
 	if err != nil {
@@ -120,7 +123,7 @@ func (s *Server) handleSubscriptionPlans(c *gin.Context) {
 			Record:    rec,
 			Name:      rec.GetString("name"),
 			Code:      rec.GetString("code"),
-			Interval:  describeInterval(rec.GetString("interval"), rec.GetInt("intervalCount")),
+			Interval:  describeInterval(locale, rec.GetString("interval"), rec.GetInt("intervalCount")),
 			Trial:     rec.GetInt("trialDays"),
 			MaxCycles: rec.GetInt("maxCycles"),
 			Status:    rec.GetString("status"),
@@ -158,6 +161,7 @@ func (s *Server) handleSubscriptionPlans(c *gin.Context) {
 
 // handleSubscriptionDetail renders one subscription with its cycles.
 func (s *Server) handleSubscriptionDetail(c *gin.Context) {
+	locale := s.locale(c)
 	rec, err := s.app.FindRecordById(subscription.CollectionSubscriptions, c.Param("id"))
 	if err != nil || rec == nil {
 		s.renderErrorPage(c, http.StatusNotFound, "Not found", "That subscription does not exist.")
@@ -182,7 +186,7 @@ func (s *Server) handleSubscriptionDetail(c *gin.Context) {
 		view.Email = user.Email()
 	}
 	if plan != nil {
-		view.Interval = describeInterval(plan.GetString("interval"), plan.GetInt("intervalCount"))
+		view.Interval = describeInterval(locale, plan.GetString("interval"), plan.GetInt("intervalCount"))
 		view.Price = money.Format(money.Amount(subscription.PlanPrice(s.app, plan)), "USD")
 	}
 
@@ -214,7 +218,7 @@ func (s *Server) handleSubscriptionDetail(c *gin.Context) {
 	for _, p := range plans {
 		planOptions = append(planOptions, subscriptionPlanOption{
 			ID: p.Id, Name: p.GetString("name"),
-			Interval: describeInterval(p.GetString("interval"), p.GetInt("intervalCount")),
+			Interval: describeInterval(locale, p.GetString("interval"), p.GetInt("intervalCount")),
 		})
 	}
 	view.Plans = planOptions
@@ -290,7 +294,7 @@ func (s *Server) handleSubscriptionPlanSave(c *gin.Context) {
 		TargetType: "subscription_plan",
 		TargetID:   rec.Id,
 		Severity:   severityWarning,
-		Summary:    "Subscription plan \"" + name + "\" saved: " + describeInterval(rec.GetString("interval"), rec.GetInt("intervalCount")),
+		Summary:    "Subscription plan \"" + name + "\" saved: " + describeInterval(i18n.Default, rec.GetString("interval"), rec.GetInt("intervalCount")),
 	})
 	s.setFlash(c, "success", "Saved.")
 	c.Redirect(http.StatusSeeOther, "/subscriptions/plans")
@@ -505,15 +509,34 @@ func (s *Server) handleSubscriptionCancel(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/subscriptions/"+rec.Id)
 }
 
-// describeInterval renders a billing interval.
-func describeInterval(interval string, count int) string {
+// describeInterval renders a billing interval in the reader's language.
+//
+// The unit comes from the catalogue rather than from the stored value, and the plural
+// is a separate message because English and Chinese disagree about whether one is
+// needed: "every 3 months" and "每 3 个月" are the same shape and "every 3 month" is not
+// English. A locale that does not translate the plural falls back to the singular.
+func describeInterval(locale i18n.Locale, interval string, count int) string {
 	if count <= 0 {
 		count = 1
 	}
-	if count == 1 {
-		return "every " + interval
+
+	unit := i18n.T(locale, "subscriptions.interval."+interval)
+	if unit == "subscriptions.interval."+interval {
+		// An interval the catalogue does not know keeps its stored value rather than
+		// printing the key.
+		unit = interval
 	}
-	return "every " + itoa(count) + " " + interval + "s"
+	if count != 1 {
+		plural := i18n.T(locale, "subscriptions.interval."+interval+".plural")
+		if plural != "subscriptions.interval."+interval+".plural" {
+			unit = plural
+		}
+	}
+
+	if count == 1 {
+		return i18n.T(locale, "subscriptions.interval.every", unit)
+	}
+	return i18n.T(locale, "subscriptions.interval.everyN", count, unit)
 }
 
 // subscriptionRow is one subscription.

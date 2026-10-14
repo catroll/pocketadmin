@@ -77,9 +77,9 @@
             {{if .LastRun}}{{.LastRun}}{{else}}<span class="text-body-secondary">{{$.T "jobs.never"}}</span>{{end}}
             {{if .LastStatus}}
             <div>
-              {{if eq .LastStatus "success"}}<span class="badge text-bg-success">{{.LastStatus}}</span>
-              {{else if eq .LastStatus "skipped"}}<span class="badge text-bg-secondary">{{.LastStatus}}</span>
-              {{else}}<span class="badge text-bg-danger">{{.LastStatus}}</span>{{end}}
+              {{if eq .LastStatus "success"}}<span class="badge text-bg-success">{{$.T (printf "jobs.status.%s" .LastStatus)}}</span>
+              {{else if eq .LastStatus "skipped"}}<span class="badge text-bg-secondary">{{$.T (printf "jobs.status.%s" .LastStatus)}}</span>
+              {{else}}<span class="badge text-bg-danger">{{$.T (printf "jobs.status.%s" .LastStatus)}}</span>{{end}}
             </div>
             {{end}}
           </td>

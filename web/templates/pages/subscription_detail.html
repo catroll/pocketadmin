@@ -4,7 +4,7 @@
     <h4 class="mb-0">{{.Email}}</h4>
     <div class="small text-body-secondary">
       {{if .Plan}}{{.Plan.GetString "name"}} &middot; {{.Interval}} &middot; {{.Price}}{{end}}
-      &middot; <span class="badge {{if eq (.Record.GetString "status") "active"}}text-bg-success{{else if eq (.Record.GetString "status") "past_due"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{.Record.GetString "status"}}</span>
+      &middot; <span class="badge {{if eq (.Record.GetString "status") "active"}}text-bg-success{{else if eq (.Record.GetString "status") "past_due"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{$.T (printf "subscriptions.status.%s" (.Record.GetString "status"))}}</span>
       {{if .Record.GetBool "cancelAtPeriodEnd"}}<span class="badge text-bg-warning">{{.T "subscriptions.detail.endsAtPeriodEnd"}}</span>{{end}}
     </div>
   </div>
@@ -31,7 +31,7 @@
                 {{if eq $s "paid"}}<span class="badge text-bg-success">{{$.T "subscriptions.cycle.paid"}}</span>
                 {{else if eq $s "pending"}}<span class="badge text-bg-info">{{$.T "subscriptions.cycle.pending"}}</span>
                 {{else if eq $s "failed"}}<span class="badge text-bg-danger">{{$.T "subscriptions.cycle.failed"}}</span>
-                {{else}}<span class="badge text-bg-secondary">{{$s}}</span>{{end}}
+                {{else}}<span class="badge text-bg-secondary">{{$.T (printf "subscriptions.cycle.%s" $s)}}</span>{{end}}
               </td>
               <td>{{.GetInt "attempts"}}</td>
               <td>{{truncate (.GetString "note") 40}}</td>

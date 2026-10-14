@@ -35,7 +35,7 @@
               {{$st := .Account.GetString "status"}}
               {{if eq $st "active"}}<span class="badge text-bg-success">{{.T "account.status.active"}}</span>
               {{else if eq $st "banned"}}<span class="badge text-bg-danger">{{.T "account.status.banned"}}</span>
-              {{else}}<span class="badge text-bg-secondary">{{if $st}}{{$st}}{{else}}{{.T "account.status.unknown"}}{{end}}</span>{{end}}
+              {{else}}<span class="badge text-bg-secondary">{{if $st}}{{$.T (printf "account.status.%s" $st)}}{{else}}{{.T "account.status.unknown"}}{{end}}</span>{{end}}
             </td></tr>
             <tr><th>{{.T "account.source"}}</th><td>{{if .Account.GetString "source"}}{{.Account.GetString "source"}}{{else}}&mdash;{{end}}</td></tr>
             <tr><th>{{.T "common.lastSignIn"}}</th><td>{{formatTime (.Account.GetDateTime "lastLoginAt")}} <span class="text-body-secondary small">{{.Account.GetString "lastLoginIp"}}</span></td></tr>
@@ -58,7 +58,7 @@
               <td>
                 {{$r := .GetString "result"}}
                 {{if eq $r "success"}}<span class="badge text-bg-success">{{$.T "account.login.success"}}</span>
-                {{else}}<span class="badge text-bg-danger">{{$r}}</span>{{end}}
+                {{else}}<span class="badge text-bg-danger">{{$.T (printf "account.login.%s" $r)}}</span>{{end}}
               </td>
               <td class="small">{{.GetString "ip"}}</td>
             </tr>

@@ -8,7 +8,7 @@
       <div class="col-auto">
         <select class="form-select form-select-sm" name="status">
           <option value="">{{.T "subscriptions.filter.anyStatus"}}</option>
-          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "subscriptions.status.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-auto"><button class="btn btn-sm btn-secondary">{{.T "common.filter"}}</button></div>
@@ -65,10 +65,10 @@
           <td>
             {{if eq .Status "active"}}<span class="badge text-bg-success">{{$.T "subscriptions.status.active"}}</span>
             {{else if eq .Status "trialing"}}<span class="badge text-bg-info">{{$.T "subscriptions.status.trialing"}}</span>
-            {{else if eq .Status "past_due"}}<span class="badge text-bg-warning">{{$.T "subscriptions.status.pastDue"}}</span>
+            {{else if eq .Status "past_due"}}<span class="badge text-bg-warning">{{$.T "subscriptions.status.past_due"}}</span>
             {{else if eq .Status "paused"}}<span class="badge text-bg-secondary">{{$.T "subscriptions.status.paused"}}</span>
             {{else if eq .Status "cancelled"}}<span class="badge text-bg-dark">{{$.T "subscriptions.status.cancelled"}}</span>
-            {{else}}<span class="badge text-bg-dark">{{.Status}}</span>{{end}}
+            {{else}}<span class="badge text-bg-dark">{{$.T (printf "subscriptions.status.%s" .Status)}}</span>{{end}}
             {{if .CancelAtEnd}}<span class="badge text-bg-warning" title="{{$.T "subscriptions.endsAtPeriodEnd"}}">{{$.T "subscriptions.status.ending"}}</span>{{end}}
             {{if .Retries}}<span class="badge text-bg-danger">{{$.T "subscriptions.retries" .Retries}}</span>{{end}}
           </td>

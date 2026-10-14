@@ -13,7 +13,7 @@
   <div class="card-body border-bottom">
     <dl class="row mb-0 small">
       <dt class="col-sm-2">{{.T "subscriptions.detail.schedule"}}</dt><dd class="col-sm-4"><code>{{.Job.GetString "cron"}}</code></dd>
-      <dt class="col-sm-2">{{.T "common.state"}}</dt><dd class="col-sm-4">{{.Job.GetString "status"}}</dd>
+      <dt class="col-sm-2">{{.T "common.state"}}</dt><dd class="col-sm-4">{{.T (printf "jobs.status.%s" (.Job.GetString "status"))}}</dd>
       <dt class="col-sm-2">{{.T "jobs.timeout"}}</dt><dd class="col-sm-4">{{.Job.GetInt "timeoutSeconds"}}s</dd>
       <dt class="col-sm-2">{{.T "jobs.retries"}}</dt><dd class="col-sm-4">{{.T "jobs.retryBackoff" (.Job.GetInt "maxRetries") (.Job.GetInt "retryBackoffSeconds")}}</dd>
       <dt class="col-sm-2">{{.T "common.concurrency"}}</dt><dd class="col-sm-4">{{.Job.GetString "concurrency"}}</dd>
@@ -34,7 +34,7 @@
             {{if eq $s "success"}}<span class="badge text-bg-success">{{$.T "jobs.status.success"}}</span>
             {{else if eq $s "running"}}<span class="badge text-bg-info">{{$.T "jobs.status.running"}}</span>
             {{else if eq $s "skipped"}}<span class="badge text-bg-secondary">{{$.T "jobs.status.skipped"}}</span>
-            {{else}}<span class="badge text-bg-danger">{{$s}}</span>{{end}}
+            {{else}}<span class="badge text-bg-danger">{{$.T (printf "jobs.status.%s" $s)}}</span>{{end}}
           </td>
           <td class="small">{{.GetString "triggeredBy"}}</td>
           <td class="small">{{.GetInt "durationMs"}} ms</td>
