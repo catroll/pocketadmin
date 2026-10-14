@@ -11,14 +11,14 @@
         <label class="form-label small" for="status">{{.T "common.status"}}</label>
         <select class="form-select form-select-sm" id="status" name="status">
           <option value="">{{.T "common.any"}}</option>
-          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{.}}</option>{{end}}
+          {{$s := .Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $s}}selected{{end}}>{{$.T (printf "orders.status.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-2">
         <label class="form-label small" for="paymentStatus">{{.T "orders.payment"}}</label>
         <select class="form-select form-select-sm" id="paymentStatus" name="paymentStatus">
           <option value="">{{.T "common.any"}}</option>
-          {{$p := .Payment}}{{range .Payments}}<option value="{{.}}" {{if eq . $p}}selected{{end}}>{{.}}</option>{{end}}
+          {{$p := .Payment}}{{range .Payments}}<option value="{{.}}" {{if eq . $p}}selected{{end}}>{{$.T (printf "orders.paymentStatus.%s" .)}}</option>{{end}}
         </select>
       </div>
       <div class="col-sm-1">
@@ -50,7 +50,7 @@
       <a href="/orders" class="btn btn-outline-secondary {{if not .HasFilter}}active{{end}}">{{.T "common.all"}}</a>
       {{range .Statuses}}
       <a href="/orders?status={{.}}" class="btn btn-outline-secondary {{if eq . $.Status}}active{{end}}">
-        {{.}}{{with index $.Counts .}} <span class="badge text-bg-light">{{.}}</span>{{end}}
+        {{$.T (printf "orders.status.%s" .)}}{{with index $.Counts .}} <span class="badge text-bg-light">{{.}}</span>{{end}}
       </a>
       {{end}}
     </div>
@@ -82,7 +82,7 @@
         <tr>
           <td>
             <a href="/orders/{{.Record.Id}}" class="font-monospace">{{.OrderNo}}</a>
-            <div class="small text-body-secondary">{{$.T "orders.itemCount" .ItemCount}} &middot; {{.Source}}</div>
+            <div class="small text-body-secondary">{{$.T "orders.itemCount" .ItemCount}} &middot; {{$.T (printf "orders.source.%s" .Source)}}</div>
           </td>
           <td class="small">{{.Email}}</td>
           <td class="small">
@@ -97,13 +97,13 @@
             {{else if eq .Status "fulfilling"}}<span class="badge text-bg-primary">{{$.T "orders.badge.fulfilling"}}</span>
             {{else if eq .Status "completed"}}<span class="badge text-bg-success">{{$.T "orders.badge.completed"}}</span>
             {{else if eq .Status "refunded"}}<span class="badge text-bg-danger">{{$.T "orders.badge.refunded"}}</span>
-            {{else}}<span class="badge text-bg-secondary">{{.Status}}</span>{{end}}
+            {{else}}<span class="badge text-bg-secondary">{{$.T (printf "orders.status.%s" .Status)}}</span>{{end}}
           </td>
           <td class="small">
             {{if eq .Payment "paid"}}<span class="badge text-bg-success">{{$.T "orders.badge.paid"}}</span>
             {{else if eq .Payment "unpaid"}}<span class="badge text-bg-secondary">{{$.T "orders.badge.unpaid"}}</span>
             {{else if eq .Payment "partial"}}<span class="badge text-bg-warning">{{$.T "orders.badge.partial"}}</span>
-            {{else}}<span class="badge text-bg-danger">{{.Payment}}</span>{{end}}
+            {{else}}<span class="badge text-bg-danger">{{$.T (printf "orders.paymentStatus.%s" .Payment)}}</span>{{end}}
           </td>
           <td class="text-end">
             <a href="/orders/{{.Record.Id}}" class="btn btn-sm btn-secondary"><i class="fas fa-eye"></i></a>
